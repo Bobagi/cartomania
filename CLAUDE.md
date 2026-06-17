@@ -365,3 +365,38 @@ web/                         SvelteKit frontend
 - **Online presence**: `Player.lastSeenAt DateTime?` (migration `20260613000000_add_player_last_seen_at`).
   Updated on every `GET /friends` call via `touchLastSeen()`. Returned in all friend summaries.
   Frontend: online = < 2 min ago (green dot), away = < 10 min ago (gold dot), offline = gray dot.
+- **Card aspect ratio unified (2026-06-13)**: the gallery, duel page, classic page and `FlippableCard`
+  used to pass the wrong `430/670` aspect to `CardComposite`, distorting every card vs. `/cards-lab`
+  (which uses the correct `1444/1920` default). All call sites are now `1444/1920`. See the aspect-ratio
+  gotcha above.
+- **Repo went public-safe (2026-06-13)**: GitHub repo has a description + topics; README rewritten for
+  accuracy (real `:3000` port, Attribute Duel API, not the old CLASSIC `play-card`/HP examples); the two
+  `howToAccessDatabase.md` ops files (leaked `ssh root@bobagi.space`) were removed. `.env`/`web/.env`
+  are git-ignored and were never committed (verified across history).
+
+## TODO / pending work (next session)
+
+> Ordered roughly by priority. Update/trim as items land.
+
+1. **[SECURITY — do first] Rotate the live `admin`/`alice` passwords.** The live `.env` does NOT set
+   `ADMIN_PASSWORD`/`ALICE_PASSWORD`, so the seed fell back to `admin123`/`alice123` — a publicly-known
+   ADMIN login on `cartomania.bobagi.space` (the weak default is visible in the now-public
+   `prisma/seed.ts`). The user opted to do this manually. Fix: add strong values to `/opt/chronos/.env`
+   then `docker compose up -d chronos` (the seed `upsert` uses `update:`, so it rotates on restart).
+   Consider also hardening `seed.ts` to refuse the weak default when `NODE_ENV=production`.
+2. **Unauthenticated duel endpoints.** `GET /game/state/:id` and the duel actions are unauthenticated —
+   anyone with a `gameId` can read/act on a match. Acceptable for a portfolio; harden (auth guard +
+   "is this player in this game" check) if it ever matters.
+3. **Finish Google sign-in** (currently scaffolded, frontend-only — see the gotcha). Needs: the OAuth
+   token exchange + `id_token` verification in `web/src/routes/auth/google/callback/+server.ts`, a
+   backend find-or-create-Player-by-Google-identity endpoint (Prisma migration adding `googleId`/`email`
+   to `Player`), then `setChronosSessionCookie`. Flip on with `PUBLIC_GOOGLE_AUTH_ENABLED=true` +
+   `GOOGLE_CLIENT_ID/SECRET/REDIRECT_URI`.
+4. **Duel realtime: swap polling for WebSockets** (optional polish). The client polls `GET state` every
+   1 s; the `game` WS gateway already emits `state` to room `game:<id>`. Would need an nginx
+   `location /socket.io/` → `:3056` and a socket.io-client. Lower priority — polling works fine.
+5. **`.nvmrc` says 20 but only Node 18.20.5 is installed** on the VPS; the web build needs
+   `npm_config_engine_strict=false`. Either install Node 20 (and drop the flag) or change `.nvmrc` to 18.
+6. **Minor cleanup:** `CardComposite` inline-styles the attribute value/label at `5cqh`/`3cqh`, but
+   `game/fonts.css` overrides both with `!important` (`--cc-val-size` 8cqh / `--cc-label-size` 5.6cqh) —
+   the inline values are dead. Harmless, but worth removing to avoid confusion.
