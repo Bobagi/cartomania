@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { AVATAR_OPTIONS } from '$lib/config/avatarOptions';
 	import { t } from '$lib/i18n';
-	import type { AuthenticatedChronosUser } from '$lib/types/chronos';
+	import type { AuthenticatedCartomaniaUser } from '$lib/types/cartomania';
 	import { createEventDispatcher } from 'svelte';
 
 	export let currentAvatarUrl: string | null = null;
 
 	const dispatch = createEventDispatcher<{
 		close: void;
-		updated: { user: AuthenticatedChronosUser };
+		updated: { user: AuthenticatedCartomaniaUser };
 	}>();
 	let saving = false;
 	let errorText = '';
@@ -24,7 +24,7 @@
 				body: JSON.stringify({ avatarUrl: url })
 			});
 			if (!response.ok) throw new Error('failed');
-			const data = (await response.json()) as { user: AuthenticatedChronosUser };
+			const data = (await response.json()) as { user: AuthenticatedCartomaniaUser };
 			dispatch('updated', { user: data.user });
 			dispatch('close');
 		} catch {

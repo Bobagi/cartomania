@@ -9,7 +9,7 @@ export interface ApplicationHomeMetadata {
 }
 
 export const APPLICATION_HOME_METADATA: ApplicationHomeMetadata = {
-  message: 'Chronos API is ready to accept requests.',
+  message: 'Cartomania API is ready to accept requests.',
   documentationUrl: '/api',
   healthCheckUrl: '/health',
 };
@@ -29,7 +29,7 @@ function loadHomeTemplate(): string {
     );
 
     if (!resolvedPath) {
-      throw new Error('Chronos homepage template asset could not be located.');
+      throw new Error('Cartomania homepage template asset could not be located.');
     }
 
     cachedTemplate = readFileSync(resolvedPath, 'utf8');

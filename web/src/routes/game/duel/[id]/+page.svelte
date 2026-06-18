@@ -2,16 +2,16 @@
 	import { browser } from '$app/environment';
 	import { page as sveltePageStore } from '$app/stores';
 	import {
-		advanceChronosDuel,
-		chooseChronosDuelAttribute,
-		chooseChronosDuelCard,
-		fetchChronosCardCatalog,
-		fetchChronosGameResult,
-		fetchChronosGameStateById,
-		fetchMultipleChronosCardMetadata,
-		startAttributeDuelChronosGameForPlayer,
-		surrenderChronosGame,
-		unchooseChronosDuelCard
+		advanceCartomaniaDuel,
+		chooseCartomaniaDuelAttribute,
+		chooseCartomaniaDuelCard,
+		fetchCartomaniaCardCatalog,
+		fetchCartomaniaGameResult,
+		fetchCartomaniaGameStateById,
+		fetchMultipleCartomaniaCardMetadata,
+		startAttributeDuelCartomaniaGameForPlayer,
+		surrenderCartomaniaGame,
+		unchooseCartomaniaDuelCard
 	} from '$lib/api/GameClient';
 	import CardComposite from '$lib/components/CardComposite.svelte';
 	import UiIcon from '$lib/components/UiIcon.svelte';
@@ -281,7 +281,7 @@
 	async function ensureCatalogLoaded() {
 		if (catalogLoaded) return;
 		try {
-			const catalogCollections = await fetchChronosCardCatalog();
+			const catalogCollections = await fetchCartomaniaCardCatalog();
 			for (const collection of catalogCollections) {
 				for (const catalogEntry of collection.cards) {
 					const entry = catalogEntry as unknown as {
@@ -327,17 +327,17 @@
 
 		await ensureCatalogLoaded();
 
-		const chronosCards = await fetchMultipleChronosCardMetadata(missingCodes);
-		for (const chronosCard of chronosCards) {
-			const resolvedNumber = chronosCard.number || catalogNumberByCode.get(chronosCard.code) || 0;
-			cardDetailsCacheByCode.set(chronosCard.code, {
-				code: chronosCard.code,
-				name: chronosCard.name,
-				description: chronosCard.description,
-				imageUrl: chronosCard.image,
-				might: chronosCard.might,
-				fire: chronosCard.fire,
-				magic: chronosCard.magic,
+		const cartomaniaCards = await fetchMultipleCartomaniaCardMetadata(missingCodes);
+		for (const cartomaniaCard of cartomaniaCards) {
+			const resolvedNumber = cartomaniaCard.number || catalogNumberByCode.get(cartomaniaCard.code) || 0;
+			cardDetailsCacheByCode.set(cartomaniaCard.code, {
+				code: cartomaniaCard.code,
+				name: cartomaniaCard.name,
+				description: cartomaniaCard.description,
+				imageUrl: cartomaniaCard.image,
+				might: cartomaniaCard.might,
+				fire: cartomaniaCard.fire,
+				magic: cartomaniaCard.magic,
 				number: resolvedNumber
 			});
 		}
@@ -406,7 +406,7 @@
 	async function loadGameStateOrFinalResult() {
 		errorMessageText = null;
 		try {
-			const state = (await fetchChronosGameStateById(currentGameId)) as GameState | null;
+			const state = (await fetchCartomaniaGameStateById(currentGameId)) as GameState | null;
 			if (state && typeof state === 'object') {
 				finalGameResult = null;
 				state.duelCenter = normalizeDuelCenterForView(state.duelCenter);
@@ -461,7 +461,7 @@
 						advanceTimer = window.setTimeout(
 							async () => {
 								try {
-									await advanceChronosDuel(currentGameId);
+									await advanceCartomaniaDuel(currentGameId);
 								} finally {
 									await loadGameStateOrFinalResult();
 								}
@@ -512,7 +512,7 @@
 			}
 		} catch {}
 		try {
-			finalGameResult = await fetchChronosGameResult(currentGameId);
+			finalGameResult = await fetchCartomaniaGameResult(currentGameId);
 		} catch {
 			errorMessageText = $t('duel.errorLoadState');
 		}
@@ -529,7 +529,7 @@
 		if (state.duelCenter?.aCardCode) return;
 		if (state.duelStage !== 'PICK_CARD') return;
 		const me = state.players[0];
-		await chooseChronosDuelCard(currentGameId, me, cardCode);
+		await chooseCartomaniaDuelCard(currentGameId, me, cardCode);
 		await loadGameStateOrFinalResult();
 	}
 
@@ -541,7 +541,7 @@
 		if (!state.duelCenter?.aCardCode) return;
 		const me = state.players[0];
 		lastReturnedCode = state.duelCenter.aCardCode || null;
-		await unchooseChronosDuelCard(currentGameId, me);
+		await unchooseCartomaniaDuelCard(currentGameId, me);
 		await loadGameStateOrFinalResult();
 	}
 
@@ -552,7 +552,7 @@
 			return;
 		}
 		try {
-			const { gameId } = await startAttributeDuelChronosGameForPlayer(me);
+			const { gameId } = await startAttributeDuelCartomaniaGameForPlayer(me);
 			window.location.assign(`/game/duel/${gameId}`);
 		} catch (error) {
 			console.error('Failed to start a new duel', error);
@@ -570,7 +570,7 @@
 			return;
 		}
 		try {
-			await surrenderChronosGame(currentGameId);
+			await surrenderCartomaniaGame(currentGameId);
 			await loadGameStateOrFinalResult();
 		} catch (error) {
 			console.error('Failed to surrender duel game', error);
@@ -581,7 +581,7 @@
 	async function chooseAttr(attr: 'magic' | 'might' | 'fire') {
 		if (isGameOver()) return;
 		const me = $gameStateStore?.players?.[0] ?? 'playerA';
-		await chooseChronosDuelAttribute(currentGameId, me, attr);
+		await chooseCartomaniaDuelAttribute(currentGameId, me, attr);
 		await loadGameStateOrFinalResult();
 	}
 
@@ -759,7 +759,7 @@
 					const autoCard = pickFallbackCardFromHand(hands[playerA] as string[] | undefined);
 					if (autoCard) {
 						pendingSelections.push(
-							chooseChronosDuelCard(currentGameId, playerA, autoCard).catch((error) => {
+							chooseCartomaniaDuelCard(currentGameId, playerA, autoCard).catch((error) => {
 								console.error('Failed to auto-pick card for playerA after timeout', error);
 							})
 						);
@@ -771,7 +771,7 @@
 					const autoCard = pickFallbackCardFromHand(hands[playerB] as string[] | undefined);
 					if (autoCard) {
 						pendingSelections.push(
-							chooseChronosDuelCard(currentGameId, playerB, autoCard).catch((error) => {
+							chooseCartomaniaDuelCard(currentGameId, playerB, autoCard).catch((error) => {
 								console.error('Failed to auto-pick card for playerB after timeout', error);
 							})
 						);
@@ -811,7 +811,7 @@
 			) {
 				const attribute = resolvePreferredAttributeForChooser(chooser);
 				try {
-					await chooseChronosDuelAttribute(currentGameId, chooser, attribute);
+					await chooseCartomaniaDuelAttribute(currentGameId, chooser, attribute);
 				} catch (error) {
 					console.error('Failed to auto-select duel attribute after timeout', error);
 					return;

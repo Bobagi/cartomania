@@ -4,18 +4,18 @@ import fs from 'fs';
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 
-const DEFAULT_CHRONOS_BASE_URL = 'http://localhost:3053';
+const DEFAULT_CARTOMANIA_BASE_URL = 'http://localhost:3053';
 
 export default defineConfig(({ mode }) => {
 	const env = loadEnv(mode, process.cwd(), '');
 
 	console.log('Loaded VITE_API_BASE_URL:', env.VITE_API_BASE_URL);
 
-	const chronosTarget = (env.VITE_API_BASE_URL?.trim() || DEFAULT_CHRONOS_BASE_URL).replace(
+	const cartomaniaTarget = (env.VITE_API_BASE_URL?.trim() || DEFAULT_CARTOMANIA_BASE_URL).replace(
 		/\/+$/,
 		''
 	);
-	const proxySecure = chronosTarget.startsWith('https://');
+	const proxySecure = cartomaniaTarget.startsWith('https://');
 
 	// The localhost HTTPS certs are only used by `vite dev`. They are absent from
 	// production builds and from the server (nginx terminates TLS there), so load
@@ -38,17 +38,17 @@ export default defineConfig(({ mode }) => {
 			...(devHttps ? { https: devHttps } : {}),
 			proxy: {
 				'/game': {
-					target: chronosTarget,
+					target: cartomaniaTarget,
 					changeOrigin: true,
 					secure: proxySecure
 				},
 				'/auth': {
-					target: chronosTarget,
+					target: cartomaniaTarget,
 					changeOrigin: true,
 					secure: proxySecure
 				},
 				'/friends': {
-					target: chronosTarget,
+					target: cartomaniaTarget,
 					changeOrigin: true,
 					secure: proxySecure
 				}

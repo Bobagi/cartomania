@@ -13,11 +13,11 @@
 	import { initLocale } from '$lib/i18n';
 	import type { Locale } from '$lib/i18n/config';
 	import { authUser, clearAuthState, setAuthState } from '$lib/stores/authStore';
-	import type { AuthenticatedChronosUser } from '$lib/types/chronos';
+	import type { AuthenticatedCartomaniaUser } from '$lib/types/cartomania';
 	import '$lib/styles/appShell.css';
 	import '../app.postcss';
 
-	export let data: { authUser: AuthenticatedChronosUser | null; locale: Locale };
+	export let data: { authUser: AuthenticatedCartomaniaUser | null; locale: Locale };
 
 	// Keep the i18n store in sync with the locale the server resolved (cookie or
 	// Accept-Language). Runs during SSR and on every client navigation.

@@ -1,7 +1,7 @@
 /*
  * Shared styling for the generic legal pages (/privacy and /terms). Reuses the
  * global dark-fantasy design tokens from appShell.css so the documents match the
- * rest of Chronos. The global TopBar + footer are rendered by the root layout.
+ * rest of Cartomania. The global TopBar + footer are rendered by the root layout.
  */
 
 .legal-page {

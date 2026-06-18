@@ -1,15 +1,15 @@
 <script lang="ts">
 	import { goto, invalidateAll } from '$app/navigation';
 	import { onMount, onDestroy } from 'svelte';
-	import type { GameMode } from '$lib/api/chronosTypes';
+	import type { GameMode } from '$lib/api/cartomaniaTypes';
 	import {
-		endChronosGameSessionOnServer,
-		expireInactiveChronosGames,
-		loginChronosUserAccount,
-		startAttributeDuelChronosGameForPlayer,
-		listAuthenticatedChronosPlayerActiveGames,
-		listChronosFriends,
-		surrenderChronosGame
+		endCartomaniaGameSessionOnServer,
+		expireInactiveCartomaniaGames,
+		loginCartomaniaUserAccount,
+		startAttributeDuelCartomaniaGameForPlayer,
+		listAuthenticatedCartomaniaPlayerActiveGames,
+		listCartomaniaFriends,
+		surrenderCartomaniaGame
 	} from '$lib/api/GameClient';
 	import AvatarPicker from '$lib/components/AvatarPicker.svelte';
 	import CardComposite from '$lib/components/CardComposite.svelte';
@@ -20,22 +20,22 @@
 	import {
 		extractLastActivityTimestamp,
 		formatRelativeLastActivity,
-		resolveChronosGameIdentifier
-	} from '$lib/services/chronosGameSummaryUtils';
+		resolveCartomaniaGameIdentifier
+	} from '$lib/services/cartomaniaGameSummaryUtils';
 	import { t } from '$lib/i18n';
 	import type { FeaturedHeroCard } from '$lib/services/featuredHeroCards';
 	import type {
-		AuthenticatedChronosUser,
-		ChronosDashboardData,
-		ChronosGameSummaryWithMetadata
-	} from '$lib/types/chronos';
+		AuthenticatedCartomaniaUser,
+		CartomaniaDashboardData,
+		CartomaniaGameSummaryWithMetadata
+	} from '$lib/types/cartomania';
 	import { setAuthState } from '$lib/stores/authStore';
 	import './game/fonts.css';
 	import './mainpage.css';
 
 	export let data: {
-		authUser: AuthenticatedChronosUser | null;
-		dashboard: ChronosDashboardData;
+		authUser: AuthenticatedCartomaniaUser | null;
+		dashboard: CartomaniaDashboardData;
 		featuredCards: FeaturedHeroCard[];
 	};
 
@@ -85,7 +85,7 @@
 	async function refreshFriendsCache() {
 		if (!currentUser) return;
 		try {
-			const friends = await listChronosFriends();
+			const friends = await listCartomaniaFriends();
 			friends.forEach((f) => friendsCache.set(f.friend.id, f.friend.username));
 		} catch {}
 	}
@@ -93,7 +93,7 @@
 	async function pollForChallenges() {
 		if (!currentUser) return;
 		try {
-			const games = await listAuthenticatedChronosPlayerActiveGames();
+			const games = await listAuthenticatedCartomaniaPlayerActiveGames();
 			for (const game of games) {
 				const g = game as Record<string, unknown>;
 				const gameId = (g.gameId as string) || (g.id as string);
@@ -126,7 +126,7 @@
 
 	async function declineChallenge(challenge: PendingChallenge) {
 		markChallengeSeen(challenge.gameId);
-		try { await surrenderChronosGame(challenge.gameId); } catch {}
+		try { await surrenderCartomaniaGame(challenge.gameId); } catch {}
 	}
 
 	function startChallengePoll() {
@@ -153,30 +153,30 @@
 	$: setAuthState(currentUser ?? null);
 	$: avatarPrimaryImageUrl = currentUser?.avatarUrl || DEFAULT_AVATAR_URL;
 
-	function handleAvatarUpdated(event: CustomEvent<{ user: AuthenticatedChronosUser }>) {
+	function handleAvatarUpdated(event: CustomEvent<{ user: AuthenticatedCartomaniaUser }>) {
 		setAuthState(event.detail.user);
 		showAvatarPicker = false;
-		void refreshChronosDashboardData();
+		void refreshCartomaniaDashboardData();
 	}
 
 	$: featuredCards = data.featuredCards ?? [];
 
 	$: dashboardData = data.dashboard;
 	$: backendHealthMessage = dashboardData?.backendHealthMessage ?? 'Checking server…';
-	$: myActiveChronosGames =
-		dashboardData?.myActiveChronosGames ?? ([] as ChronosGameSummaryWithMetadata[]);
-	$: allActiveChronosGames =
-		dashboardData?.allActiveChronosGames ?? ([] as ChronosGameSummaryWithMetadata[]);
+	$: myActiveCartomaniaGames =
+		dashboardData?.myActiveCartomaniaGames ?? ([] as CartomaniaGameSummaryWithMetadata[]);
+	$: allActiveCartomaniaGames =
+		dashboardData?.allActiveCartomaniaGames ?? ([] as CartomaniaGameSummaryWithMetadata[]);
 	$: statistics = dashboardData?.statistics ?? { gamesPlayed: 0, gamesWon: 0, gamesDrawn: 0 };
 
 	$: statGamesPlayed = statistics.gamesPlayed ?? 0;
 	$: statGamesWon = statistics.gamesWon ?? 0;
 	$: statGamesDrawn = statistics.gamesDrawn ?? 0;
-	$: statActive = myActiveChronosGames.length;
+	$: statActive = myActiveCartomaniaGames.length;
 	$: statLastUpdated =
-		myActiveChronosGames.length > 0
+		myActiveCartomaniaGames.length > 0
 			? formatRelativeLastActivity(
-					Math.max(...myActiveChronosGames.map((g) => extractLastActivityTimestamp(g) || 0))
+					Math.max(...myActiveCartomaniaGames.map((g) => extractLastActivityTimestamp(g) || 0))
 				)
 			: '—';
 	$: statRank = 'Bronze I';
@@ -187,47 +187,47 @@
 			: '🔴';
 	$: isAdmin = currentUser?.role === 'ADMIN';
 
-	async function refreshChronosDashboardData() {
+	async function refreshCartomaniaDashboardData() {
 		await invalidateAll();
 	}
 
-	async function handleChronosLoginSubmission() {
+	async function handleCartomaniaLoginSubmission() {
 		try {
-			const { user } = await loginChronosUserAccount(usernameInputValue.trim(), passwordInputValue);
+			const { user } = await loginCartomaniaUserAccount(usernameInputValue.trim(), passwordInputValue);
 			setAuthState(user);
 			passwordInputValue = '';
 			loginErrorKey = null;
 			showFriendsPanel = false;
-			await refreshChronosDashboardData();
+			await refreshCartomaniaDashboardData();
 		} catch (err) {
-			console.error('loginChronosUserAccount failed', err);
+			console.error('loginCartomaniaUserAccount failed', err);
 			loginErrorKey = 'home.auth.invalidCredentials';
 		}
 	}
 
-	async function startNewAttributeDuelChronosGameForPlayer() {
+	async function startNewAttributeDuelCartomaniaGameForPlayer() {
 		if (!currentUser) return;
 		try {
-			const { gameId } = await startAttributeDuelChronosGameForPlayer(currentUser.id);
+			const { gameId } = await startAttributeDuelCartomaniaGameForPlayer(currentUser.id);
 			goto(`/game/duel/${gameId}`);
 			return;
 		} catch (error) {
 			console.error('Failed to start duel', error);
 		}
-		await refreshChronosDashboardData();
+		await refreshCartomaniaDashboardData();
 	}
 
-	async function expireInactiveChronosGamesAndReloadDashboard() {
+	async function expireInactiveCartomaniaGamesAndReloadDashboard() {
 		if (!isAdmin) return;
 		try {
-			await expireInactiveChronosGames();
+			await expireInactiveCartomaniaGames();
 		} catch (error) {
 			console.error('Failed to expire games', error);
 		}
-		await refreshChronosDashboardData();
+		await refreshCartomaniaDashboardData();
 	}
 
-	function navigateToExistingChronosGame(gameIdentifier: string, gameMode: string) {
+	function navigateToExistingCartomaniaGame(gameIdentifier: string, gameMode: string) {
 		if (gameMode === 'CLASSIC') goto(`/game/classic/${gameIdentifier}`);
 		else if (gameMode === 'ATTRIBUTE_DUEL' || gameMode === 'DUEL')
 			goto(`/game/duel/${gameIdentifier}`);
@@ -247,7 +247,7 @@
 	}
 
 	async function refreshDashboardAfterFriendPanelInteraction() {
-		await refreshChronosDashboardData();
+		await refreshCartomaniaDashboardData();
 	}
 
 	$: if (!currentUser) {
@@ -315,7 +315,7 @@
 			<div class="auth-card">
 				<h2 class="auth-card-title">{$t('home.auth.title')}</h2>
 				<p class="auth-card-sub">{$t('home.auth.subtitle')}</p>
-				<form class="controls-col" on:submit|preventDefault={handleChronosLoginSubmission}>
+				<form class="controls-col" on:submit|preventDefault={handleCartomaniaLoginSubmission}>
 					<div class="auth-fields">
 						<label class="input-wrap">
 							<span class="input-label">{$t('home.auth.username')}</span>
@@ -399,7 +399,7 @@
 								</button>
 								<button
 									class="button button-ghost"
-									on:click={expireInactiveChronosGamesAndReloadDashboard}
+									on:click={expireInactiveCartomaniaGamesAndReloadDashboard}
 								>
 									<UiIcon name="hourglass" />
 									{$t('home.dashboard.expireOld')}
@@ -442,21 +442,21 @@
 					<h2 class="play-cta-title">{$t('home.dashboard.readyTitle')}</h2>
 					<p class="play-cta-sub">{$t('home.dashboard.readySub')}</p>
 				</div>
-				<button class="button button-primary" on:click={startNewAttributeDuelChronosGameForPlayer}>
+				<button class="button button-primary" on:click={startNewAttributeDuelCartomaniaGameForPlayer}>
 					⚔️ {$t('home.dashboard.startDuel')}
 				</button>
 			</div>
 
 			<section class="games-section">
 				<h2 class="section-title">{$t('home.dashboard.yourGames')}</h2>
-				{#if myActiveChronosGames.length === 0}
+				{#if myActiveCartomaniaGames.length === 0}
 					<p class="empty-text">{$t('home.dashboard.noGames')}</p>
 				{:else}
 					<ul class="games-list">
-						{#each myActiveChronosGames as gameSummary}
+						{#each myActiveCartomaniaGames as gameSummary}
 							<li class="game-card">
 								<div class="game-info">
-									<p class="game-id mono">{resolveChronosGameIdentifier(gameSummary)}</p>
+									<p class="game-id mono">{resolveCartomaniaGameIdentifier(gameSummary)}</p>
 									<p class="game-meta">
 										{$t('home.dashboard.mode')}: <b>{gameSummary.mode}</b>
 										{#if extractLastActivityTimestamp(gameSummary)}
@@ -470,8 +470,8 @@
 									<button
 										class="button button-primary"
 										on:click={() =>
-											navigateToExistingChronosGame(
-												resolveChronosGameIdentifier(gameSummary),
+											navigateToExistingCartomaniaGame(
+												resolveCartomaniaGameIdentifier(gameSummary),
 												gameSummary.mode
 											)}
 										title={$t('home.dashboard.openGame')}
@@ -482,9 +482,9 @@
 										<button
 											class="button button-danger"
 											on:click={() =>
-												endChronosGameSessionOnServer(
-													resolveChronosGameIdentifier(gameSummary)
-												).then(refreshChronosDashboardData)}
+												endCartomaniaGameSessionOnServer(
+													resolveCartomaniaGameIdentifier(gameSummary)
+												).then(refreshCartomaniaDashboardData)}
 											title={$t('home.dashboard.finishGame')}
 										>
 											🗑️
@@ -500,14 +500,14 @@
 			{#if isAdmin}
 				<section class="games-section">
 					<h2 class="section-title">{$t('home.dashboard.allGames')}</h2>
-					{#if allActiveChronosGames.length === 0}
+					{#if allActiveCartomaniaGames.length === 0}
 						<p class="empty-text">{$t('home.dashboard.noServerGames')}</p>
 					{:else}
 						<ul class="games-list">
-							{#each allActiveChronosGames as gameSummary}
+							{#each allActiveCartomaniaGames as gameSummary}
 								<li class="game-card">
 									<div class="game-info">
-										<p class="game-id mono">{resolveChronosGameIdentifier(gameSummary)}</p>
+										<p class="game-id mono">{resolveCartomaniaGameIdentifier(gameSummary)}</p>
 										<p class="game-meta">
 											{$t('home.dashboard.mode')}: <b>{gameSummary.mode}</b>
 											{#if gameSummary.players}• {$t('home.dashboard.players')}: {gameSummary.players.join(
@@ -524,8 +524,8 @@
 										<button
 											class="button button-neutral"
 											on:click={() =>
-												navigateToExistingChronosGame(
-													resolveChronosGameIdentifier(gameSummary),
+												navigateToExistingCartomaniaGame(
+													resolveCartomaniaGameIdentifier(gameSummary),
 													gameSummary.mode
 												)}
 										>
@@ -534,9 +534,9 @@
 										<button
 											class="button button-danger"
 											on:click={() =>
-												endChronosGameSessionOnServer(
-													resolveChronosGameIdentifier(gameSummary)
-												).then(refreshChronosDashboardData)}
+												endCartomaniaGameSessionOnServer(
+													resolveCartomaniaGameIdentifier(gameSummary)
+												).then(refreshCartomaniaDashboardData)}
 										>
 											🗑️
 										</button>

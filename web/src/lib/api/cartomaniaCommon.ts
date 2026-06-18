@@ -1,4 +1,4 @@
-import type { Card } from '$lib/api/chronosTypes';
+import type { Card } from '$lib/api/cartomaniaTypes';
 
 export function normalizeHeadersInitToObject(headersInit?: HeadersInit): Record<string, string> {
 	if (!headersInit) {
@@ -32,7 +32,7 @@ export function ensureJsonContentType(
 	}
 }
 
-export class ChronosApiError extends Error {
+export class CartomaniaApiError extends Error {
 	readonly status: number;
 	readonly method: string;
 	readonly path: string;
@@ -53,7 +53,7 @@ export class ChronosApiError extends Error {
 				: '';
 		const summary = bodyMessage || bodyText.trim();
 		super(`${method} ${path} → ${status}` + (summary ? ` ${summary}` : ''));
-		this.name = 'ChronosApiError';
+		this.name = 'CartomaniaApiError';
 		this.status = status;
 		this.method = method;
 		this.path = path;
@@ -62,11 +62,11 @@ export class ChronosApiError extends Error {
 	}
 }
 
-export type ChronosRawCardMetadata = {
+export type CartomaniaRawCardMetadata = {
 	number?: number | string | null;
 } | null;
 
-export type ChronosRawCardPayload = {
+export type CartomaniaRawCardPayload = {
 	code: string;
 	name: string;
 	description?: string | null;
@@ -79,25 +79,25 @@ export type ChronosRawCardPayload = {
 	number?: number | string | null;
 	cardNumber?: number | string | null;
 	cornerNumber?: number | string | null;
-	meta?: ChronosRawCardMetadata;
-	metadata?: ChronosRawCardMetadata;
+	meta?: CartomaniaRawCardMetadata;
+	metadata?: CartomaniaRawCardMetadata;
 	no?: number | string | null;
 	idx?: number | string | null;
 	id?: number | string | null;
 };
 
-export function resolveCardNumberFromChronosRawCardPayload(
-	rawChronosCard: ChronosRawCardPayload
+export function resolveCardNumberFromCartomaniaRawCardPayload(
+	rawCartomaniaCard: CartomaniaRawCardPayload
 ): number {
 	const possibleValues: Array<number | string | null | undefined> = [
-		rawChronosCard.number,
-		rawChronosCard.cardNumber,
-		rawChronosCard.cornerNumber,
-		rawChronosCard.meta?.number,
-		rawChronosCard.metadata?.number,
-		rawChronosCard.no,
-		rawChronosCard.idx,
-		rawChronosCard.id
+		rawCartomaniaCard.number,
+		rawCartomaniaCard.cardNumber,
+		rawCartomaniaCard.cornerNumber,
+		rawCartomaniaCard.meta?.number,
+		rawCartomaniaCard.metadata?.number,
+		rawCartomaniaCard.no,
+		rawCartomaniaCard.idx,
+		rawCartomaniaCard.id
 	];
 	for (const value of possibleValues) {
 		if (value === null || value === undefined) {
@@ -111,17 +111,17 @@ export function resolveCardNumberFromChronosRawCardPayload(
 	return 0;
 }
 
-export function convertChronosRawCardPayloadToCard(rawChronosCard: ChronosRawCardPayload): Card {
+export function convertCartomaniaRawCardPayloadToCard(rawCartomaniaCard: CartomaniaRawCardPayload): Card {
 	return {
-		code: rawChronosCard.code,
-		name: rawChronosCard.name,
-		description: rawChronosCard.description ?? '',
-		image: rawChronosCard.imageUrl,
-		damage: rawChronosCard.damage ?? 0,
-		heal: rawChronosCard.heal ?? 0,
-		fire: rawChronosCard.fire ?? 0,
-		might: rawChronosCard.might ?? 0,
-		magic: rawChronosCard.magic ?? 0,
-		number: resolveCardNumberFromChronosRawCardPayload(rawChronosCard)
+		code: rawCartomaniaCard.code,
+		name: rawCartomaniaCard.name,
+		description: rawCartomaniaCard.description ?? '',
+		image: rawCartomaniaCard.imageUrl,
+		damage: rawCartomaniaCard.damage ?? 0,
+		heal: rawCartomaniaCard.heal ?? 0,
+		fire: rawCartomaniaCard.fire ?? 0,
+		might: rawCartomaniaCard.might ?? 0,
+		magic: rawCartomaniaCard.magic ?? 0,
+		number: resolveCardNumberFromCartomaniaRawCardPayload(rawCartomaniaCard)
 	};
 }

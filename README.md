@@ -1,16 +1,14 @@
 # Cartomania — Digital Collectible Card Game (Backend + Web)
 
-**Cartomania** (formerly _Chronos_) is a digital collectible card game. The current set is the
+**Cartomania** is a digital collectible card game. The current set is the
 **Dracomania** collection (dragons & fantasy), and the project is built to host multiple collections
 (Dracomania, Mythomania, and custom player collections). It is **one project**: the NestJS game engine
 (this repo root) plus the SvelteKit browser frontend in [`web/`](./web) — landing/login, card gallery,
-player dashboard (avatars + account settings), friends and matches. The former separate `kairos`
-frontend was merged in here and retired.
+player dashboard (avatars + account settings), friends and matches.
 
 > The product is branded **Cartomania** (repo `cartomania`) and served at
 > **[`cartomania.bobagi.space`](https://cartomania.bobagi.space)** (the old `chronos.bobagi.space`
-> 301-redirects to it). The code identifiers and the infra names (Docker `chronos-*`, PM2
-> `chronos-web`, the DB, the `/api/chronos/*` proxy) still use `chronos` internally.
+> 301-redirects to it).
 
 ## 🎮 Gameplay — Attribute Duel
 
@@ -40,7 +38,7 @@ The UI is fully available in **English, Portuguese and Spanish**.
 
 The browser app lives in [`web/`](./web). It serves the landing/login, card gallery, player dashboard
 (avatars + account settings), friends and matches, and talks to this backend **server-side** via its
-`/api/chronos/*` proxy — so the browser only ever hits the front's own origin (no CORS).
+`/api/cartomania/*` proxy — so the browser only ever hits the front's own origin (no CORS).
 
 ```bash
 # dev (two terminals)
@@ -63,11 +61,11 @@ base URL.
 ### 1) `.env` (repo root)
 
 ```env
-CHRONOS_PORT=3000
+CARTOMANIA_PORT=3000
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=change-me
-POSTGRES_DB=chronos
-DATABASE_URL=postgresql://postgres:change-me@db:5432/chronos
+POSTGRES_DB=cartomania
+DATABASE_URL=postgresql://postgres:change-me@db:5432/cartomania
 
 # Seeded accounts — ALWAYS set strong values; without them the seed falls back to
 # weak demo passwords. Required for any internet-facing deployment.
@@ -76,12 +74,12 @@ ALICE_PASSWORD=set-a-strong-password
 ```
 
 > `.env` is git-ignored and never committed. The backend listens on container port **3000**, exposed
-> on the host as `CHRONOS_PORT`.
+> on the host as `CARTOMANIA_PORT`.
 
 ### 2) Start services
 
 ```bash
-docker compose up -d db chronos
+docker compose up -d db cartomania
 ```
 
 `docker compose up` runs migrations and an **idempotent seed** (the Dracomania collection — 32 cards
@@ -144,20 +142,20 @@ curl http://localhost:3000/game/state/<gameId>
 ## 📜 Prisma migrations
 
 ```bash
-docker compose exec chronos sh -lc 'npx prisma migrate dev --name <migration-name>'
+docker compose exec cartomania sh -lc 'npx prisma migrate dev --name <migration-name>'
 ```
 
 If you hit "We found changes that cannot be executed":
 
 ```bash
-docker compose exec chronos sh -lc 'npx prisma migrate dev --name <migration-name> --create-only'
-docker compose exec chronos sh -lc 'npx prisma migrate reset --force --skip-seed'
+docker compose exec cartomania sh -lc 'npx prisma migrate dev --name <migration-name> --create-only'
+docker compose exec cartomania sh -lc 'npx prisma migrate reset --force --skip-seed'
 ```
 
 Then regenerate the client:
 
 ```bash
-docker compose exec chronos sh -lc 'npx prisma generate'
+docker compose exec cartomania sh -lc 'npx prisma generate'
 ```
 
 ---
@@ -165,7 +163,7 @@ docker compose exec chronos sh -lc 'npx prisma generate'
 ## 🗄 Prisma Studio (DB UI)
 
 ```bash
-docker compose exec chronos sh -lc 'npx prisma studio --port 5555 --hostname 0.0.0.0 --browser none'
+docker compose exec cartomania sh -lc 'npx prisma studio --port 5555 --hostname 0.0.0.0 --browser none'
 ```
 
 Forward the port to your machine over SSH and open `http://localhost:5555`:
@@ -179,5 +177,5 @@ ssh -N -L 5555:127.0.0.1:5555 <user>@<host>
 ## 🔄 Reset DB and reseed (optional, destructive)
 
 ```bash
-docker compose exec chronos sh -lc 'npx prisma migrate reset --force'
+docker compose exec cartomania sh -lc 'npx prisma migrate reset --force'
 ```

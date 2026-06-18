@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { goto, invalidateAll } from '$app/navigation';
 	import { t } from '$lib/i18n';
+	import BackButton from '$lib/components/BackButton.svelte';
 	import { clearAuthState, setAuthState } from '$lib/stores/authStore';
-	import type { AuthenticatedChronosUser } from '$lib/types/chronos';
+	import type { AuthenticatedCartomaniaUser } from '$lib/types/cartomania';
 	import '../mainpage.css';
 	import './account.css';
 
-	export let data: { user: AuthenticatedChronosUser };
+	export let data: { user: AuthenticatedCartomaniaUser };
 
 	let newUsername = data.user.username;
 	let currentPassword = '';
@@ -40,7 +41,7 @@
 		busy = true;
 		try {
 			const { user } = await postJson('/api/auth/username', { username: newUsername.trim() });
-			setAuthState(user as AuthenticatedChronosUser);
+			setAuthState(user as AuthenticatedCartomaniaUser);
 			usernameMsg = $t('account.usernameUpdated');
 			await invalidateAll();
 		} catch (error) {
@@ -91,7 +92,7 @@
 
 <div class="page-shell">
 	<section class="content-panel account-panel">
-		<a class="account-back" href="/">← {$t('account.back')}</a>
+		<BackButton href="/" label={$t('account.back')} />
 		<header class="panel-header">
 			<h1 class="panel-title">{$t('account.title')}</h1>
 		</header>

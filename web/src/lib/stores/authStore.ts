@@ -1,9 +1,9 @@
-import type { AuthenticatedChronosUser } from '$lib/types/chronos';
+import type { AuthenticatedCartomaniaUser } from '$lib/types/cartomania';
 import { writable } from 'svelte/store';
 
-export const authUser = writable<AuthenticatedChronosUser | null>(null);
+export const authUser = writable<AuthenticatedCartomaniaUser | null>(null);
 
-export function setAuthState(user: AuthenticatedChronosUser | null) {
+export function setAuthState(user: AuthenticatedCartomaniaUser | null) {
 	authUser.set(user);
 }
 

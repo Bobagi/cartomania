@@ -1,5 +1,5 @@
 /**
- * Locale configuration for the Chronos i18n system. Kept framework-agnostic so
+ * Locale configuration for the Cartomania i18n system. Kept framework-agnostic so
  * it can run on the server (hooks / layout load) and the client alike.
  */
 
@@ -9,7 +9,7 @@ export type Locale = (typeof SUPPORTED_LOCALES)[number];
 export const DEFAULT_LOCALE: Locale = 'en';
 
 /** Cookie that persists the visitor's chosen language across requests. */
-export const LOCALE_COOKIE = 'chronos_locale';
+export const LOCALE_COOKIE = 'cartomania_locale';
 
 /** Native language names shown in the selector. */
 export const LOCALE_LABELS: Record<Locale, string> = {

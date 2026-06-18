@@ -1,58 +1,58 @@
-import type { GameSummary } from '$lib/api/chronosTypes';
+import type { GameSummary } from '$lib/api/cartomaniaTypes';
 import type {
-	AuthenticatedChronosUser,
-	ChronosDashboardData,
-	ChronosGameStatistics,
-	ChronosGameSummaryWithMetadata
-} from '../types/chronos';
-import { determineIfGameBelongsToPlayer } from './chronosGameSummaryUtils';
+	AuthenticatedCartomaniaUser,
+	CartomaniaDashboardData,
+	CartomaniaGameStatistics,
+	CartomaniaGameSummaryWithMetadata
+} from '../types/cartomania';
+import { determineIfGameBelongsToPlayer } from './cartomaniaGameSummaryUtils';
 
-export interface ChronosDashboardServiceDependencies {
-	checkChronosHealthStatus: () => Promise<string>;
-	listAllActiveChronosGames: (token: string) => Promise<GameSummary[]>;
-	listAuthenticatedChronosPlayerActiveGames: (token: string) => Promise<GameSummary[]>;
-	fetchMyChronosGameStatistics: (token: string) => Promise<Partial<ChronosGameStatistics>>;
+export interface CartomaniaDashboardServiceDependencies {
+	checkCartomaniaHealthStatus: () => Promise<string>;
+	listAllActiveCartomaniaGames: (token: string) => Promise<GameSummary[]>;
+	listAuthenticatedCartomaniaPlayerActiveGames: (token: string) => Promise<GameSummary[]>;
+	fetchMyCartomaniaGameStatistics: (token: string) => Promise<Partial<CartomaniaGameStatistics>>;
 }
 
-export async function loadChronosDashboardDataForUser(
+export async function loadCartomaniaDashboardDataForUser(
 	token: string | null,
-	authenticatedUser: AuthenticatedChronosUser | null,
-	dependencies: ChronosDashboardServiceDependencies
-): Promise<ChronosDashboardData> {
+	authenticatedUser: AuthenticatedCartomaniaUser | null,
+	dependencies: CartomaniaDashboardServiceDependencies
+): Promise<CartomaniaDashboardData> {
 	const { backendHealthMessage } = await resolveBackendHealthStatus(dependencies);
 
 	if (!token || !authenticatedUser) {
-		return createEmptyChronosDashboardData(backendHealthMessage);
+		return createEmptyCartomaniaDashboardData(backendHealthMessage);
 	}
 
 	try {
-		const { allActiveChronosGames, myActiveChronosGames } = await resolveActiveGameLists(
+		const { allActiveCartomaniaGames, myActiveCartomaniaGames } = await resolveActiveGameLists(
 			token,
 			authenticatedUser,
 			dependencies
 		);
-		const statistics = await resolveChronosStatistics(token, dependencies);
+		const statistics = await resolveCartomaniaStatistics(token, dependencies);
 
 		return {
 			backendHealthMessage,
-			myActiveChronosGames,
-			allActiveChronosGames,
+			myActiveCartomaniaGames,
+			allActiveCartomaniaGames,
 			statistics
 		};
 	} catch (error) {
-		console.error('[Chronos] Failed to load dashboard data', error);
-		return createEmptyChronosDashboardData(backendHealthMessage);
+		console.error('[Cartomania] Failed to load dashboard data', error);
+		return createEmptyCartomaniaDashboardData(backendHealthMessage);
 	}
 }
 
 async function resolveBackendHealthStatus(
-	dependencies: ChronosDashboardServiceDependencies
+	dependencies: CartomaniaDashboardServiceDependencies
 ): Promise<{ backendHealthMessage: string }> {
 	try {
-		const backendHealthMessage = await dependencies.checkChronosHealthStatus();
+		const backendHealthMessage = await dependencies.checkCartomaniaHealthStatus();
 		return { backendHealthMessage };
 	} catch (error) {
-		console.error('[Chronos] Backend health check failed', error);
+		console.error('[Cartomania] Backend health check failed', error);
 		return { backendHealthMessage: (error as Error).message };
 	}
 }
@@ -89,7 +89,7 @@ function toStringArray(value: unknown): string[] {
 	return resolved;
 }
 
-function convertApiGameSummaryToChronosMetadata(api: GameSummary): ChronosGameSummaryWithMetadata {
+function convertApiGameSummaryToCartomaniaMetadata(api: GameSummary): CartomaniaGameSummaryWithMetadata {
 	const raw = api as RawGameSummary;
 
 	const id =
@@ -147,32 +147,32 @@ function convertApiGameSummaryToChronosMetadata(api: GameSummary): ChronosGameSu
 
 async function resolveActiveGameLists(
 	token: string,
-	authenticatedUser: AuthenticatedChronosUser,
-	dependencies: ChronosDashboardServiceDependencies
+	authenticatedUser: AuthenticatedCartomaniaUser,
+	dependencies: CartomaniaDashboardServiceDependencies
 ): Promise<{
-	myActiveChronosGames: ChronosGameSummaryWithMetadata[];
-	allActiveChronosGames: ChronosGameSummaryWithMetadata[];
+	myActiveCartomaniaGames: CartomaniaGameSummaryWithMetadata[];
+	allActiveCartomaniaGames: CartomaniaGameSummaryWithMetadata[];
 }> {
 	const isAdmin = authenticatedUser.role === 'ADMIN';
 	if (!isAdmin) {
-		const myApiGames = await dependencies.listAuthenticatedChronosPlayerActiveGames(token);
-		const myActiveChronosGames = myApiGames.map(convertApiGameSummaryToChronosMetadata);
-		return { myActiveChronosGames, allActiveChronosGames: [] };
+		const myApiGames = await dependencies.listAuthenticatedCartomaniaPlayerActiveGames(token);
+		const myActiveCartomaniaGames = myApiGames.map(convertApiGameSummaryToCartomaniaMetadata);
+		return { myActiveCartomaniaGames, allActiveCartomaniaGames: [] };
 	}
 
-	const allApiGames = await dependencies.listAllActiveChronosGames(token);
-	const allActiveChronosGames = allApiGames.map(convertApiGameSummaryToChronosMetadata);
-	const myActiveChronosGames = allActiveChronosGames.filter((gameSummary) =>
+	const allApiGames = await dependencies.listAllActiveCartomaniaGames(token);
+	const allActiveCartomaniaGames = allApiGames.map(convertApiGameSummaryToCartomaniaMetadata);
+	const myActiveCartomaniaGames = allActiveCartomaniaGames.filter((gameSummary) =>
 		determineIfGameBelongsToPlayer(gameSummary, authenticatedUser.id)
 	);
-	return { myActiveChronosGames, allActiveChronosGames };
+	return { myActiveCartomaniaGames, allActiveCartomaniaGames };
 }
 
-async function resolveChronosStatistics(
+async function resolveCartomaniaStatistics(
 	token: string,
-	dependencies: ChronosDashboardServiceDependencies
-): Promise<ChronosGameStatistics> {
-	const statisticsResponse = await dependencies.fetchMyChronosGameStatistics(token);
+	dependencies: CartomaniaDashboardServiceDependencies
+): Promise<CartomaniaGameStatistics> {
+	const statisticsResponse = await dependencies.fetchMyCartomaniaGameStatistics(token);
 	return {
 		gamesPlayed: statisticsResponse.gamesPlayed ?? 0,
 		gamesWon: statisticsResponse.gamesWon ?? 0,
@@ -180,11 +180,11 @@ async function resolveChronosStatistics(
 	};
 }
 
-function createEmptyChronosDashboardData(backendHealthMessage: string): ChronosDashboardData {
+function createEmptyCartomaniaDashboardData(backendHealthMessage: string): CartomaniaDashboardData {
 	return {
 		backendHealthMessage,
-		myActiveChronosGames: [],
-		allActiveChronosGames: [],
+		myActiveCartomaniaGames: [],
+		allActiveCartomaniaGames: [],
 		statistics: {
 			gamesPlayed: 0,
 			gamesWon: 0,

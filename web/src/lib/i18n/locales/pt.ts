@@ -5,6 +5,9 @@ const pt: typeof en = {
 	language: {
 		change: 'Mudar idioma'
 	},
+	common: {
+		back: 'Voltar'
+	},
 	nav: {
 		logout: 'Sair'
 	},

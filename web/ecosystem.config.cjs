@@ -1,7 +1,7 @@
 module.exports = {
 	apps: [
 		{
-			name: 'chronos-web',
+			name: 'cartomania-web',
 			script: 'build/index.js',
 			env: {
 				NODE_ENV: 'production',

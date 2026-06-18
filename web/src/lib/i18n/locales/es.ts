@@ -5,6 +5,9 @@ const es: typeof en = {
 	language: {
 		change: 'Cambiar idioma'
 	},
+	common: {
+		back: 'Volver'
+	},
 	nav: {
 		logout: 'Cerrar sesión'
 	},

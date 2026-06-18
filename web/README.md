@@ -1,59 +1,51 @@
-# Kairos Web Client
+# Cartomania Web Client
 
-This project is the web frontend for the Chronos ("Chronoes") game service. The application expects
-a Chronos API instance to be running locally so it can proxy requests during development and call
-the same base URL in production builds.
+This project is the SvelteKit web frontend for the Cartomania game service. It proxies API requests
+to the Cartomania backend server-side during development and calls the same base URL in production
+builds.
 
 ## Prerequisites
 
 - Node.js 20+
 - pnpm (recommended) or npm
-- Chronos backend running from the companion repository
+- Cartomania backend running (see the repository root)
 - Local HTTPS certificates located in `certs/localhost.pem` and `certs/localhost-key.pem` (already
   committed for development)
 
-## 1. Start the Chronos backend locally
+## 1. Start the Cartomania backend locally
 
-1. Clone the Chronos repository beside this project.
-2. Install dependencies: `pnpm install`
-3. Configure Chronos environment variables as required by the backend (copy `.env.example` to
-   `.env`).
-4. Run Chronos on `https://localhost:4000` (or another port of your choice):
+1. Install dependencies at the repository root: `pnpm install`
+2. Configure the backend environment variables as required (copy `.env.example` to `.env`).
+3. Run the backend (or use `docker compose up`); confirm the API is reachable:
    ```bash
-   pnpm run dev -- --host 0.0.0.0 --port 4000 --https
-   ```
-5. Confirm the API is reachable:
-   ```bash
-   curl -k https://localhost:4000/health
+   curl http://localhost:3056/health
    ```
 
-> If you use a different port, remember it for the Kairos `VITE_API_BASE_URL` variable.
+> If you use a different port, remember it for the `VITE_API_BASE_URL` variable.
 
-## 2. Configure Kairos to talk to Chronos
+## 2. Point the web client at the backend
 
 1. Install dependencies:
    ```bash
    pnpm install
    ```
-2. Create a `.env.local` file in the project root and set the Chronos base URL:
+2. Create a `.env.local` file in the project root and set the backend base URL:
    ```bash
-   VITE_API_BASE_URL=https://localhost:4000
+   VITE_API_BASE_URL=http://localhost:3056
    ```
    When you run the dev server, Vite reads this variable and uses it in two places:
-   - it proxies `/auth` and `/game` requests to the Chronos server;
+   - it proxies `/auth` and `/game` requests to the Cartomania backend;
    - it becomes the base URL for API calls once you build the project for production.
 3. Trust the TLS certificate found in `certs/localhost.pem` (or replace it with one trusted by your
    OS/browser) so the browser accepts the HTTPS connection.
 
-## 3. Run Kairos in development mode
+## 3. Run the web client in development mode
 
 ```bash
 pnpm run dev -- --host 0.0.0.0 --port 3055
 ```
 
-- The app serves over HTTPS on `https://localhost:3055`.
-- All API calls go through the Vite proxy to `https://localhost:4000` (or whichever URL you
-  configured).
+- All API calls go through the Vite proxy to the configured `VITE_API_BASE_URL`.
 
 ## 4. Build for production
 
@@ -63,4 +55,4 @@ pnpm run preview
 ```
 
 Before deploying the production build, make sure the environment that serves the compiled output
-provides the same `VITE_API_BASE_URL` so the client knows where to reach Chronos.
+provides the same `VITE_API_BASE_URL` so the client knows where to reach the Cartomania backend.

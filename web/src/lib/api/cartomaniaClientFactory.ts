@@ -1,27 +1,27 @@
-import type { ChronosRawCardPayload } from '$lib/api/chronosCommon';
-import { convertChronosRawCardPayloadToCard } from '$lib/api/chronosCommon';
+import type { CartomaniaRawCardPayload } from '$lib/api/cartomaniaCommon';
+import { convertCartomaniaRawCardPayloadToCard } from '$lib/api/cartomaniaCommon';
 import type {
 	Card,
-	ChronosCardCatalogCollectionInfo,
-	ChronosCardCatalogItem,
-	ChronosCardCollection,
-	ChronosFriendChatHistory,
-	ChronosFriendChatMessage,
-	ChronosFriendSummary,
-	ChronosIncomingFriendRequest,
-	ChronosPlayerSummary,
+	CartomaniaCardCatalogCollectionInfo,
+	CartomaniaCardCatalogItem,
+	CartomaniaCardCollection,
+	CartomaniaFriendChatHistory,
+	CartomaniaFriendChatMessage,
+	CartomaniaFriendSummary,
+	CartomaniaIncomingFriendRequest,
+	CartomaniaPlayerSummary,
 	GameMode,
 	GameResult,
 	GameState,
 	GameSummary
-} from '$lib/api/chronosTypes';
+} from '$lib/api/cartomaniaTypes';
 
-export interface ChronosClientAdapter {
+export interface CartomaniaClientAdapter {
 	rawFetch: (path: string, init?: RequestInit, token?: string) => Promise<Response>;
 	requestJson: <T>(path: string, init?: RequestInit, token?: string) => Promise<T>;
 }
 
-export interface ChronosClientOptions {
+export interface CartomaniaClientOptions {
 	friendGamePath?: string;
 	respondFriendRequest?: (
 		friendshipId: string,
@@ -30,7 +30,7 @@ export interface ChronosClientOptions {
 	removeFriend?: (friendshipId: string) => { path: string; init?: RequestInit };
 }
 
-interface ChronosClientInternal extends ChronosClientAdapter {
+interface CartomaniaClientInternal extends CartomaniaClientAdapter {
 	friendGamePath: string;
 	respondFriendRequest: (
 		friendshipId: string,
@@ -40,7 +40,7 @@ interface ChronosClientInternal extends ChronosClientAdapter {
 }
 
 const defaultClientOptions: Pick<
-	ChronosClientInternal,
+	CartomaniaClientInternal,
 	'friendGamePath' | 'respondFriendRequest' | 'removeFriend'
 > = {
 	// These must match the NestJS friends/game controllers:
@@ -56,35 +56,35 @@ const defaultClientOptions: Pick<
 	})
 };
 
-type ChronosCardCollectionPayload = Omit<ChronosCardCollection, 'name' | 'cards'> & {
+type CartomaniaCardCollectionPayload = Omit<CartomaniaCardCollection, 'name' | 'cards'> & {
 	name?: string;
-	cards?: ChronosCardCatalogItem[];
+	cards?: CartomaniaCardCatalogItem[];
 };
 
-type ChronosCardCatalogApiResponse =
-	| ChronosCardCollectionPayload[]
-	| ChronosCardCatalogItem[]
+type CartomaniaCardCatalogApiResponse =
+	| CartomaniaCardCollectionPayload[]
+	| CartomaniaCardCatalogItem[]
 	| {
-			collections?: ChronosCardCollectionPayload[];
-			cards?: ChronosCardCatalogItem[];
+			collections?: CartomaniaCardCollectionPayload[];
+			cards?: CartomaniaCardCatalogItem[];
 	  }
 	| unknown;
 
-type ChronosCardCollectionsApiResponse =
-	| ChronosCardCollectionPayload[]
-	| { collections?: ChronosCardCollectionPayload[] }
+type CartomaniaCardCollectionsApiResponse =
+	| CartomaniaCardCollectionPayload[]
+	| { collections?: CartomaniaCardCollectionPayload[] }
 	| null
 	| undefined;
 
-function isChronosCardCatalogItem(candidate: unknown): candidate is ChronosCardCatalogItem {
+function isCartomaniaCardCatalogItem(candidate: unknown): candidate is CartomaniaCardCatalogItem {
 	if (typeof candidate !== 'object' || candidate === null) {
 		return false;
 	}
-	const maybeCard = candidate as Partial<ChronosCardCatalogItem>;
+	const maybeCard = candidate as Partial<CartomaniaCardCatalogItem>;
 	return typeof maybeCard.code === 'string' && typeof maybeCard.name === 'string';
 }
 
-function normalizeChronosCardCatalogItem(card: ChronosCardCatalogItem): ChronosCardCatalogItem {
+function normalizeCartomaniaCardCatalogItem(card: CartomaniaCardCatalogItem): CartomaniaCardCatalogItem {
 	const rawNumber = (card as { number?: number | string }).number;
 	const normalizedNumber = Number(rawNumber ?? 0);
 	return {
@@ -94,12 +94,12 @@ function normalizeChronosCardCatalogItem(card: ChronosCardCatalogItem): ChronosC
 	};
 }
 
-function normalizeChronosCardCollectionPayload(
-	collection: ChronosCardCollectionPayload,
+function normalizeCartomaniaCardCollectionPayload(
+	collection: CartomaniaCardCollectionPayload,
 	index: number
-): ChronosCardCollection {
+): CartomaniaCardCollection {
 	const cards = Array.isArray(collection.cards) ? collection.cards : [];
-	const normalizedCards = cards.map(normalizeChronosCardCatalogItem);
+	const normalizedCards = cards.map(normalizeCartomaniaCardCatalogItem);
 	const slug = collection.slug ?? collection.id ?? `collection-${index + 1}`;
 	const name = collection.name ?? collection.slug ?? collection.id ?? `Collection ${index + 1}`;
 	return {
@@ -115,15 +115,15 @@ function normalizeChronosCardCollectionPayload(
 	};
 }
 
-function groupChronosCardsIntoCollections(
-	cards: ChronosCardCatalogItem[]
-): ChronosCardCollection[] {
+function groupCartomaniaCardsIntoCollections(
+	cards: CartomaniaCardCatalogItem[]
+): CartomaniaCardCollection[] {
 	if (!cards.length) {
 		return [];
 	}
-	const groups = new Map<string, ChronosCardCollection>();
+	const groups = new Map<string, CartomaniaCardCollection>();
 	cards.forEach((rawCard, index) => {
-		const normalizedCard = normalizeChronosCardCatalogItem(rawCard);
+		const normalizedCard = normalizeCartomaniaCardCatalogItem(rawCard);
 		const fallbackKey = `collection-${index + 1}`;
 		const collectionInfo = normalizedCard.collection ?? null;
 		const key =
@@ -166,54 +166,54 @@ function groupChronosCardsIntoCollections(
 	}));
 }
 
-function normalizeChronosCardCatalogResponse(
-	data: ChronosCardCatalogApiResponse
-): ChronosCardCollection[] {
+function normalizeCartomaniaCardCatalogResponse(
+	data: CartomaniaCardCatalogApiResponse
+): CartomaniaCardCollection[] {
 	if (Array.isArray(data)) {
 		if (data.every((entry) => typeof entry === 'object' && entry !== null && 'cards' in entry)) {
-			return (data as ChronosCardCollectionPayload[]).map((entry, index) =>
-				normalizeChronosCardCollectionPayload(entry, index)
+			return (data as CartomaniaCardCollectionPayload[]).map((entry, index) =>
+				normalizeCartomaniaCardCollectionPayload(entry, index)
 			);
 		}
-		if (data.every(isChronosCardCatalogItem)) {
-			return groupChronosCardsIntoCollections(data);
+		if (data.every(isCartomaniaCardCatalogItem)) {
+			return groupCartomaniaCardsIntoCollections(data);
 		}
 	}
 	if (typeof data === 'object' && data !== null) {
-		const withCollections = data as { collections?: ChronosCardCollectionPayload[] };
+		const withCollections = data as { collections?: CartomaniaCardCollectionPayload[] };
 		if (Array.isArray(withCollections.collections)) {
 			return withCollections.collections.map((entry, index) =>
-				normalizeChronosCardCollectionPayload(entry, index)
+				normalizeCartomaniaCardCollectionPayload(entry, index)
 			);
 		}
-		const withCards = data as { cards?: ChronosCardCatalogItem[] };
-		if (Array.isArray(withCards.cards) && withCards.cards.every(isChronosCardCatalogItem)) {
-			return groupChronosCardsIntoCollections(withCards.cards);
+		const withCards = data as { cards?: CartomaniaCardCatalogItem[] };
+		if (Array.isArray(withCards.cards) && withCards.cards.every(isCartomaniaCardCatalogItem)) {
+			return groupCartomaniaCardsIntoCollections(withCards.cards);
 		}
 	}
 	return [];
 }
 
-function normalizeChronosCardCollectionsListResponse(
-	data: ChronosCardCollectionsApiResponse
-): ChronosCardCollection[] {
+function normalizeCartomaniaCardCollectionsListResponse(
+	data: CartomaniaCardCollectionsApiResponse
+): CartomaniaCardCollection[] {
 	if (Array.isArray(data)) {
-		return data.map((entry, index) => normalizeChronosCardCollectionPayload(entry, index));
+		return data.map((entry, index) => normalizeCartomaniaCardCollectionPayload(entry, index));
 	}
 	if (typeof data === 'object' && data !== null) {
-		const withCollections = data as { collections?: ChronosCardCollectionPayload[] };
+		const withCollections = data as { collections?: CartomaniaCardCollectionPayload[] };
 		if (Array.isArray(withCollections.collections)) {
 			return withCollections.collections.map((entry, index) =>
-				normalizeChronosCardCollectionPayload(entry, index)
+				normalizeCartomaniaCardCollectionPayload(entry, index)
 			);
 		}
 	}
 	return [];
 }
 
-function buildCollectionInfoFromChronosCollection(
-	collection: ChronosCardCollection
-): ChronosCardCatalogCollectionInfo {
+function buildCollectionInfoFromCartomaniaCollection(
+	collection: CartomaniaCardCollection
+): CartomaniaCardCatalogCollectionInfo {
 	return {
 		id: collection.id,
 		slug: collection.slug,
@@ -226,13 +226,13 @@ function buildCollectionInfoFromChronosCollection(
 	};
 }
 
-function attachCollectionInfoToChronosCard(
-	card: ChronosCardCatalogItem,
-	collection: ChronosCardCollection
-): ChronosCardCatalogItem {
-	const normalizedCard = normalizeChronosCardCatalogItem(card);
+function attachCollectionInfoToCartomaniaCard(
+	card: CartomaniaCardCatalogItem,
+	collection: CartomaniaCardCollection
+): CartomaniaCardCatalogItem {
+	const normalizedCard = normalizeCartomaniaCardCatalogItem(card);
 	const resolvedCollectionInfo =
-		normalizedCard.collection ?? buildCollectionInfoFromChronosCollection(collection);
+		normalizedCard.collection ?? buildCollectionInfoFromCartomaniaCollection(collection);
 	return {
 		...normalizedCard,
 		collectionId: normalizedCard.collectionId ?? collection.id ?? undefined,
@@ -243,9 +243,9 @@ function attachCollectionInfoToChronosCard(
 	};
 }
 
-export interface ChronosClient {
-	checkChronosHealthStatus: (token?: string) => Promise<string>;
-	registerChronosUserAccount: (
+export interface CartomaniaClient {
+	checkCartomaniaHealthStatus: (token?: string) => Promise<string>;
+	registerCartomaniaUserAccount: (
 		username: string,
 		password: string,
 		token?: string
@@ -253,93 +253,93 @@ export interface ChronosClient {
 		accessToken: string;
 		user: { id: string; username: string; role: 'USER' | 'ADMIN' };
 	}>;
-	fetchAuthenticatedChronosUserProfile: (
+	fetchAuthenticatedCartomaniaUserProfile: (
 		token?: string
 	) => Promise<{ id: string; username: string; role: 'USER' | 'ADMIN' }>;
-	startClassicChronosGameForPlayer: (
+	startClassicCartomaniaGameForPlayer: (
 		playerIdentifier: string,
 		token?: string
 	) => Promise<{ gameId: string }>;
-	startAttributeDuelChronosGameForPlayer: (
+	startAttributeDuelCartomaniaGameForPlayer: (
 		playerIdentifier: string,
 		token?: string
 	) => Promise<{ gameId: string }>;
-	startChronosGameWithAutomaticModeSelection: (
+	startCartomaniaGameWithAutomaticModeSelection: (
 		playerIdentifier: string,
 		token?: string
 	) => Promise<{ gameId: string }>;
-	endChronosGameSessionOnServer: (gameIdentifier: string, token?: string) => Promise<unknown>;
-	startChronosGameWithFriend: (
+	endCartomaniaGameSessionOnServer: (gameIdentifier: string, token?: string) => Promise<unknown>;
+	startCartomaniaGameWithFriend: (
 		friendId: string,
 		mode: GameMode,
 		token?: string
 	) => Promise<{ gameId: string }>;
-	surrenderChronosGame: (gameIdentifier: string, token?: string) => Promise<unknown>;
-	fetchChronosGameStateById: (gameIdentifier: string, token?: string) => Promise<GameState | null>;
-	fetchChronosGameResult: (gameIdentifier: string, token?: string) => Promise<GameResult>;
-	playCardInChronosGame: (
+	surrenderCartomaniaGame: (gameIdentifier: string, token?: string) => Promise<unknown>;
+	fetchCartomaniaGameStateById: (gameIdentifier: string, token?: string) => Promise<GameState | null>;
+	fetchCartomaniaGameResult: (gameIdentifier: string, token?: string) => Promise<GameResult>;
+	playCardInCartomaniaGame: (
 		gameIdentifier: string,
 		playerIdentifier: string,
 		cardCode: string,
 		token?: string
 	) => Promise<unknown>;
-	skipChronosGameTurn: (
+	skipCartomaniaGameTurn: (
 		gameIdentifier: string,
 		playerIdentifier: string,
 		token?: string
 	) => Promise<unknown>;
-	chooseChronosDuelCard: (
+	chooseCartomaniaDuelCard: (
 		gameIdentifier: string,
 		playerIdentifier: string,
 		cardCode: string,
 		token?: string
 	) => Promise<unknown>;
-	chooseChronosDuelAttribute: (
+	chooseCartomaniaDuelAttribute: (
 		gameIdentifier: string,
 		playerIdentifier: string,
 		attributeCode: string,
 		token?: string
 	) => Promise<unknown>;
-	unchooseChronosDuelCard: (
+	unchooseCartomaniaDuelCard: (
 		gameIdentifier: string,
 		playerIdentifier: string,
 		cardCode: string,
 		token?: string
 	) => Promise<unknown>;
-	advanceChronosDuel: (gameIdentifier: string, token?: string) => Promise<unknown>;
-	fetchChronosCardMetadata: (cardCode: string, token?: string) => Promise<Card>;
-	fetchMultipleChronosCardMetadata: (cardCodes: string[], token?: string) => Promise<Card[]>;
-	listAuthenticatedChronosPlayerActiveGames: (token?: string) => Promise<GameSummary[]>;
-	listAllActiveChronosGames: (token?: string) => Promise<GameSummary[]>;
-	expireInactiveChronosGames: (token?: string) => Promise<unknown>;
-	fetchMyChronosGameStatistics: (
+	advanceCartomaniaDuel: (gameIdentifier: string, token?: string) => Promise<unknown>;
+	fetchCartomaniaCardMetadata: (cardCode: string, token?: string) => Promise<Card>;
+	fetchMultipleCartomaniaCardMetadata: (cardCodes: string[], token?: string) => Promise<Card[]>;
+	listAuthenticatedCartomaniaPlayerActiveGames: (token?: string) => Promise<GameSummary[]>;
+	listAllActiveCartomaniaGames: (token?: string) => Promise<GameSummary[]>;
+	expireInactiveCartomaniaGames: (token?: string) => Promise<unknown>;
+	fetchMyCartomaniaGameStatistics: (
 		token?: string
 	) => Promise<{ gamesPlayed: number; gamesWon: number; gamesDrawn: number }>;
-	fetchChronosCardCatalog: (token?: string) => Promise<ChronosCardCollection[]>;
-	searchChronosPlayers: (query: string, token?: string) => Promise<ChronosPlayerSummary[]>;
-	listChronosFriends: (token?: string) => Promise<ChronosFriendSummary[]>;
-	listChronosFriendRequests: (token?: string) => Promise<ChronosIncomingFriendRequest[]>;
-	sendChronosFriendRequest: (targetId: string, token?: string) => Promise<unknown>;
-	respondChronosFriendRequest: (
+	fetchCartomaniaCardCatalog: (token?: string) => Promise<CartomaniaCardCollection[]>;
+	searchCartomaniaPlayers: (query: string, token?: string) => Promise<CartomaniaPlayerSummary[]>;
+	listCartomaniaFriends: (token?: string) => Promise<CartomaniaFriendSummary[]>;
+	listCartomaniaFriendRequests: (token?: string) => Promise<CartomaniaIncomingFriendRequest[]>;
+	sendCartomaniaFriendRequest: (targetId: string, token?: string) => Promise<unknown>;
+	respondCartomaniaFriendRequest: (
 		friendshipId: string,
 		accept: boolean,
 		token?: string
 	) => Promise<unknown>;
-	removeChronosFriend: (friendshipId: string, token?: string) => Promise<unknown>;
-	blockChronosPlayer: (targetId: string, token?: string) => Promise<unknown>;
-	fetchChronosFriendChat: (friendId: string, token?: string) => Promise<ChronosFriendChatHistory>;
-	sendChronosFriendMessage: (
+	removeCartomaniaFriend: (friendshipId: string, token?: string) => Promise<unknown>;
+	blockCartomaniaPlayer: (targetId: string, token?: string) => Promise<unknown>;
+	fetchCartomaniaFriendChat: (friendId: string, token?: string) => Promise<CartomaniaFriendChatHistory>;
+	sendCartomaniaFriendMessage: (
 		friendId: string,
 		message: string,
 		token?: string
-	) => Promise<ChronosFriendChatMessage>;
+	) => Promise<CartomaniaFriendChatMessage>;
 }
 
-export function createChronosClient(
-	adapter: ChronosClientAdapter,
-	options?: ChronosClientOptions
-): ChronosClient {
-	const resolvedOptions: ChronosClientInternal = {
+export function createCartomaniaClient(
+	adapter: CartomaniaClientAdapter,
+	options?: CartomaniaClientOptions
+): CartomaniaClient {
+	const resolvedOptions: CartomaniaClientInternal = {
 		rawFetch: adapter.rawFetch,
 		requestJson: adapter.requestJson,
 		friendGamePath: options?.friendGamePath ?? defaultClientOptions.friendGamePath,
@@ -349,23 +349,23 @@ export function createChronosClient(
 	};
 	const { rawFetch, requestJson, friendGamePath, respondFriendRequest, removeFriend } =
 		resolvedOptions;
-	const chronosCardMetadataCache = new Map<string, Card>();
+	const cartomaniaCardMetadataCache = new Map<string, Card>();
 
-	async function populateChronosCollectionCards(
-		collection: ChronosCardCollection,
+	async function populateCartomaniaCollectionCards(
+		collection: CartomaniaCardCollection,
 		token?: string
-	): Promise<ChronosCardCollection> {
+	): Promise<CartomaniaCardCollection> {
 		const identifier = collection.slug ?? collection.id;
 		if (!identifier) {
 			return collection;
 		}
-		const cards = await requestJson<ChronosCardCatalogItem[]>(
+		const cards = await requestJson<CartomaniaCardCatalogItem[]>(
 			`/game/collections/${encodeURIComponent(identifier)}/cards`,
 			undefined,
 			token
 		);
 		const normalizedCards = cards.map((card) =>
-			attachCollectionInfoToChronosCard(card, collection)
+			attachCollectionInfoToCartomaniaCard(card, collection)
 		);
 		return {
 			...collection,
@@ -374,21 +374,21 @@ export function createChronosClient(
 		};
 	}
 
-	async function fetchChronosCollectionsUsingNewEndpoint(
+	async function fetchCartomaniaCollectionsUsingNewEndpoint(
 		token?: string
-	): Promise<ChronosCardCollection[]> {
+	): Promise<CartomaniaCardCollection[]> {
 		try {
-			const response = await requestJson<ChronosCardCollectionsApiResponse>(
+			const response = await requestJson<CartomaniaCardCollectionsApiResponse>(
 				'/game/collections',
 				undefined,
 				token
 			);
-			const normalizedCollections = normalizeChronosCardCollectionsListResponse(response);
+			const normalizedCollections = normalizeCartomaniaCardCollectionsListResponse(response);
 			if (!normalizedCollections.length) {
 				return [];
 			}
 			const populationTasks = normalizedCollections.map((collection) =>
-				populateChronosCollectionCards(collection, token).catch(() => collection)
+				populateCartomaniaCollectionCards(collection, token).catch(() => collection)
 			);
 			return Promise.all(populationTasks);
 		} catch {
@@ -396,23 +396,23 @@ export function createChronosClient(
 		}
 	}
 
-	async function fetchLegacyChronosCardCatalog(token?: string): Promise<ChronosCardCollection[]> {
-		const response = await requestJson<ChronosCardCatalogApiResponse>(
+	async function fetchLegacyCartomaniaCardCatalog(token?: string): Promise<CartomaniaCardCollection[]> {
+		const response = await requestJson<CartomaniaCardCatalogApiResponse>(
 			'/game/cards',
 			undefined,
 			token
 		);
-		return normalizeChronosCardCatalogResponse(response);
+		return normalizeCartomaniaCardCatalogResponse(response);
 	}
 
-	interface ChronosHealthStatusResponsePayload {
+	interface CartomaniaHealthStatusResponsePayload {
 		status?: string;
 		message?: string;
 		timestamp?: string;
 		uptimeInSeconds?: number;
 	}
 
-	function normalizeChronosHealthStatusText(status?: string): string | null {
+	function normalizeCartomaniaHealthStatusText(status?: string): string | null {
 		if (!status) {
 			return null;
 		}
@@ -420,11 +420,11 @@ export function createChronosClient(
 		return normalizedStatus || null;
 	}
 
-	function tryParseChronosHealthStatusPayload(
+	function tryParseCartomaniaHealthStatusPayload(
 		bodyText: string
-	): ChronosHealthStatusResponsePayload | null {
+	): CartomaniaHealthStatusResponsePayload | null {
 		try {
-			const parsed = JSON.parse(bodyText) as ChronosHealthStatusResponsePayload;
+			const parsed = JSON.parse(bodyText) as CartomaniaHealthStatusResponsePayload;
 			if (parsed && typeof parsed === 'object') {
 				return parsed;
 			}
@@ -434,14 +434,14 @@ export function createChronosClient(
 		}
 	}
 
-	function buildChronosHealthStatusMessage(bodyText: string): string {
+	function buildCartomaniaHealthStatusMessage(bodyText: string): string {
 		const trimmedText = bodyText.trim();
 		if (!trimmedText) {
 			return 'Server status unknown';
 		}
-		const payload = tryParseChronosHealthStatusPayload(trimmedText);
+		const payload = tryParseCartomaniaHealthStatusPayload(trimmedText);
 		if (payload) {
-			const normalizedStatus = normalizeChronosHealthStatusText(payload.status);
+			const normalizedStatus = normalizeCartomaniaHealthStatusText(payload.status);
 			if (normalizedStatus === 'ok' || normalizedStatus === 'online') {
 				return 'online';
 			}
@@ -461,16 +461,16 @@ export function createChronosClient(
 		return trimmedText;
 	}
 
-	async function checkChronosHealthStatus(token?: string): Promise<string> {
+	async function checkCartomaniaHealthStatus(token?: string): Promise<string> {
 		const response = await rawFetch('/health', undefined, token);
 		const bodyText = await response.text();
 		if (!response.ok) {
 			throw new Error(`Health-check failed: ${response.status}`);
 		}
-		return buildChronosHealthStatusMessage(bodyText);
+		return buildCartomaniaHealthStatusMessage(bodyText);
 	}
 
-	async function fetchChronosGameStateById(
+	async function fetchCartomaniaGameStateById(
 		gameIdentifier: string,
 		token?: string
 	): Promise<GameState | null> {
@@ -485,33 +485,33 @@ export function createChronosClient(
 		return (await response.json()) as GameState | null;
 	}
 
-	async function fetchChronosCardMetadata(cardCode: string, token?: string): Promise<Card> {
-		const cachedCard = chronosCardMetadataCache.get(cardCode);
+	async function fetchCartomaniaCardMetadata(cardCode: string, token?: string): Promise<Card> {
+		const cachedCard = cartomaniaCardMetadataCache.get(cardCode);
 		if (cachedCard) {
 			return cachedCard;
 		}
 
-		const normalizedCard = convertChronosRawCardPayloadToCard(
-			await requestJson<ChronosRawCardPayload>(
+		const normalizedCard = convertCartomaniaRawCardPayloadToCard(
+			await requestJson<CartomaniaRawCardPayload>(
 				`/game/cards/${encodeURIComponent(cardCode)}`,
 				undefined,
 				token
 			)
 		);
-		chronosCardMetadataCache.set(cardCode, normalizedCard);
+		cartomaniaCardMetadataCache.set(cardCode, normalizedCard);
 		return normalizedCard;
 	}
 
-	async function fetchMultipleChronosCardMetadata(
+	async function fetchMultipleCartomaniaCardMetadata(
 		cardCodes: string[],
 		token?: string
 	): Promise<Card[]> {
 		const cardCodesMissingFromCache = cardCodes.filter(
-			(candidateCode) => !chronosCardMetadataCache.has(candidateCode)
+			(candidateCode) => !cartomaniaCardMetadataCache.has(candidateCode)
 		);
 		if (cardCodesMissingFromCache.length > 0) {
 			try {
-				const rawCards = await requestJson<ChronosRawCardPayload[]>(
+				const rawCards = await requestJson<CartomaniaRawCardPayload[]>(
 					`/game/cards?codes=${cardCodesMissingFromCache
 						.map((code) => encodeURIComponent(code))
 						.join(',')}`,
@@ -520,11 +520,11 @@ export function createChronosClient(
 				);
 				for (const rawCard of rawCards) {
 					if (rawCard && rawCard.code) {
-						chronosCardMetadataCache.set(rawCard.code, convertChronosRawCardPayloadToCard(rawCard));
+						cartomaniaCardMetadataCache.set(rawCard.code, convertCartomaniaRawCardPayloadToCard(rawCard));
 					}
 				}
 			} catch {
-				const allCards = await requestJson<ChronosRawCardPayload[]>(
+				const allCards = await requestJson<CartomaniaRawCardPayload[]>(
 					'/game/cards',
 					undefined,
 					token
@@ -532,9 +532,9 @@ export function createChronosClient(
 				for (const missingCode of cardCodesMissingFromCache) {
 					const fallbackCard = allCards.find((candidateCard) => candidateCard.code === missingCode);
 					if (fallbackCard) {
-						chronosCardMetadataCache.set(
+						cartomaniaCardMetadataCache.set(
 							missingCode,
-							convertChronosRawCardPayloadToCard(fallbackCard)
+							convertCartomaniaRawCardPayloadToCard(fallbackCard)
 						);
 					}
 				}
@@ -543,7 +543,7 @@ export function createChronosClient(
 
 		const resolvedCards: Card[] = [];
 		for (const cardCode of cardCodes) {
-			const cachedCard = chronosCardMetadataCache.get(cardCode);
+			const cachedCard = cartomaniaCardMetadataCache.get(cardCode);
 			if (cachedCard) {
 				resolvedCards.push(cachedCard);
 			}
@@ -551,15 +551,15 @@ export function createChronosClient(
 		return resolvedCards;
 	}
 
-	async function listAuthenticatedChronosPlayerActiveGames(token?: string): Promise<GameSummary[]> {
+	async function listAuthenticatedCartomaniaPlayerActiveGames(token?: string): Promise<GameSummary[]> {
 		const response = await rawFetch('/game/active/mine', undefined, token);
 		if (!response.ok) return [];
 		return (await response.json()) as GameSummary[];
 	}
 
 	return {
-		checkChronosHealthStatus,
-		registerChronosUserAccount: (username, password, token) =>
+		checkCartomaniaHealthStatus,
+		registerCartomaniaUserAccount: (username, password, token) =>
 			requestJson(
 				'/auth/register',
 				{
@@ -568,8 +568,8 @@ export function createChronosClient(
 				},
 				token
 			),
-		fetchAuthenticatedChronosUserProfile: (token) => requestJson('/auth/me', undefined, token),
-		startClassicChronosGameForPlayer: (playerIdentifier, token) =>
+		fetchAuthenticatedCartomaniaUserProfile: (token) => requestJson('/auth/me', undefined, token),
+		startClassicCartomaniaGameForPlayer: (playerIdentifier, token) =>
 			requestJson(
 				'/game/start-classic',
 				{
@@ -578,7 +578,7 @@ export function createChronosClient(
 				},
 				token
 			),
-		startAttributeDuelChronosGameForPlayer: (playerIdentifier, token) =>
+		startAttributeDuelCartomaniaGameForPlayer: (playerIdentifier, token) =>
 			requestJson(
 				'/game/start-duel',
 				{
@@ -587,7 +587,7 @@ export function createChronosClient(
 				},
 				token
 			),
-		startChronosGameWithAutomaticModeSelection: (playerIdentifier, token) =>
+		startCartomaniaGameWithAutomaticModeSelection: (playerIdentifier, token) =>
 			requestJson(
 				'/game/start',
 				{
@@ -596,9 +596,9 @@ export function createChronosClient(
 				},
 				token
 			),
-		endChronosGameSessionOnServer: (gameIdentifier, token) =>
+		endCartomaniaGameSessionOnServer: (gameIdentifier, token) =>
 			requestJson(`/game/end/${encodeURIComponent(gameIdentifier)}`, { method: 'DELETE' }, token),
-		startChronosGameWithFriend: (friendId, mode, token) =>
+		startCartomaniaGameWithFriend: (friendId, mode, token) =>
 			requestJson(
 				friendGamePath,
 				{
@@ -607,7 +607,7 @@ export function createChronosClient(
 				},
 				token
 			),
-		surrenderChronosGame: (gameIdentifier, token) =>
+		surrenderCartomaniaGame: (gameIdentifier, token) =>
 			requestJson(
 				'/game/surrender',
 				{
@@ -616,10 +616,10 @@ export function createChronosClient(
 				},
 				token
 			),
-		fetchChronosGameStateById,
-		fetchChronosGameResult: (gameIdentifier, token) =>
+		fetchCartomaniaGameStateById,
+		fetchCartomaniaGameResult: (gameIdentifier, token) =>
 			requestJson(`/game/result/${encodeURIComponent(gameIdentifier)}`, undefined, token),
-		playCardInChronosGame: (gameIdentifier, playerIdentifier, cardCode, token) =>
+		playCardInCartomaniaGame: (gameIdentifier, playerIdentifier, cardCode, token) =>
 			requestJson(
 				'/game/play-card',
 				{
@@ -632,7 +632,7 @@ export function createChronosClient(
 				},
 				token
 			),
-		skipChronosGameTurn: (gameIdentifier, playerIdentifier, token) =>
+		skipCartomaniaGameTurn: (gameIdentifier, playerIdentifier, token) =>
 			requestJson(
 				'/game/skip-turn',
 				{
@@ -641,7 +641,7 @@ export function createChronosClient(
 				},
 				token
 			),
-		chooseChronosDuelCard: (gameIdentifier, playerIdentifier, cardCode, token) =>
+		chooseCartomaniaDuelCard: (gameIdentifier, playerIdentifier, cardCode, token) =>
 			requestJson(
 				`/game/${encodeURIComponent(gameIdentifier)}/duel/choose-card`,
 				{
@@ -650,7 +650,7 @@ export function createChronosClient(
 				},
 				token
 			),
-		chooseChronosDuelAttribute: (gameIdentifier, playerIdentifier, attributeCode, token) =>
+		chooseCartomaniaDuelAttribute: (gameIdentifier, playerIdentifier, attributeCode, token) =>
 			requestJson(
 				`/game/${encodeURIComponent(gameIdentifier)}/duel/choose-attribute`,
 				{
@@ -659,7 +659,7 @@ export function createChronosClient(
 				},
 				token
 			),
-		unchooseChronosDuelCard: (gameIdentifier, playerIdentifier, cardCode, token) =>
+		unchooseCartomaniaDuelCard: (gameIdentifier, playerIdentifier, cardCode, token) =>
 			requestJson(
 				`/game/${encodeURIComponent(gameIdentifier)}/duel/unchoose-card`,
 				{
@@ -668,47 +668,47 @@ export function createChronosClient(
 				},
 				token
 			),
-		advanceChronosDuel: (gameIdentifier, token) =>
+		advanceCartomaniaDuel: (gameIdentifier, token) =>
 			requestJson(
 				`/game/${encodeURIComponent(gameIdentifier)}/duel/advance`,
 				{ method: 'POST' },
 				token
 			),
-		fetchChronosCardMetadata,
-		fetchMultipleChronosCardMetadata,
-		listAuthenticatedChronosPlayerActiveGames,
-		listAllActiveChronosGames: (token) => requestJson('/game/active', undefined, token),
-		expireInactiveChronosGames: (token) => requestJson('/game/expire', { method: 'POST' }, token),
-		fetchMyChronosGameStatistics: (token) => requestJson('/game/stats/me', undefined, token),
-		fetchChronosCardCatalog: async (token) => {
-			const collections = await fetchChronosCollectionsUsingNewEndpoint(token);
+		fetchCartomaniaCardMetadata,
+		fetchMultipleCartomaniaCardMetadata,
+		listAuthenticatedCartomaniaPlayerActiveGames,
+		listAllActiveCartomaniaGames: (token) => requestJson('/game/active', undefined, token),
+		expireInactiveCartomaniaGames: (token) => requestJson('/game/expire', { method: 'POST' }, token),
+		fetchMyCartomaniaGameStatistics: (token) => requestJson('/game/stats/me', undefined, token),
+		fetchCartomaniaCardCatalog: async (token) => {
+			const collections = await fetchCartomaniaCollectionsUsingNewEndpoint(token);
 			if (collections.length > 0) {
 				return collections;
 			}
-			return fetchLegacyChronosCardCatalog(token);
+			return fetchLegacyCartomaniaCardCatalog(token);
 		},
-		searchChronosPlayers: (query, token) => {
+		searchCartomaniaPlayers: (query, token) => {
 			const trimmed = query.trim();
 			if (!trimmed) return Promise.resolve([]);
 			return requestJson(`/friends/search?q=${encodeURIComponent(trimmed)}`, undefined, token);
 		},
-		listChronosFriends: (token) => requestJson('/friends', undefined, token),
-		listChronosFriendRequests: (token) => requestJson('/friends/requests', undefined, token),
-		sendChronosFriendRequest: (targetId, token) =>
+		listCartomaniaFriends: (token) => requestJson('/friends', undefined, token),
+		listCartomaniaFriendRequests: (token) => requestJson('/friends/requests', undefined, token),
+		sendCartomaniaFriendRequest: (targetId, token) =>
 			requestJson(
 				'/friends/request',
 				{ method: 'POST', body: JSON.stringify({ targetId }) },
 				token
 			),
-		respondChronosFriendRequest: (friendshipId, accept, token) => {
+		respondCartomaniaFriendRequest: (friendshipId, accept, token) => {
 			const { path, init } = respondFriendRequest(friendshipId, accept);
 			return requestJson(path, init, token);
 		},
-		removeChronosFriend: (friendshipId, token) => {
+		removeCartomaniaFriend: (friendshipId, token) => {
 			const { path, init } = removeFriend(friendshipId);
 			return requestJson(path, init, token);
 		},
-		blockChronosPlayer: (targetId, token) =>
+		blockCartomaniaPlayer: (targetId, token) =>
 			requestJson(
 				'/friends/block',
 				{
@@ -717,9 +717,9 @@ export function createChronosClient(
 				},
 				token
 			),
-		fetchChronosFriendChat: (friendId, token) =>
+		fetchCartomaniaFriendChat: (friendId, token) =>
 			requestJson(`/friends/chat/${encodeURIComponent(friendId)}`, undefined, token),
-		sendChronosFriendMessage: (friendId, message, token) =>
+		sendCartomaniaFriendMessage: (friendId, message, token) =>
 			requestJson(
 				`/friends/chat/${encodeURIComponent(friendId)}`,
 				{
@@ -733,14 +733,14 @@ export function createChronosClient(
 
 export type {
 	Card,
-	ChronosCardCatalogItem,
-	ChronosCardCollection,
-	ChronosFriendChatHistory,
-	ChronosFriendChatMessage,
-	ChronosFriendSummary,
-	ChronosIncomingFriendRequest,
-	ChronosPlayerSummary,
-	ChronosRawCardPayload,
+	CartomaniaCardCatalogItem,
+	CartomaniaCardCollection,
+	CartomaniaFriendChatHistory,
+	CartomaniaFriendChatMessage,
+	CartomaniaFriendSummary,
+	CartomaniaIncomingFriendRequest,
+	CartomaniaPlayerSummary,
+	CartomaniaRawCardPayload,
 	GameMode,
 	GameResult,
 	GameState,

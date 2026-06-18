@@ -1,6 +1,6 @@
-import type { AuthenticatedChronosUser } from '$lib/types/chronos';
+import type { AuthenticatedCartomaniaUser } from '$lib/types/cartomania';
 
-export interface ChronosSession {
+export interface CartomaniaSession {
 	token: string;
-	user: AuthenticatedChronosUser;
+	user: AuthenticatedCartomaniaUser;
 }

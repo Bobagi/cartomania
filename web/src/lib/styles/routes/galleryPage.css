@@ -18,10 +18,6 @@
 	margin-bottom: 22px;
 }
 
-.panel-header .home-btn {
-	justify-self: start;
-}
-
 .panel-title {
 	font-family: var(--font-display);
 	font-weight: 800;

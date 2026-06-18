@@ -1,7 +1,7 @@
-import type { ChronosGameSummaryWithMetadata } from '../types/chronos';
+import type { CartomaniaGameSummaryWithMetadata } from '../types/cartomania';
 
 export function determineIfGameBelongsToPlayer(
-	gameSummary: ChronosGameSummaryWithMetadata,
+	gameSummary: CartomaniaGameSummaryWithMetadata,
 	playerIdentifier: string
 ): boolean {
 	if (!playerIdentifier) return false;
@@ -15,7 +15,7 @@ export function determineIfGameBelongsToPlayer(
 	);
 }
 
-export function resolveChronosGameIdentifier(gameSummary: ChronosGameSummaryWithMetadata): string {
+export function resolveCartomaniaGameIdentifier(gameSummary: CartomaniaGameSummaryWithMetadata): string {
 	return (
 		gameSummary.id ??
 		gameSummary.gameId ??
@@ -25,7 +25,7 @@ export function resolveChronosGameIdentifier(gameSummary: ChronosGameSummaryWith
 }
 
 export function extractLastActivityTimestamp(
-	gameSummary: ChronosGameSummaryWithMetadata
+	gameSummary: CartomaniaGameSummaryWithMetadata
 ): number | null {
 	return typeof gameSummary?.lastActivity === 'number' ? gameSummary.lastActivity : null;
 }

@@ -1,4 +1,4 @@
-import type { ChronosCardCatalogItem, ChronosCardCollection } from '$lib/api/chronosTypes';
+import type { CartomaniaCardCatalogItem, CartomaniaCardCollection } from '$lib/api/cartomaniaTypes';
 
 /** Minimal card shape the logged-out landing hero needs to render a real CardComposite. */
 export interface FeaturedHeroCard {
@@ -16,7 +16,7 @@ export interface FeaturedHeroCard {
 const DEFAULT_FEATURED_CARD_NUMBERS = [3, 1, 8];
 const FEATURED_HERO_CARD_COUNT = 3;
 
-function toFeaturedHeroCard(card: ChronosCardCatalogItem): FeaturedHeroCard {
+function toFeaturedHeroCard(card: CartomaniaCardCatalogItem): FeaturedHeroCard {
 	return {
 		code: card.code,
 		name: card.name ?? card.code,
@@ -35,7 +35,7 @@ function toFeaturedHeroCard(card: ChronosCardCatalogItem): FeaturedHeroCard {
  * remaining slots from the catalog order, never repeating a card.
  */
 export function selectFeaturedHeroCards(
-	collections: ChronosCardCollection[],
+	collections: CartomaniaCardCollection[],
 	preferredCardNumbers: number[] = DEFAULT_FEATURED_CARD_NUMBERS
 ): FeaturedHeroCard[] {
 	const allCards = collections.flatMap((collection) => collection.cards ?? []);
@@ -44,7 +44,7 @@ export function selectFeaturedHeroCards(
 	const chosen: FeaturedHeroCard[] = [];
 	const usedCodes = new Set<string>();
 
-	const take = (card: ChronosCardCatalogItem | undefined) => {
+	const take = (card: CartomaniaCardCatalogItem | undefined) => {
 		if (!card || usedCodes.has(card.code) || chosen.length >= FEATURED_HERO_CARD_COUNT) return;
 		usedCodes.add(card.code);
 		chosen.push(toFeaturedHeroCard(card));

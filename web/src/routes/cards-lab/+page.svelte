@@ -2,7 +2,8 @@
 	import { onDestroy, onMount } from 'svelte';
 	import CardComposite from '$lib/components/CardComposite.svelte';
 	import CardFxFilters from '$lib/cards/CardFxFilters.svelte';
-	import { fetchChronosCardCatalog } from '$lib/api/GameClient';
+	import BackButton from '$lib/components/BackButton.svelte';
+	import { fetchCartomaniaCardCatalog } from '$lib/api/GameClient';
 	import {
 		createHoloTilt,
 		foilStyleVars,
@@ -152,7 +153,7 @@
 	onMount(async () => {
 		loadSaved();
 		try {
-			const collections = await fetchChronosCardCatalog();
+			const collections = await fetchCartomaniaCardCatalog();
 			const flat: LabCard[] = [];
 			for (const col of collections ?? []) {
 				for (const raw of (col?.cards ?? []) as Record<string, unknown>[]) {
@@ -197,6 +198,7 @@
 <CardFxFilters />
 
 <div class="lab">
+	<BackButton floating href="/" />
 	<div class="lab__stage">
 		<div class="cardfx-scene" bind:this={sceneEl} style="perspective:1100px">
 			<div class="cardfx-wrap">
@@ -322,7 +324,7 @@
 			<label for="sc">Outline color</label>
 			<input id="sc" type="color" bind:value={t.ccOutlineColor} />
 		</div>
-		{#each [['ccBannerH', 'Banner height (cqh)', 8, 36, 0.2], ['ccBannerTop', 'Banner top %', 0, 12, 0.2], ['ccBannerRight', 'Banner right %', 0, 12, 0.2], ['ccBannerMin', 'Ribbon min width (cqw)', 8, 45, 0.5], ['ccNameFactor', 'Name size ×height', 0.10, 0.55, 0.005], ['ccOutlineSize', 'Outline thickness (×em)', 0.02, 1.0, 0.005], ['ccNumFactor', 'Number size ×height', 0.08, 0.9, 0.01], ['ccNumX', 'Number X %', 20, 70, 0.5], ['ccNumY', 'Number Y %', 15, 65, 0.5], ['ccValSize', 'Attr value size (cqh)', 4, 16, 0.2], ['ccLabelSize', 'Attr label size (cqh)', 2, 9, 0.2]] as [key, lbl, min, max, step]}
+		{#each [['ccBannerH', 'Banner height (cqh)', 8, 36, 0.2], ['ccBannerTop', 'Banner top %', 0, 12, 0.2], ['ccBannerRight', 'Banner right %', 0, 12, 0.2], ['ccBannerMin', 'Ribbon min width (cqw)', 8, 45, 0.5], ['ccNameFactor', 'Name size ×height', 0.1, 0.55, 0.005], ['ccOutlineSize', 'Outline thickness (×em)', 0.02, 1.0, 0.005], ['ccNumFactor', 'Number size ×height', 0.08, 0.9, 0.01], ['ccNumX', 'Number X %', 20, 70, 0.5], ['ccNumY', 'Number Y %', 15, 65, 0.5], ['ccValSize', 'Attr value size (cqh)', 4, 16, 0.2], ['ccLabelSize', 'Attr label size (cqh)', 2, 9, 0.2]] as [key, lbl, min, max, step]}
 			<div class="slider">
 				<span>{lbl}</span>
 				<input
@@ -373,6 +375,7 @@
 
 <style>
 	.lab {
+		position: relative;
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) 340px;
 		min-height: 100dvh;

@@ -1,5 +1,5 @@
 /*
- * Chronos app shell — the global design system loaded by the root layout, so
+ * Cartomania app shell — the global design system loaded by the root layout, so
  * every route shares one cohesive "dark fantasy / Dracomania gold" look:
  * design tokens, the atmospheric background, the top bar / footer, and the
  * shared button + input primitives used across all screens.

@@ -1,7 +1,8 @@
 <script lang="ts">
-	import type { ChronosCardCatalogItem, ChronosCardCollection } from '$lib/api/GameClient';
-	import { fetchChronosCardCatalog } from '$lib/api/GameClient';
+	import type { CartomaniaCardCatalogItem, CartomaniaCardCollection } from '$lib/api/GameClient';
+	import { fetchCartomaniaCardCatalog } from '$lib/api/GameClient';
 	import CardComposite from '$lib/components/CardComposite.svelte';
+	import BackButton from '$lib/components/BackButton.svelte';
 	import { t } from '$lib/i18n';
 	import '$lib/styles/routes/galleryPage.css';
 	import { onMount } from 'svelte';
@@ -15,10 +16,10 @@
 
 	let isLoadingCards = true;
 	let errorMessageText: string | null = null;
-	let chronosCollections: ChronosCardCollection[] = [];
-	let selectedCardItem: ChronosCardCatalogItem | null = null;
+	let cartomaniaCollections: CartomaniaCardCollection[] = [];
+	let selectedCardItem: CartomaniaCardCatalogItem | null = null;
 
-	function getCollectionDisplayName(collection: ChronosCardCollection): string {
+	function getCollectionDisplayName(collection: CartomaniaCardCollection): string {
 		return (
 			collection.name?.trim() ||
 			collection.slug?.trim() ||
@@ -77,7 +78,7 @@
 		return sanitizeCollectionIdentifier(baseName);
 	}
 
-	function resolveLocalCollectionLogoImageUrl(collection: ChronosCardCollection): string | null {
+	function resolveLocalCollectionLogoImageUrl(collection: CartomaniaCardCollection): string | null {
 		const possibleIdentifiers: Array<string | null | undefined> = [
 			collection.slug,
 			extractIdentifierFromImagePath(collection.imageUrl),
@@ -93,7 +94,7 @@
 		return null;
 	}
 
-	function getCollectionLogoImageUrl(collection: ChronosCardCollection): string {
+	function getCollectionLogoImageUrl(collection: CartomaniaCardCollection): string {
 		return (
 			resolveLocalCollectionLogoImageUrl(collection) ??
 			resolveAssetUrl(collection.imageUrl) ??
@@ -105,8 +106,8 @@
 		isLoadingCards = true;
 		errorMessageText = null;
 		try {
-			const data = await fetchChronosCardCatalog();
-			chronosCollections = data;
+			const data = await fetchCartomaniaCardCatalog();
+			cartomaniaCollections = data;
 		} catch (e) {
 			errorMessageText = (e as Error).message;
 		} finally {
@@ -114,7 +115,7 @@
 		}
 	});
 
-	function openCardModal(cardItem: ChronosCardCatalogItem) {
+	function openCardModal(cardItem: CartomaniaCardCatalogItem) {
 		selectedCardItem = cardItem;
 	}
 	function closeCardModal() {
@@ -149,7 +150,7 @@
 <div class="gallery-panel">
 	<header class="panel-header">
 		<div style="display: flex; justify-content: space-between; width: 100%;">
-			<a href="/" class="home-btn" style="min-width: 10vw;">← {$t('gallery.home')}</a>
+			<BackButton href="/" label={$t('gallery.home')} />
 			<h1 class="panel-title">{$t('gallery.title')}</h1>
 			<span style="min-width: 10vw;"></span>
 		</div>
@@ -160,10 +161,10 @@
 		<p class="status">{$t('gallery.loading')}</p>
 	{:else if errorMessageText}
 		<p class="status error">{$t('gallery.error', { message: errorMessageText })}</p>
-	{:else if !chronosCollections.length}
+	{:else if !cartomaniaCollections.length}
 		<p class="status">{$t('gallery.noCollections')}</p>
 	{:else}
-		{#each chronosCollections as collection (collection.slug ?? collection.id ?? collection.name)}
+		{#each cartomaniaCollections as collection (collection.slug ?? collection.id ?? collection.name)}
 			<section class="collection">
 				<div class="collection-banner">
 					<img

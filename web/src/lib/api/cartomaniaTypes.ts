@@ -16,27 +16,27 @@ export interface GameResult {
 	log: string[];
 }
 
-export interface ChronosPlayerSummary {
+export interface CartomaniaPlayerSummary {
 	id: string;
 	username: string;
 	avatarUrl?: string | null;
 	lastSeenAt?: string | null;
 }
 
-export interface ChronosFriendSummary {
+export interface CartomaniaFriendSummary {
 	friendshipId: string;
-	friend: ChronosPlayerSummary;
+	friend: CartomaniaPlayerSummary;
 	status: 'PENDING' | 'ACCEPTED' | 'BLOCKED';
 	blockedByMe: boolean;
 }
 
-export interface ChronosIncomingFriendRequest {
+export interface CartomaniaIncomingFriendRequest {
 	friendshipId: string;
-	requester: ChronosPlayerSummary;
+	requester: CartomaniaPlayerSummary;
 	createdAt: string;
 }
 
-export interface ChronosFriendChatMessage {
+export interface CartomaniaFriendChatMessage {
 	id: string;
 	senderId: string;
 	recipientId: string;
@@ -44,12 +44,12 @@ export interface ChronosFriendChatMessage {
 	createdAt: string;
 }
 
-export interface ChronosFriendChatHistory {
+export interface CartomaniaFriendChatHistory {
 	friendshipId: string;
-	messages: ChronosFriendChatMessage[];
+	messages: CartomaniaFriendChatMessage[];
 }
 
-export interface ChronosCardCatalogCollectionInfo {
+export interface CartomaniaCardCatalogCollectionInfo {
 	id?: string;
 	slug?: string;
 	name?: string;
@@ -60,7 +60,7 @@ export interface ChronosCardCatalogCollectionInfo {
 	imageUrl?: string | null;
 }
 
-export interface ChronosCardCatalogItem {
+export interface CartomaniaCardCatalogItem {
 	code: string;
 	name: string;
 	description: string;
@@ -74,10 +74,10 @@ export interface ChronosCardCatalogItem {
 	collectionSlug?: string;
 	collectionName?: string;
 	collectionImageUrl?: string | null;
-	collection?: ChronosCardCatalogCollectionInfo;
+	collection?: CartomaniaCardCatalogCollectionInfo;
 }
 
-export interface ChronosCardCollection extends ChronosCardCatalogCollectionInfo {
+export interface CartomaniaCardCollection extends CartomaniaCardCatalogCollectionInfo {
 	name: string;
-	cards: ChronosCardCatalogItem[];
+	cards: CartomaniaCardCatalogItem[];
 }

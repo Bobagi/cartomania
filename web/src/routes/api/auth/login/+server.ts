@@ -1,11 +1,11 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { setChronosSessionCookie } from '$lib/server/auth/cookies';
+import { setCartomaniaSessionCookie } from '$lib/server/auth/cookies';
 import {
-	ChronosApiError,
-	fetchAuthenticatedChronosUserProfile,
-	loginChronosUserAccount
-} from '$lib/server/chronos/client';
+	CartomaniaApiError,
+	fetchAuthenticatedCartomaniaUserProfile,
+	loginCartomaniaUserAccount
+} from '$lib/server/cartomania/client';
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
 	const body = await request.json().catch(() => null);
@@ -17,12 +17,12 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 	}
 
 	try {
-		const { accessToken, user } = await loginChronosUserAccount(username, password);
-		const resolvedUser = await fetchAuthenticatedChronosUserProfile(accessToken).catch(() => user);
-		setChronosSessionCookie(cookies, { token: accessToken, user: resolvedUser });
+		const { accessToken, user } = await loginCartomaniaUserAccount(username, password);
+		const resolvedUser = await fetchAuthenticatedCartomaniaUserProfile(accessToken).catch(() => user);
+		setCartomaniaSessionCookie(cookies, { token: accessToken, user: resolvedUser });
 		return json({ user: resolvedUser });
 	} catch (error) {
-		if (error instanceof ChronosApiError) {
+		if (error instanceof CartomaniaApiError) {
 			return json(
 				{ message: error.bodyText || 'Authentication failed.' },
 				{ status: error.status }

@@ -1,52 +1,52 @@
-import { createChronosClient } from '$lib/api/chronosClientFactory';
+import { createCartomaniaClient } from '$lib/api/cartomaniaClientFactory';
 import {
-	ChronosApiError,
+	CartomaniaApiError,
 	ensureJsonContentType,
 	normalizeHeadersInitToObject
-} from '$lib/api/chronosCommon';
+} from '$lib/api/cartomaniaCommon';
 
 export type {
 	Card,
-	ChronosCardCatalogItem,
-	ChronosCardCollection,
-	ChronosFriendChatHistory,
-	ChronosFriendChatMessage,
-	ChronosFriendSummary,
-	ChronosIncomingFriendRequest,
-	ChronosPlayerSummary,
+	CartomaniaCardCatalogItem,
+	CartomaniaCardCollection,
+	CartomaniaFriendChatHistory,
+	CartomaniaFriendChatMessage,
+	CartomaniaFriendSummary,
+	CartomaniaIncomingFriendRequest,
+	CartomaniaPlayerSummary,
 	GameMode,
 	GameResult,
 	GameSummary,
 	GameState,
-	ChronosRawCardPayload as ChronosRawCard
-} from '$lib/api/chronosClientFactory';
-export { ChronosApiError } from '$lib/api/chronosCommon';
+	CartomaniaRawCardPayload as CartomaniaRawCard
+} from '$lib/api/cartomaniaClientFactory';
+export { CartomaniaApiError } from '$lib/api/cartomaniaCommon';
 
-const KAIROS_CHRONOS_PROXY_BASE_PATH = '/api/chronos';
+const CARTOMANIA_CARTOMANIA_PROXY_BASE_PATH = '/api/cartomania';
 
-function buildChronosProxyUrl(path: string): string {
+function buildCartomaniaProxyUrl(path: string): string {
 	const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-	return `${KAIROS_CHRONOS_PROXY_BASE_PATH}${normalizedPath}`;
+	return `${CARTOMANIA_CARTOMANIA_PROXY_BASE_PATH}${normalizedPath}`;
 }
 
-async function performKairosApiRequest(
+async function performCartomaniaApiRequest(
 	path: string,
 	init: RequestInit = {},
 	_token?: string
 ): Promise<Response> {
-	const url = buildChronosProxyUrl(path);
+	const url = buildCartomaniaProxyUrl(path);
 	const combinedHeaders = normalizeHeadersInitToObject(init.headers);
 	const method = String(init.method ?? 'GET').toUpperCase();
 	ensureJsonContentType(combinedHeaders, init.body);
 	return fetch(url, { ...init, headers: combinedHeaders, method });
 }
 
-async function performKairosApiRequestReturningJson<T = unknown>(
+async function performCartomaniaApiRequestReturningJson<T = unknown>(
 	path: string,
 	init: RequestInit = {},
 	token?: string
 ): Promise<T> {
-	const response = await performKairosApiRequest(path, init, token);
+	const response = await performCartomaniaApiRequest(path, init, token);
 
 	if (!response.ok) {
 		let bodyText = '';
@@ -67,7 +67,7 @@ async function performKairosApiRequestReturningJson<T = unknown>(
 
 		const method = String(init.method ?? 'GET').toUpperCase();
 
-		throw new ChronosApiError({
+		throw new CartomaniaApiError({
 			status: response.status,
 			method,
 			path,
@@ -83,84 +83,84 @@ async function performKairosApiRequestReturningJson<T = unknown>(
 	return null as unknown as T;
 }
 
-const chronosClient = createChronosClient({
-	rawFetch: performKairosApiRequest,
-	requestJson: performKairosApiRequestReturningJson
+const cartomaniaClient = createCartomaniaClient({
+	rawFetch: performCartomaniaApiRequest,
+	requestJson: performCartomaniaApiRequestReturningJson
 });
 
 const {
-	checkChronosHealthStatus,
-	registerChronosUserAccount,
-	fetchAuthenticatedChronosUserProfile,
-	startClassicChronosGameForPlayer,
-	startAttributeDuelChronosGameForPlayer,
-	startChronosGameWithAutomaticModeSelection,
-	endChronosGameSessionOnServer,
-	startChronosGameWithFriend,
-	surrenderChronosGame,
-	fetchChronosGameStateById,
-	fetchChronosGameResult,
-	playCardInChronosGame,
-	skipChronosGameTurn,
-	chooseChronosDuelCard,
-	chooseChronosDuelAttribute,
-	unchooseChronosDuelCard,
-	advanceChronosDuel,
-	fetchChronosCardMetadata,
-	fetchMultipleChronosCardMetadata,
-	listAuthenticatedChronosPlayerActiveGames,
-	listAllActiveChronosGames,
-	expireInactiveChronosGames,
-	fetchMyChronosGameStatistics,
-	fetchChronosCardCatalog,
-	searchChronosPlayers,
-	listChronosFriends,
-	listChronosFriendRequests,
-	sendChronosFriendRequest,
-	respondChronosFriendRequest,
-	removeChronosFriend,
-	blockChronosPlayer,
-	fetchChronosFriendChat,
-	sendChronosFriendMessage
-} = chronosClient;
+	checkCartomaniaHealthStatus,
+	registerCartomaniaUserAccount,
+	fetchAuthenticatedCartomaniaUserProfile,
+	startClassicCartomaniaGameForPlayer,
+	startAttributeDuelCartomaniaGameForPlayer,
+	startCartomaniaGameWithAutomaticModeSelection,
+	endCartomaniaGameSessionOnServer,
+	startCartomaniaGameWithFriend,
+	surrenderCartomaniaGame,
+	fetchCartomaniaGameStateById,
+	fetchCartomaniaGameResult,
+	playCardInCartomaniaGame,
+	skipCartomaniaGameTurn,
+	chooseCartomaniaDuelCard,
+	chooseCartomaniaDuelAttribute,
+	unchooseCartomaniaDuelCard,
+	advanceCartomaniaDuel,
+	fetchCartomaniaCardMetadata,
+	fetchMultipleCartomaniaCardMetadata,
+	listAuthenticatedCartomaniaPlayerActiveGames,
+	listAllActiveCartomaniaGames,
+	expireInactiveCartomaniaGames,
+	fetchMyCartomaniaGameStatistics,
+	fetchCartomaniaCardCatalog,
+	searchCartomaniaPlayers,
+	listCartomaniaFriends,
+	listCartomaniaFriendRequests,
+	sendCartomaniaFriendRequest,
+	respondCartomaniaFriendRequest,
+	removeCartomaniaFriend,
+	blockCartomaniaPlayer,
+	fetchCartomaniaFriendChat,
+	sendCartomaniaFriendMessage
+} = cartomaniaClient;
 
 export {
-	checkChronosHealthStatus,
-	registerChronosUserAccount,
-	fetchAuthenticatedChronosUserProfile,
-	startClassicChronosGameForPlayer,
-	startAttributeDuelChronosGameForPlayer,
-	startChronosGameWithAutomaticModeSelection,
-	endChronosGameSessionOnServer,
-	startChronosGameWithFriend,
-	surrenderChronosGame,
-	fetchChronosGameStateById,
-	fetchChronosGameResult,
-	playCardInChronosGame,
-	skipChronosGameTurn,
-	chooseChronosDuelCard,
-	chooseChronosDuelAttribute,
-	unchooseChronosDuelCard,
-	advanceChronosDuel,
-	fetchChronosCardMetadata,
-	fetchMultipleChronosCardMetadata,
-	listAuthenticatedChronosPlayerActiveGames,
-	listAllActiveChronosGames,
-	expireInactiveChronosGames,
-	fetchMyChronosGameStatistics,
-	fetchChronosCardCatalog,
-	searchChronosPlayers,
-	listChronosFriends,
-	listChronosFriendRequests,
-	sendChronosFriendRequest,
-	respondChronosFriendRequest,
-	removeChronosFriend,
-	blockChronosPlayer,
-	fetchChronosFriendChat,
-	sendChronosFriendMessage
+	checkCartomaniaHealthStatus,
+	registerCartomaniaUserAccount,
+	fetchAuthenticatedCartomaniaUserProfile,
+	startClassicCartomaniaGameForPlayer,
+	startAttributeDuelCartomaniaGameForPlayer,
+	startCartomaniaGameWithAutomaticModeSelection,
+	endCartomaniaGameSessionOnServer,
+	startCartomaniaGameWithFriend,
+	surrenderCartomaniaGame,
+	fetchCartomaniaGameStateById,
+	fetchCartomaniaGameResult,
+	playCardInCartomaniaGame,
+	skipCartomaniaGameTurn,
+	chooseCartomaniaDuelCard,
+	chooseCartomaniaDuelAttribute,
+	unchooseCartomaniaDuelCard,
+	advanceCartomaniaDuel,
+	fetchCartomaniaCardMetadata,
+	fetchMultipleCartomaniaCardMetadata,
+	listAuthenticatedCartomaniaPlayerActiveGames,
+	listAllActiveCartomaniaGames,
+	expireInactiveCartomaniaGames,
+	fetchMyCartomaniaGameStatistics,
+	fetchCartomaniaCardCatalog,
+	searchCartomaniaPlayers,
+	listCartomaniaFriends,
+	listCartomaniaFriendRequests,
+	sendCartomaniaFriendRequest,
+	respondCartomaniaFriendRequest,
+	removeCartomaniaFriend,
+	blockCartomaniaPlayer,
+	fetchCartomaniaFriendChat,
+	sendCartomaniaFriendMessage
 };
 
-export async function loginChronosUserAccount(
+export async function loginCartomaniaUserAccount(
 	username: string,
 	password: string
 ): Promise<{ user: { id: string; username: string; role: 'USER' | 'ADMIN' } }> {
@@ -180,7 +180,7 @@ export async function loginChronosUserAccount(
 		} catch {
 			// ignore JSON parse errors
 		}
-		throw new ChronosApiError({
+		throw new CartomaniaApiError({
 			status: response.status,
 			method: 'POST',
 			path: '/api/auth/login',
@@ -194,6 +194,6 @@ export async function loginChronosUserAccount(
 	};
 }
 
-export async function fetchChronosProxy(path: string, init?: RequestInit): Promise<Response> {
-	return fetch(buildChronosProxyUrl(path), init);
+export async function fetchCartomaniaProxy(path: string, init?: RequestInit): Promise<Response> {
+	return fetch(buildCartomaniaProxyUrl(path), init);
 }

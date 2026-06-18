@@ -4,6 +4,9 @@ const en = {
 	language: {
 		change: 'Change language'
 	},
+	common: {
+		back: 'Back'
+	},
 	nav: {
 		logout: 'Log out'
 	},

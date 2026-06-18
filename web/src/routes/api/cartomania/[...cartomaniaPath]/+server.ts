@@ -1,9 +1,9 @@
-import { getChronosBaseUrl } from '$lib/server/chronos/client';
+import { getCartomaniaBaseUrl } from '$lib/server/cartomania/client';
 import type { RequestEvent, RequestHandler } from './$types';
 
-async function proxyChronosRequest(event: RequestEvent): Promise<Response> {
-	const baseUrl = getChronosBaseUrl();
-	const rawPath = event.params.chronosPath ?? '';
+async function proxyCartomaniaRequest(event: RequestEvent): Promise<Response> {
+	const baseUrl = getCartomaniaBaseUrl();
+	const rawPath = event.params.cartomaniaPath ?? '';
 	const normalizedPath = rawPath ? rawPath.replace(/^\/+/, '') : '';
 	const targetUrl = normalizedPath ? `${baseUrl}/${normalizedPath}` : `${baseUrl}/`;
 	const finalUrl = event.url.search ? `${targetUrl}${event.url.search}` : targetUrl;
@@ -22,7 +22,7 @@ async function proxyChronosRequest(event: RequestEvent): Promise<Response> {
 	headers.delete('transfer-encoding');
 	headers.delete('Transfer-Encoding');
 
-	const token = event.locals.chronosSession?.token;
+	const token = event.locals.cartomaniaSession?.token;
 	if (token) {
 		headers.set('Authorization', `Bearer ${token}`);
 	} else {
@@ -32,7 +32,7 @@ async function proxyChronosRequest(event: RequestEvent): Promise<Response> {
 	// Forward the visitor's chosen language so the backend can localize card
 	// content (the gallery catalog). Resolved in hooks from the locale cookie.
 	if (event.locals.locale) {
-		headers.set('x-chronos-locale', event.locals.locale);
+		headers.set('x-cartomania-locale', event.locals.locale);
 	}
 
 	const method = event.request.method.toUpperCase();
@@ -43,35 +43,35 @@ async function proxyChronosRequest(event: RequestEvent): Promise<Response> {
 		init.body = bodyBuffer;
 	}
 
-	let chronosResponse: Response;
+	let cartomaniaResponse: Response;
 	try {
-		chronosResponse = await fetch(finalUrl, init);
+		cartomaniaResponse = await fetch(finalUrl, init);
 	} catch (error) {
-		console.error(`[@chronos-proxy] ${method} ${finalUrl} failed`, error);
+		console.error(`[@cartomania-proxy] ${method} ${finalUrl} failed`, error);
 		throw error;
 	}
 
-	if (!chronosResponse.ok) {
+	if (!cartomaniaResponse.ok) {
 		try {
-			const errorBody = await chronosResponse.clone().text();
+			const errorBody = await cartomaniaResponse.clone().text();
 			if (errorBody) {
-				console.error(`[@chronos-proxy] ${method} ${finalUrl} body ← ${errorBody}`);
+				console.error(`[@cartomania-proxy] ${method} ${finalUrl} body ← ${errorBody}`);
 			}
 		} catch (bodyError) {
-			console.error(`[@chronos-proxy] ${method} ${finalUrl} unable to read body`, bodyError);
+			console.error(`[@cartomania-proxy] ${method} ${finalUrl} unable to read body`, bodyError);
 		}
 	}
 
-	const responseHeaders = new Headers(chronosResponse.headers);
+	const responseHeaders = new Headers(cartomaniaResponse.headers);
 	responseHeaders.delete('set-cookie');
 
-	return new Response(chronosResponse.body, {
-		status: chronosResponse.status,
+	return new Response(cartomaniaResponse.body, {
+		status: cartomaniaResponse.status,
 		headers: responseHeaders
 	});
 }
 
-const handler: RequestHandler = (event) => proxyChronosRequest(event);
+const handler: RequestHandler = (event) => proxyCartomaniaRequest(event);
 
 export const GET = handler;
 export const POST = handler;

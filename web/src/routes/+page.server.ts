@@ -1,17 +1,17 @@
 import type { PageServerLoad } from './$types';
 import {
-	checkChronosHealthStatus,
-	fetchChronosCardCatalog,
-	fetchMyChronosGameStatistics,
-	listAllActiveChronosGames,
-	listAuthenticatedChronosPlayerActiveGames
-} from '$lib/server/chronos/client';
-import { loadChronosDashboardDataForUser } from '$lib/services/chronosDashboardDataService';
+	checkCartomaniaHealthStatus,
+	fetchCartomaniaCardCatalog,
+	fetchMyCartomaniaGameStatistics,
+	listAllActiveCartomaniaGames,
+	listAuthenticatedCartomaniaPlayerActiveGames
+} from '$lib/server/cartomania/client';
+import { loadCartomaniaDashboardDataForUser } from '$lib/services/cartomaniaDashboardDataService';
 import { selectFeaturedHeroCards, type FeaturedHeroCard } from '$lib/services/featuredHeroCards';
 
 async function loadFeaturedHeroCardsSafely(): Promise<FeaturedHeroCard[]> {
 	try {
-		const collections = await fetchChronosCardCatalog();
+		const collections = await fetchCartomaniaCardCatalog();
 		return selectFeaturedHeroCards(collections);
 	} catch (error) {
 		console.error('Failed to load featured hero cards', error);
@@ -20,16 +20,16 @@ async function loadFeaturedHeroCardsSafely(): Promise<FeaturedHeroCard[]> {
 }
 
 export const load: PageServerLoad = async ({ locals }) => {
-	const session = locals.chronosSession;
+	const session = locals.cartomaniaSession;
 
-	const dashboard = await loadChronosDashboardDataForUser(
+	const dashboard = await loadCartomaniaDashboardDataForUser(
 		session?.token ?? null,
 		session?.user ?? null,
 		{
-			checkChronosHealthStatus,
-			listAllActiveChronosGames,
-			listAuthenticatedChronosPlayerActiveGames,
-			fetchMyChronosGameStatistics
+			checkCartomaniaHealthStatus,
+			listAllActiveCartomaniaGames,
+			listAuthenticatedCartomaniaPlayerActiveGames,
+			fetchMyCartomaniaGameStatistics
 		}
 	);
 

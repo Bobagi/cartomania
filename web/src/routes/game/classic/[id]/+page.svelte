@@ -2,12 +2,12 @@
 	import { browser } from '$app/environment';
 	import { page as sveltePageStore } from '$app/stores';
 	import {
-		fetchChronosGameResult,
-		fetchChronosGameStateById,
-		fetchMultipleChronosCardMetadata,
-		playCardInChronosGame,
-		skipChronosGameTurn,
-		surrenderChronosGame
+		fetchCartomaniaGameResult,
+		fetchCartomaniaGameStateById,
+		fetchMultipleCartomaniaCardMetadata,
+		playCardInCartomaniaGame,
+		skipCartomaniaGameTurn,
+		surrenderCartomaniaGame
 	} from '$lib/api/GameClient';
 	import CardComposite from '$lib/components/CardComposite.svelte';
 	import CenterPanel from '$lib/components/CenterPanel.svelte';
@@ -107,17 +107,17 @@
 	async function ensureCodesCached(codes: string[]) {
 		const missing = codes.filter((code) => !cardDetailsCacheByCode.has(code));
 		if (!missing.length) return;
-		const chronosCards = await fetchMultipleChronosCardMetadata(missing);
-		for (const chronosCard of chronosCards) {
-			cardDetailsCacheByCode.set(chronosCard.code, {
-				code: chronosCard.code,
-				name: chronosCard.name,
-				description: chronosCard.description,
-				imageUrl: chronosCard.image,
-				might: chronosCard.might,
-				fire: chronosCard.fire,
-				magic: chronosCard.magic,
-				number: chronosCard.number
+		const cartomaniaCards = await fetchMultipleCartomaniaCardMetadata(missing);
+		for (const cartomaniaCard of cartomaniaCards) {
+			cardDetailsCacheByCode.set(cartomaniaCard.code, {
+				code: cartomaniaCard.code,
+				name: cartomaniaCard.name,
+				description: cartomaniaCard.description,
+				imageUrl: cartomaniaCard.image,
+				might: cartomaniaCard.might,
+				fire: cartomaniaCard.fire,
+				magic: cartomaniaCard.magic,
+				number: cartomaniaCard.number
 			});
 		}
 	}
@@ -184,7 +184,7 @@
 	async function loadGameStateOrFinalResult() {
 		errorMessageText = null;
 		try {
-			const state = (await fetchChronosGameStateById(currentGameId)) as GameState | null;
+			const state = (await fetchCartomaniaGameStateById(currentGameId)) as GameState | null;
 			if (state && typeof state === 'object') {
 				finalGameResult = null;
 				gameStateStore.set({ ...state, gameId: currentGameId });
@@ -243,7 +243,7 @@
 			}
 		} catch {}
 		try {
-			finalGameResult = await fetchChronosGameResult(currentGameId);
+			finalGameResult = await fetchCartomaniaGameResult(currentGameId);
 		} catch {
 			errorMessageText = 'Could not load game state';
 		}
@@ -286,7 +286,7 @@
 				amount
 			});
 		}
-		playCardInChronosGame(currentGameId, $gameStateStore!.players[0], code).then(
+		playCardInCartomaniaGame(currentGameId, $gameStateStore!.players[0], code).then(
 			loadGameStateOrFinalResult
 		);
 	}
@@ -294,7 +294,7 @@
 	async function skipTurnClassic() {
 		if (isGameOver()) return;
 		const me = $gameStateStore?.players?.[0] ?? 'playerA';
-		await skipChronosGameTurn(currentGameId, me);
+		await skipCartomaniaGameTurn(currentGameId, me);
 		await loadGameStateOrFinalResult();
 	}
 
@@ -308,7 +308,7 @@
 			return;
 		}
 		try {
-			await surrenderChronosGame(currentGameId);
+			await surrenderCartomaniaGame(currentGameId);
 			await loadGameStateOrFinalResult();
 		} catch {
 			errorMessageText = 'Unable to surrender match.';
@@ -401,7 +401,7 @@
 		) {
 			autoTimeoutHandledForCurrentDeadline = true;
 			const me = $gameStateStore.players?.[0] ?? 'playerA';
-			void skipChronosGameTurn(currentGameId, me)
+			void skipCartomaniaGameTurn(currentGameId, me)
 				.then(() => loadGameStateOrFinalResult())
 				.catch(() => {});
 		}

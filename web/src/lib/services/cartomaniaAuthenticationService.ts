@@ -1,27 +1,27 @@
-import type { AuthenticatedChronosUser } from '../types/chronos';
+import type { AuthenticatedCartomaniaUser } from '../types/cartomania';
 
-export interface ChronosAuthenticationDependencies {
-	loginChronosUserAccount: (
+export interface CartomaniaAuthenticationDependencies {
+	loginCartomaniaUserAccount: (
 		username: string,
 		password: string
 	) => Promise<{
 		accessToken: string;
-		user: AuthenticatedChronosUser;
+		user: AuthenticatedCartomaniaUser;
 	}>;
-	fetchAuthenticatedChronosUserProfile: (token: string) => Promise<AuthenticatedChronosUser>;
+	fetchAuthenticatedCartomaniaUserProfile: (token: string) => Promise<AuthenticatedCartomaniaUser>;
 	storage?: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 }
 
-export async function authenticateChronosUser(
+export async function authenticateCartomaniaUser(
 	username: string,
 	password: string,
-	dependencies: ChronosAuthenticationDependencies
-): Promise<{ token: string; user: AuthenticatedChronosUser }> {
+	dependencies: CartomaniaAuthenticationDependencies
+): Promise<{ token: string; user: AuthenticatedCartomaniaUser }> {
 	const trimmedUsername = username.trim();
 	if (!trimmedUsername || !password) {
 		throw new Error('Username and password are required to authenticate');
 	}
-	const authenticationResponse = await dependencies.loginChronosUserAccount(
+	const authenticationResponse = await dependencies.loginCartomaniaUserAccount(
 		trimmedUsername,
 		password
 	);
@@ -32,15 +32,15 @@ export async function authenticateChronosUser(
 	};
 }
 
-export async function restoreChronosAuthentication(
-	dependencies: ChronosAuthenticationDependencies
-): Promise<{ token: string | null; user: AuthenticatedChronosUser | null }> {
+export async function restoreCartomaniaAuthentication(
+	dependencies: CartomaniaAuthenticationDependencies
+): Promise<{ token: string | null; user: AuthenticatedCartomaniaUser | null }> {
 	const token = dependencies.storage?.getItem('token') ?? null;
 	if (!token) {
 		return { token: null, user: null };
 	}
 	try {
-		const user = await dependencies.fetchAuthenticatedChronosUserProfile(token);
+		const user = await dependencies.fetchAuthenticatedCartomaniaUserProfile(token);
 		return { token, user };
 	} catch (error) {
 		dependencies.storage?.removeItem('token');
@@ -49,8 +49,8 @@ export async function restoreChronosAuthentication(
 	}
 }
 
-export function clearChronosAuthenticationState(
-	dependencies: ChronosAuthenticationDependencies
+export function clearCartomaniaAuthenticationState(
+	dependencies: CartomaniaAuthenticationDependencies
 ): void {
 	dependencies.storage?.removeItem('token');
 }

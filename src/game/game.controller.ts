@@ -196,7 +196,7 @@ export class GameController {
   async getCollectionCards(
     @Param('identifier') identifier: string,
     @Query('locale') queryLocale?: string,
-    @Headers('x-chronos-locale') headerLocale?: string,
+    @Headers('x-cartomania-locale') headerLocale?: string,
   ): Promise<PrismaCard[]> {
     const collection =
       await this.gameService.getCollectionByIdentifier(identifier);

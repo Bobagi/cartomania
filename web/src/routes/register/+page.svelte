@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { loginChronosUserAccount, registerChronosUserAccount } from '$lib/api/GameClient';
+	import { loginCartomaniaUserAccount, registerCartomaniaUserAccount } from '$lib/api/GameClient';
 	import GoogleAuthButton from '$lib/components/GoogleAuthButton.svelte';
+	import BackButton from '$lib/components/BackButton.svelte';
 	import { t } from '$lib/i18n';
 	import '../mainpage.css';
 
@@ -26,8 +27,8 @@
 		}
 
 		try {
-			await registerChronosUserAccount(usernameInputValue.trim(), passwordInputValue);
-			await loginChronosUserAccount(usernameInputValue.trim(), passwordInputValue);
+			await registerCartomaniaUserAccount(usernameInputValue.trim(), passwordInputValue);
+			await loginCartomaniaUserAccount(usernameInputValue.trim(), passwordInputValue);
 			goto('/');
 		} catch (error) {
 			console.error(error);
@@ -80,9 +81,7 @@
 
 			<div class="auth-actions stacked">
 				<button class="button button-accent" type="submit">{$t('register.submit')}</button>
-				<button class="button button-ghost" type="button" on:click={() => goto('/')}
-					>← {$t('register.back')}</button
-				>
+				<BackButton href="/" label={$t('register.back')} />
 			</div>
 		</form>
 

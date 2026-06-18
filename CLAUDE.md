@@ -1,16 +1,18 @@
-# CLAUDE.md — Cartomania (internal name: Chronos)
+# CLAUDE.md — Cartomania
 
 > **BRANDING:** the product is branded **Cartomania** (the user-facing name + the GitHub repo
 > `Bobagi/cartomania`); it's meant to host multiple collections (Dracomania, Mythomania, custom
 > player collections). The product is served at **`cartomania.bobagi.space`** (the old
-> `chronos.bobagi.space` 301-redirects to it). The **codebase identifiers** (`Chronos*`
-> functions/types, the `chronos` proxy path) and the **infra** names (Docker `chronos-*`, PM2
-> `chronos-web`, the DB) still use `chronos` on purpose — so "Chronos" below = the internal/infra name.
+> `chronos.bobagi.space` 301-redirects to it). Everything is **cartomania** now — the codebase
+> identifiers (`Cartomania*` functions/types, the `/api/cartomania` proxy path), the infra names
+> (Docker `cartomania-*`, PM2 `cartomania-web`, the Postgres DB `cartomania`), and the repo folder
+> `/opt/cartomania`. The former internal codename was fully renamed (only the legacy redirect
+> domain `chronos.bobagi.space` keeps it, on purpose).
 
 > **SESSION PROTOCOL — follow automatically, every time, without being reminded:**
 >
 > 1. **Trust this file before exploring.** It is auto-loaded whenever you read any file
->    under `/opt/chronos`, and the machine's `/root/CLAUDE.md` already tells you to read a
+>    under `/opt/cartomania`, and the machine's `/root/CLAUDE.md` already tells you to read a
 >    repo's own `CLAUDE.md` first. Don't re-discover what's documented here.
 > 2. **Keep it current — treat a stale CLAUDE.md as a bug.** Whenever a task changes the
 >    architecture, file map, commands, deploy steps, gotchas, or the Status section, update
@@ -20,17 +22,17 @@
 Guidance for Claude Code working in this repo. All code, comments and UI text are
 **English**; use intuitive names.
 
-## What Chronos is
+## What Cartomania is
 
 A digital collectible card game (the **Dracomania** collection — dragons & fantasy), built as
 the owner's (Gustavo Perin / "Bobagi") portfolio piece. It is **one project**:
 
 - **Backend** — NestJS game engine at the repo root (`src/`), Prisma + Postgres. Runs in Docker.
 - **Frontend** — SvelteKit app in `web/` (`@sveltejs/adapter-node`). Talks to the backend
-  **server-side** via a proxy (`/api/chronos/*`), so the browser only hits its own origin (no CORS).
+  **server-side** via a proxy (`/api/cartomania/*`), so the browser only hits its own origin (no CORS).
 
-The former separate `kairos` frontend was merged into `web/` and retired. Repo:
-`https://github.com/Bobagi/chronos`. Live: `https://cartomania.bobagi.space`
+The former standalone web frontend was merged into `web/` and retired. Repo:
+`https://github.com/Bobagi/cartomania`. Live: `https://cartomania.bobagi.space`
 (legacy `https://chronos.bobagi.space` 301-redirects here).
 
 The main mode is **Attribute Duel** (`mode = ATTRIBUTE_DUEL`): each round both duelists reveal one
@@ -42,9 +44,9 @@ their discard pile; whoever captured more cards when a hand empties wins the mat
 
 | Part | Where | How it runs | Port |
 |---|---|---|---|
-| Frontend | `/opt/chronos/web` (`build/index.js`) | **PM2** app `chronos-web` | 127.0.0.1:**3055** |
-| Backend | Docker `chronos-backend` (image `chronos-chronos`) | `docker compose` service `chronos` | host **3056** → container 3000; also 5555 (Prisma Studio) |
-| Database | Docker `chronos-db` (postgres:15) | `docker compose` service `db` | host **5434** → 5432 |
+| Frontend | `/opt/cartomania/web` (`build/index.js`) | **PM2** app `cartomania-web` | 127.0.0.1:**3055** |
+| Backend | Docker `cartomania-backend` (image `cartomania-cartomania`) | `docker compose` service `cartomania` | host **3056** → container 3000; also 5555 (Prisma Studio) |
+| Database | Docker `cartomania-db` (postgres:15) | `docker compose` service `db` | host **5434** → 5432 |
 | nginx | `/etc/nginx/sites-available/cartomania.bobagi.space` | proxies `/` → 127.0.0.1:3055 | :80/:443 |
 | nginx (legacy) | `/etc/nginx/sites-available/chronos.bobagi.space` | 301 → `cartomania.bobagi.space` | :80/:443 |
 
@@ -69,18 +71,18 @@ their discard pile; whoever captured more cards when a hand empties wins the mat
 
 ### Deploy the FRONTEND (after editing anything in `web/`)
 ```bash
-cd /opt/chronos/web
+cd /opt/cartomania/web
 bash -lc 'source ~/.nvm/nvm.sh; export npm_config_engine_strict=false; pnpm run build'   # ~10-18s
-pm2 restart chronos-web --update-env && pm2 save
+pm2 restart cartomania-web --update-env && pm2 save
 ```
 PM2 serves the built `build/` — **you must rebuild + restart** for changes to show. CSS/markup-only
 changes don't need anything else.
 
 ### Deploy the BACKEND (after editing anything in `src/`, `prisma/`)
 ```bash
-cd /opt/chronos
-docker compose build chronos          # nest build runs inside node:20 (no nvm needed)
-docker compose up -d chronos           # recreate; waits for db healthy; re-runs idempotent seed
+cd /opt/cartomania
+docker compose build cartomania          # nest build runs inside node:20 (no nvm needed)
+docker compose up -d cartomania           # recreate; waits for db healthy; re-runs idempotent seed
 # wait for health:
 curl -s http://localhost:3056/health   # -> {"status":"ok",...}
 ```
@@ -233,7 +235,7 @@ web/                         SvelteKit frontend
   `--cc-val-size`/`--cc-val-ls`, `--cc-label-size`/`--cc-label-ls` (all default to the current look).
   All outlines are **text-shadows** (8-direction), NOT `-webkit-text-stroke` (which thinned glyphs).
   Tune in `/cards-lab` and bake into `fonts.css` + `CardComposite` defaults.
-- **Friend API paths live in the client factory DEFAULTS** (`web/src/lib/api/chronosClientFactory.ts`,
+- **Friend API paths live in the client factory DEFAULTS** (`web/src/lib/api/cartomaniaClientFactory.ts`,
   `defaultClientOptions`). They must match the NestJS controllers: `POST /friends/request/:id/{accept,
   reject}`, `DELETE /friends/:id`, `POST /game/start-with-friend`. A past bug had wrong defaults
   (`/friends/respond`, `/friends/remove`, `/friends/start`) that the browser client used → "Cannot POST
@@ -252,7 +254,7 @@ web/                         SvelteKit frontend
   uses the real power icons (`/icons/{magic,strength,fire}_icon.png`), not emoji.
 - **i18n is a small custom store** (`web/src/lib/i18n`). It exposes a `locale` store and a reactive
   `$t('a.b.c', vars)` translator (dotted keys, `{var}` interpolation, English fallback so missing
-  strings never crash). The server resolves the locale in `hooks.server.ts` (cookie `chronos_locale`
+  strings never crash). The server resolves the locale in `hooks.server.ts` (cookie `cartomania_locale`
   → `Accept-Language` → default `en`), puts it on `locals.locale` + layout `data.locale`, and
   `+layout.svelte` calls `initLocale(data.locale)` so SSR renders the chosen language; `app.html` uses
   `<html lang="%lang%">` (replaced in the hook). `setLocale()` (the header `LanguageSelector`) updates
@@ -265,7 +267,7 @@ web/                         SvelteKit frontend
 - **Card content (name/description) is localized via a normalized `CardTranslation` table** (base `Card`
   keeps canonical English; one row per `(cardId, locale)` for pt/es; seeded idempotently). ONLY the
   collection-cards endpoint localizes: `GET /game/collections/:id/cards` reads the locale from
-  `?locale=` or the `x-chronos-locale` header (the web proxy sets it from the locale cookie), so the
+  `?locale=` or the `x-cartomania-locale` header (the web proxy sets it from the locale cookie), so the
   **gallery** is localized with zero per-call threading. `getAllCards`/`findByCode` (the `/game/cards`
   paths the duel uses) stay **canonical** on purpose — the duel + server battle-log lines need English
   names so the log's name→code parsing keeps working. The logged-out hero (SSR, direct to backend, no
@@ -278,7 +280,7 @@ web/                         SvelteKit frontend
       redirect URI e.g. `https://cartomania.bobagi.space/auth/google/callback`)
   Still TODO (documented inline in the callback): the token exchange, `id_token` verification, a backend
   find-or-create-Player-by-Google-identity endpoint (needs a `googleId`/`email` column on Player via a
-  Prisma migration), then `setChronosSessionCookie`.
+  Prisma migration), then `setCartomaniaSessionCookie`.
 - **Prettier:** the repo's `prettier-plugin-svelte` crashes on Prettier **3.8** (`getVisitorKeys`).
   Format with a compatible version: `npx --yes prettier@3.6.2 --write .` (run inside `web/` and at the
   repo root). `web/pnpm-lock.yaml` is untracked by design — don't commit it.
@@ -287,7 +289,7 @@ web/                         SvelteKit frontend
 
 - **API smoke (fast, no browser):** start a duel, choose a card, choose the winning attribute:
   ```bash
-  ADMIN=$(docker exec chronos-db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -t -A -c \
+  ADMIN=$(docker exec cartomania-db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -t -A -c \
     "SELECT id FROM \"Player\" WHERE username='admin'")   # (load .env first)
   GID=$(curl -s -XPOST localhost:3056/game/start-duel -H 'Content-Type: application/json' \
     -d "{\"playerAId\":\"$ADMIN\"}" | python3 -c 'import sys,json;print(json.load(sys.stdin)["gameId"])')
@@ -295,7 +297,7 @@ web/                         SvelteKit frontend
   ```
 - **Browser (Playwright is installed, chromium headless):** drive `https://cartomania.bobagi.space` or
   navigate directly to `/game/duel/<id>` (state fetch + duel actions are unauthenticated) and
-  screenshot. Import via `createRequire('/opt/chronos/web/')('playwright')`.
+  screenshot. Import via `createRequire('/opt/cartomania/web/')('playwright')`.
 
 ## Conventions & rules
 
@@ -312,13 +314,32 @@ web/                         SvelteKit frontend
   passwords (`admin123` / `alice123`) when `ADMIN_PASSWORD` / `ALICE_PASSWORD` are unset, and the seed
   `upsert` uses `update:` so it **rotates the password on every `docker compose up`**. For any
   internet-facing deploy these MUST be set in the live `.env` — otherwise the public site has a known
-  ADMIN login. To rotate: set them in `.env`, then `docker compose up -d chronos` (re-runs the seed).
+  ADMIN login. To rotate: set them in `.env`, then `docker compose up -d cartomania` (re-runs the seed).
 - **Don't touch other VPS services** (rhyme, umami, todo, etc.) — see `/root/CLAUDE.md` for the machine map.
 - **Commits:** end messages with `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`. Work on
   `main` (current convention) or `feat/*`; confirm before destructive git/DB actions.
 
 ## Status (update as you go)
 
+- **Full `chronos`→`cartomania` rename (2026-06-18).** The old internal codename was removed
+  everywhere: code identifiers/types/files (`Cartomania*`, `cartomaniaClientFactory.ts`,
+  `$lib/server/cartomania`, `$lib/types/cartomania`, …), the SvelteKit proxy path
+  (`/api/chronos`→`/api/cartomania`, route folder `api/cartomania/[...cartomaniaPath]`), the session
+  cookie (`cartomania_session`), the locale cookie/header (`cartomania_locale` / `x-cartomania-locale`,
+  matched on both the web proxy and `game.controller.ts`), plus docs. **Infra too:** repo folder
+  `/opt/chronos`→`/opt/cartomania`; Docker containers `cartomania-db`/`cartomania-backend`, compose
+  service `cartomania` (pinned `name: cartomania` in `docker-compose.yml`), image `cartomania-cartomania`;
+  PM2 app `cartomania-web`; env `CHRONOS_PORT`→`CARTOMANIA_PORT`; Postgres DB `chronos`→`cartomania`
+  (data migrated by cloning the volume `chronos_pgdata`→`cartomania_pgdata` then `ALTER DATABASE`;
+  5 players / 82 games / 32 cards preserved). Only the legacy redirect domain `chronos.bobagi.space`
+  (301→`cartomania.bobagi.space`) and its nginx vhost keep the old word, on purpose. **Rollback
+  leftovers kept (safe to prune once confident):** volume `chronos_pgdata` + image `chronos-chronos`
+  (~1.83GB) — `docker volume rm chronos_pgdata && docker image rm chronos-chronos`. A pre-rename SQL
+  backup is at `/root/cartomania-pre-rename-*.sql`.
+- **Shared `BackButton` component** (`web/src/lib/components/BackButton.svelte`): one ghost-pill back
+  control modelled on the Friends panel aesthetic, used by `/cards-lab` (floating, top-left → profile),
+  `/account`, `/gallery` and `/register`. Label defaults to i18n `common.back` (en/pt/es); pass `label`
+  to override and `href` for the target (`/` = profile/home), or omit `href` to get a `click` event.
 - **Server-authoritative duel** (anti-cheat): `DuelProgressionService` drives every active duel to
   completion on its own (`@nestjs/schedule`), so a match continues & finishes even with no browser open;
   the client is a pure renderer (polls state, `CLIENT_DRIVES_TIMEOUTS=false`, only sends real moves).
@@ -336,7 +357,7 @@ web/                         SvelteKit frontend
   bare art tiles; the footer's Privacy/Terms links resolve to real `/privacy` and `/terms` pages.
 - Account management: clickable profile avatar → picker (curated card art + a `web/static/avatars/`
   folder for custom images); an `/account` page to change username / password / delete the account.
-  The `/api/auth/{avatar,username}` web endpoints re-set the `chronos_session` cookie with the updated
+  The `/api/auth/{avatar,username}` web endpoints re-set the `cartomania_session` cookie with the updated
   user (so SSR stays in sync); `/api/auth/delete` clears it. Player has an `avatarUrl` column.
 - Multilanguage (en / pt / es) with a flag language selector in the top bar; persisted via cookie and
   SSR-resolved. The whole UI is translated, and **card name/description are localized in the gallery**
@@ -358,8 +379,8 @@ web/                         SvelteKit frontend
   `.challenge-toast` floats at the bottom with Accept → navigate to game and Decline → surrender. First
   poll silently seeds `seenGameIds` (localStorage key `cartomania-seen-games`) so existing games never
   trigger a spurious notification. Friends are cached in `friendsCache` (Map id→username) for the name
-  display. Chat via the floating dock in FriendsPanel already works end-to-end (`fetchChronosFriendChat`
-  / `sendChronosFriendMessage`).
+  display. Chat via the floating dock in FriendsPanel already works end-to-end (`fetchCartomaniaFriendChat`
+  / `sendCartomaniaFriendMessage`).
 - **FriendsPanel auto-refresh**: friends list + requests auto-refresh every 8 s; chat auto-refreshes
   every 3 s while the dock is open (new messages only, scroll stays at bottom).
 - **Online presence**: `Player.lastSeenAt DateTime?` (migration `20260613000000_add_player_last_seen_at`).
@@ -381,8 +402,8 @@ web/                         SvelteKit frontend
 1. **[SECURITY — do first] Rotate the live `admin`/`alice` passwords.** The live `.env` does NOT set
    `ADMIN_PASSWORD`/`ALICE_PASSWORD`, so the seed fell back to `admin123`/`alice123` — a publicly-known
    ADMIN login on `cartomania.bobagi.space` (the weak default is visible in the now-public
-   `prisma/seed.ts`). The user opted to do this manually. Fix: add strong values to `/opt/chronos/.env`
-   then `docker compose up -d chronos` (the seed `upsert` uses `update:`, so it rotates on restart).
+   `prisma/seed.ts`). The user opted to do this manually. Fix: add strong values to `/opt/cartomania/.env`
+   then `docker compose up -d cartomania` (the seed `upsert` uses `update:`, so it rotates on restart).
    Consider also hardening `seed.ts` to refuse the weak default when `NODE_ENV=production`.
 2. **Unauthenticated duel endpoints.** `GET /game/state/:id` and the duel actions are unauthenticated —
    anyone with a `gameId` can read/act on a match. Acceptable for a portfolio; harden (auth guard +
@@ -390,7 +411,7 @@ web/                         SvelteKit frontend
 3. **Finish Google sign-in** (currently scaffolded, frontend-only — see the gotcha). Needs: the OAuth
    token exchange + `id_token` verification in `web/src/routes/auth/google/callback/+server.ts`, a
    backend find-or-create-Player-by-Google-identity endpoint (Prisma migration adding `googleId`/`email`
-   to `Player`), then `setChronosSessionCookie`. Flip on with `PUBLIC_GOOGLE_AUTH_ENABLED=true` +
+   to `Player`), then `setCartomaniaSessionCookie`. Flip on with `PUBLIC_GOOGLE_AUTH_ENABLED=true` +
    `GOOGLE_CLIENT_ID/SECRET/REDIRECT_URI`.
 4. **Duel realtime: swap polling for WebSockets** (optional polish). The client polls `GET state` every
    1 s; the `game` WS gateway already emits `state` to room `game:<id>`. Would need an nginx

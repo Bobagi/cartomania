@@ -2,20 +2,20 @@
 	import { createEventDispatcher, onDestroy, onMount, tick } from 'svelte';
 
 	import {
-		blockChronosPlayer,
-		fetchChronosFriendChat,
-		listChronosFriendRequests,
-		listChronosFriends,
-		respondChronosFriendRequest,
-		searchChronosPlayers,
-		sendChronosFriendMessage,
-		sendChronosFriendRequest,
-		removeChronosFriend,
-		startChronosGameWithFriend,
-		type ChronosFriendChatMessage,
-		type ChronosFriendSummary,
-		type ChronosIncomingFriendRequest,
-		type ChronosPlayerSummary,
+		blockCartomaniaPlayer,
+		fetchCartomaniaFriendChat,
+		listCartomaniaFriendRequests,
+		listCartomaniaFriends,
+		respondCartomaniaFriendRequest,
+		searchCartomaniaPlayers,
+		sendCartomaniaFriendMessage,
+		sendCartomaniaFriendRequest,
+		removeCartomaniaFriend,
+		startCartomaniaGameWithFriend,
+		type CartomaniaFriendChatMessage,
+		type CartomaniaFriendSummary,
+		type CartomaniaIncomingFriendRequest,
+		type CartomaniaPlayerSummary,
 		type GameMode
 	} from '$lib/api/GameClient';
 	import '$lib/styles/components/FriendsPanel.css';
@@ -31,13 +31,13 @@
 	type Tab = 'amigos' | 'pedidos' | 'buscar';
 
 	let tab: Tab = 'amigos';
-	let friends: ChronosFriendSummary[] = [];
-	let requests: ChronosIncomingFriendRequest[] = [];
+	let friends: CartomaniaFriendSummary[] = [];
+	let requests: CartomaniaIncomingFriendRequest[] = [];
 	let searchTerm = '';
-	let searchResults: ChronosPlayerSummary[] = [];
+	let searchResults: CartomaniaPlayerSummary[] = [];
 	let searchInFlight = false;
 	let dockFriendId: string | null = null;
-	let chatMessages: ChronosFriendChatMessage[] = [];
+	let chatMessages: CartomaniaFriendChatMessage[] = [];
 	let chatDraft = '';
 	let chatLoading = false;
 	let menuOpenId: string | null = null;
@@ -115,7 +115,7 @@
 
 	async function loadData() {
 		try {
-			const [fl, rl] = await Promise.all([listChronosFriends(), listChronosFriendRequests()]);
+			const [fl, rl] = await Promise.all([listCartomaniaFriends(), listCartomaniaFriendRequests()]);
 			friends = fl;
 			requests = rl;
 			// If docked friend is no longer valid, close dock
@@ -131,7 +131,7 @@
 	async function refreshChat() {
 		if (!dockFriendId || !docked) return;
 		try {
-			const history = await fetchChronosFriendChat(docked.friend.id);
+			const history = await fetchCartomaniaFriendChat(docked.friend.id);
 			const incoming = history.messages ?? [];
 			if (incoming.length > chatMessages.length) {
 				chatMessages = incoming;
@@ -152,11 +152,11 @@
 		if (chatInterval) clearInterval(chatInterval);
 	});
 
-	async function handleAccept(r: ChronosIncomingFriendRequest) {
+	async function handleAccept(r: CartomaniaIncomingFriendRequest) {
 		leaving = { ...leaving, [r.friendshipId]: true };
 		after(320, async () => {
 			try {
-				await respondChronosFriendRequest(r.friendshipId, true);
+				await respondCartomaniaFriendRequest(r.friendshipId, true);
 				await loadData();
 				dispatch('refreshDashboard');
 				showToast('Pedido aceite! Novo aliado adicionado.', true);
@@ -167,11 +167,11 @@
 		});
 	}
 
-	async function handleDecline(r: ChronosIncomingFriendRequest) {
+	async function handleDecline(r: CartomaniaIncomingFriendRequest) {
 		leaving = { ...leaving, [r.friendshipId]: true };
 		after(320, async () => {
 			try {
-				await respondChronosFriendRequest(r.friendshipId, false);
+				await respondCartomaniaFriendRequest(r.friendshipId, false);
 				await loadData();
 			} catch (e) {
 				console.error('Decline failed', e);
@@ -180,12 +180,12 @@
 		});
 	}
 
-	async function handleRemove(f: ChronosFriendSummary) {
+	async function handleRemove(f: CartomaniaFriendSummary) {
 		menuOpenId = null;
 		leaving = { ...leaving, [f.friendshipId]: true };
 		after(320, async () => {
 			try {
-				await removeChronosFriend(f.friendshipId);
+				await removeCartomaniaFriend(f.friendshipId);
 				if (dockFriendId === f.friendshipId) {
 					dockFriendId = null;
 					chatMessages = [];
@@ -200,12 +200,12 @@
 		});
 	}
 
-	async function handleBlock(f: ChronosFriendSummary) {
+	async function handleBlock(f: CartomaniaFriendSummary) {
 		menuOpenId = null;
 		leaving = { ...leaving, [f.friendshipId]: true };
 		after(320, async () => {
 			try {
-				await blockChronosPlayer(f.friend.id);
+				await blockCartomaniaPlayer(f.friend.id);
 				if (dockFriendId === f.friendshipId) {
 					dockFriendId = null;
 					chatMessages = [];
@@ -220,11 +220,11 @@
 		});
 	}
 
-	async function handleDuel(f: ChronosFriendSummary) {
+	async function handleDuel(f: CartomaniaFriendSummary) {
 		duelSent = { ...duelSent, [f.friendshipId]: true };
 		showToast('Duelo iniciado!', true);
 		try {
-			const { gameId } = await startChronosGameWithFriend(f.friend.id, 'ATTRIBUTE_DUEL');
+			const { gameId } = await startCartomaniaGameWithFriend(f.friend.id, 'ATTRIBUTE_DUEL');
 			dispatch('navigateToGame', { gameId, mode: 'ATTRIBUTE_DUEL' });
 		} catch (e) {
 			console.error('Start duel failed', e);
@@ -235,12 +235,12 @@
 		});
 	}
 
-	async function openChat(f: ChronosFriendSummary) {
+	async function openChat(f: CartomaniaFriendSummary) {
 		dockFriendId = f.friendshipId;
 		chatLoading = true;
 		chatMessages = [];
 		try {
-			const history = await fetchChronosFriendChat(f.friend.id);
+			const history = await fetchCartomaniaFriendChat(f.friend.id);
 			chatMessages = history.messages ?? [];
 			await scrollMsgs();
 		} catch (e) {
@@ -255,7 +255,7 @@
 		const text = chatDraft.trim();
 		chatDraft = '';
 		try {
-			const msg = await sendChronosFriendMessage(docked.friend.id, text);
+			const msg = await sendCartomaniaFriendMessage(docked.friend.id, text);
 			chatMessages = [...chatMessages, msg];
 			await scrollMsgs();
 		} catch (e) {
@@ -274,7 +274,7 @@
 			}
 			searchInFlight = true;
 			try {
-				searchResults = await searchChronosPlayers(term);
+				searchResults = await searchCartomaniaPlayers(term);
 			} catch (e) {
 				console.error('Search failed', e);
 			} finally {
@@ -283,10 +283,10 @@
 		}, 320);
 	}
 
-	async function handleAdd(p: ChronosPlayerSummary) {
+	async function handleAdd(p: CartomaniaPlayerSummary) {
 		addSent = { ...addSent, [p.id]: true };
 		try {
-			await sendChronosFriendRequest(p.id);
+			await sendCartomaniaFriendRequest(p.id);
 			showToast('Pedido de amizade enviado!', true);
 		} catch (e) {
 			console.error('Add failed', e);

@@ -1,19 +1,19 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
 import type { Locale } from '$lib/i18n/config';
-import type { ChronosSession } from '$lib/server/auth/session';
-import type { AuthenticatedChronosUser, ChronosDashboardData } from '$lib/types/chronos';
+import type { CartomaniaSession } from '$lib/server/auth/session';
+import type { AuthenticatedCartomaniaUser, CartomaniaDashboardData } from '$lib/types/cartomania';
 
 declare global {
 	namespace App {
 		// interface Error {}
 		interface Locals {
-			chronosSession: ChronosSession | null;
+			cartomaniaSession: CartomaniaSession | null;
 			locale: Locale;
 		}
 		interface PageData {
-			authUser: AuthenticatedChronosUser | null;
-			dashboard?: ChronosDashboardData;
+			authUser: AuthenticatedCartomaniaUser | null;
+			dashboard?: CartomaniaDashboardData;
 			locale?: Locale;
 		}
 		// interface PageState {}

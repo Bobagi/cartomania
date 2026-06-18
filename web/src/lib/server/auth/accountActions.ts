@@ -1,9 +1,9 @@
 import { error } from '@sveltejs/kit';
-import { getChronosBaseUrl } from '$lib/server/chronos/client';
+import { getCartomaniaBaseUrl } from '$lib/server/cartomania/client';
 
 /** Require an authenticated session, returning its backend token (or 401). */
 export function requireSessionToken(locals: App.Locals): string {
-	const token = locals.chronosSession?.token;
+	const token = locals.cartomaniaSession?.token;
 	if (!token) throw error(401, 'Not authenticated');
 	return token;
 }
@@ -18,7 +18,7 @@ export async function callBackendAuthed(
 	method: string,
 	body?: unknown
 ): Promise<unknown> {
-	const response = await fetch(`${getChronosBaseUrl()}${path}`, {
+	const response = await fetch(`${getCartomaniaBaseUrl()}${path}`, {
 		method,
 		headers: {
 			Authorization: `Bearer ${token}`,
