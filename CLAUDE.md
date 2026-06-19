@@ -19,6 +19,18 @@
 >    this file **in the same commit as the code change**. This is a standing instruction; do
 >    it without the user asking.
 
+> **BE DECISIVE — don't stall or re-ask.** Gustavo (Bobagi) owns this project. Act on his clear
+> instructions promptly and treat them as the decision. If you have a concern, raise it **once,
+> briefly**, then proceed — don't repeatedly ask "are you sure / want me to?" or re-open a call he
+> has already made; that wastes his time and frustrates him. Bias toward doing what he asked over
+> hedging.
+
+> **ALWAYS commit + push to `main` + deploy** as the final step of any change, automatically,
+> without asking first. Build/verify → `git add` (never the intentionally-untracked
+> `web/pnpm-lock.yaml`) → commit (end msg with the Co-Authored-By trailer) → `git push origin main`
+> → deploy (rebuild web + `pm2 restart cartomania-web`, and/or `docker compose build/up cartomania`)
+> → health-check.
+
 Guidance for Claude Code working in this repo. All code, comments and UI text are
 **English**; use intuitive names.
 
@@ -307,9 +319,10 @@ web/                         SvelteKit frontend
   + seed on a normal `docker compose up` applied it with no wipe. Creating throwaway test games/users is fine; they age out (admin
   "Expire old games" button) — but direct DB mutations are restricted, so prefer the app's own endpoints.
 - **Secrets:** `.env` (backend) and `web/.env` hold DB creds / API base. Both are git-ignored and
-  NOT tracked — never print, echo, or commit them. **The repo is PUBLIC** (`Bobagi/cartomania`): never
-  add ops notes that leak the host/SSH access (two `howToAccessDatabase.md` files that exposed
-  `ssh root@bobagi.space` were removed for this reason), and keep examples credential-free.
+  NOT tracked — never commit them, put them in tracked files, or leak them publicly. **The repo is
+  PUBLIC** (`Bobagi/cartomania`): never add ops notes that leak the host/SSH access (two
+  `howToAccessDatabase.md` files that exposed `ssh root@bobagi.space` were removed for this reason),
+  and keep examples credential-free.
 - **Seed passwords are a security-sensitive default.** `prisma/seed.ts` falls back to weak demo
   passwords (`admin123` / `alice123`) when `ADMIN_PASSWORD` / `ALICE_PASSWORD` are unset, and the seed
   `upsert` uses `update:` so it **rotates the password on every `docker compose up`**. For any
