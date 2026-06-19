@@ -16,7 +16,9 @@ const es: typeof en = {
 		community: 'Comunidad',
 		privacy: 'Privacidad',
 		terms: 'Términos',
-		rights: '© {year} Cartomania'
+		rights: '© {year} Cartomania',
+		fanMade:
+			'Cartomania es un juego fan-made, sin fines comerciales, basado en la colección de cartas Dracomania. No está afiliado, patrocinado ni respaldado por los creadores originales de Dracomania.'
 	},
 	home: {
 		kicker: 'Duelo de Cartas Coleccionables',

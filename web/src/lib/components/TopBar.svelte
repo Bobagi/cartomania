@@ -9,7 +9,7 @@
 	function requestLogout() {
 		dispatch('logout');
 	}
-	const brandLogoUrl = `${assets}/world_icon.png`;
+	const brandLogoUrl = `${assets}/cartomania-icon.png`;
 </script>
 
 <header class="site-topbar" aria-label="Cartomania top bar">

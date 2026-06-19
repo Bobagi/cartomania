@@ -21,6 +21,8 @@
 		</nav>
 	</div>
 
+	<p class="footer-fanmade">{$t('footer.fanMade')}</p>
+
 	<div class="footer-legal">
 		<p class="legal-text">{$t('footer.rights', { year: currentYear })}</p>
 		<ul class="legal-links">

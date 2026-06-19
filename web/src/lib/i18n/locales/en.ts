@@ -15,7 +15,9 @@ const en = {
 		community: 'Community',
 		privacy: 'Privacy',
 		terms: 'Terms',
-		rights: '© {year} Cartomania'
+		rights: '© {year} Cartomania',
+		fanMade:
+			'Cartomania is a fan-made, non-commercial game built around the Dracomania card collection. It is not affiliated with, sponsored by, or endorsed by the original creators of Dracomania.'
 	},
 	home: {
 		kicker: 'Digital Collectible Card Duel',
