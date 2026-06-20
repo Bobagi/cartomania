@@ -217,7 +217,10 @@ web/                         SvelteKit frontend
   card column is the focus and the hand sits on top at the bottom. The column uses
   `.lb__cards { flex-direction: column-reverse }` so the OPPONENT card shows on top while the
   binding-heavy YOUR-card markup stays first in source (slot A = `aCardCode` = you, slot B =
-  `bCardCode` = opponent — don't swap those). In-play cards are sized in `vh` (`.lb__cards .duel-slot`
+  `bCardCode` = opponent — don't swap those). **Empty battlefield slots are invisible anchors:** there
+  are NO "your card here"/"waiting" placeholder boxes and the slot has no framed outline
+  (`.lb__cards .duel-slot { box-shadow: none }`) — the felt is empty until a card is played, and a played
+  card lands in the central slot showing only its own CardComposite frame. In-play cards are sized in `vh` (`.lb__cards .duel-slot`
   ≈ `16vh`) and hand cards via `cardWidthCssValue` (≈ `15.5vh`); `.lb__table` reserves `8vh` top /
   `26vh` bottom so the column never collides with the strips. The chooser (`.lb__notices`,
   `z-index:1600`) sits just above the hand and stays clickable. The opponent hand is a small offset
@@ -411,6 +414,15 @@ web/                         SvelteKit frontend
 ## TODO / pending work (next session)
 
 > Ordered roughly by priority. Update/trim as items land.
+
+- **[IN PROGRESS] Duel battlefield — masked card art (2-step).** **Step 1 DONE (2026-06-20):** removed the
+  "your card here" / "waiting" slot placeholders + the slot's framed outline, so the felt is empty until a
+  card is played and the played card lands in the central slot (`box-shadow:none` on `.lb__cards .duel-slot`;
+  both `slot-empty` placeholders deleted from the duel page). **Step 2 (next, per the user):** instead of
+  showing the whole card in the slot, mask ONLY the creature ART into the circular battlefield — fill the
+  player's part of the felt circle (`.lb__felt-ring`) with the played card's art (masked to the circle) and
+  the opponent's part with theirs once revealed (Hearthstone / MTG-Arena style). In-play cards are
+  `.lb__cards .duel-slot` (slot A = you, slot B = opponent).
 
 1. **[SECURITY — do first] Rotate the live `admin`/`alice` passwords.** The live `.env` does NOT set
    `ADMIN_PASSWORD`/`ALICE_PASSWORD`, so the seed fell back to `admin123`/`alice123` — a publicly-known

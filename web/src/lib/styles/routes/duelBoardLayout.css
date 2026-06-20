@@ -309,17 +309,6 @@
 	z-index: 4;
 }
 
-/* slot placeholder text in the design ("Waiting…" / "Your card goes here") */
-.lb__slot-text {
-	display: grid;
-	place-items: center;
-	padding: 0 14px;
-	text-align: center;
-	color: var(--muted);
-	font-size: 13px;
-	font-weight: 600;
-}
-
 /* ---------- row 3: your hand + HUD + actions ---------- */
 .lb__you {
 	position: absolute;
@@ -362,6 +351,10 @@
 .lb__cards .duel-slot {
 	width: clamp(92px, 17vh, 225px) !important;
 	height: calc(clamp(92px, 17vh, 225px) * 1.33) !important;
+	/* The slot is just an invisible anchor that reserves the central spot: when empty
+	   the battlefield shows nothing, and a played card lands here on its own (its
+	   CardComposite frame is the only border — no extra boxed outline). */
+	box-shadow: none;
 }
 .lb__cards {
 	gap: 4px;

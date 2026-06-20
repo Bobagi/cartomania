@@ -329,7 +329,8 @@
 
 		const cartomaniaCards = await fetchMultipleCartomaniaCardMetadata(missingCodes);
 		for (const cartomaniaCard of cartomaniaCards) {
-			const resolvedNumber = cartomaniaCard.number || catalogNumberByCode.get(cartomaniaCard.code) || 0;
+			const resolvedNumber =
+				cartomaniaCard.number || catalogNumberByCode.get(cartomaniaCard.code) || 0;
 			cardDetailsCacheByCode.set(cartomaniaCard.code, {
 				code: cartomaniaCard.code,
 				name: cartomaniaCard.name,
@@ -1027,10 +1028,6 @@
 									?.number ?? 0}
 							/>
 						</div>
-					{:else}
-						<div class="slot-empty">
-							<span class="lb__slot-text">{$t('duel.yourCardHere')}</span>
-						</div>
 					{/if}
 				</div>
 
@@ -1100,10 +1097,6 @@
 					{:else if opponentLooksLikeBot && duelStage === 'PICK_CARD'}
 						<div class="slot-placeholder bot-card-back">
 							<img src={cardBackImageUrl} alt="Bot card hidden" loading="lazy" decoding="async" />
-						</div>
-					{:else}
-						<div class="slot-empty slot-empty-opp">
-							<span class="lb__slot-text">{$t('duel.waiting')}</span>
 						</div>
 					{/if}
 				</div>

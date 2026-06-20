@@ -105,21 +105,6 @@
 	z-index: 2;
 	border-radius: 10px;
 }
-.slot-empty {
-	position: absolute;
-	inset: 0;
-	display: grid;
-	place-items: center;
-	border-radius: 12px;
-	pointer-events: none;
-}
-.slot-empty-opp .slot-icon {
-	filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.35));
-}
-.slot-icon {
-	font-size: clamp(36px, 7vmin, 64px);
-	opacity: 0.75;
-}
 .slot-removable .result-wrap:hover {
 	animation: slotRemoveBlink 800ms linear infinite;
 }
