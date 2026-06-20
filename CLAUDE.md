@@ -214,25 +214,28 @@ web/                         SvelteKit frontend
 - **Duel board layout = the designer's "mesa".** The board is `.lb` (in `duelBoardLayout.css`): the
   felt (`.lb__table`) fills the WHOLE viewport and everything else (opponent strip `.lb__opp`, hand+HUD
   strip `.lb__you`, log `.lb__log`, chooser `.lb__notices`) is an absolute OVERLAY on top — so the big
-  card column is the focus and the hand sits on top at the bottom. The column uses
-  `.lb__cards { flex-direction: column-reverse }` so the OPPONENT card shows on top while the
-  binding-heavy YOUR-card markup stays first in source (slot A = `aCardCode` = you, slot B =
-  `bCardCode` = opponent — don't swap those). **Empty battlefield slots are invisible anchors:** there
-  are NO "your card here"/"waiting" placeholder boxes and the slot has no framed outline
-  (`.lb__cards .duel-slot { box-shadow: none }`) — the felt is empty until a card is played, and a played
-  card lands in the central slot showing only its own CardComposite frame. In-play cards are sized in `vh` (`.lb__cards .duel-slot`
-  ≈ `16vh`) and hand cards via `cardWidthCssValue` (≈ `15.5vh`); `.lb__table` reserves `8vh` top /
-  `26vh` bottom so the column never collides with the strips. The chooser (`.lb__notices`,
+  circular **arena** is the focus and the hand sits on top at the bottom. **The played card is no longer
+  shown whole** (step 2, branch `feat/duel-circle-art`): the centre is `.lb__arena`, a gold-rimmed felt
+  DISC split into `.lb__arena-half--opp` (top) and `.lb__arena-half--you` (bottom). The played card's
+  **creature ART** (the square `imageUrl`, masked with `object-fit:cover`) fills the matching half — your
+  half the instant you pick (`youArt`), the opponent's half a face-down card-back **veil**
+  (`.lb__arena-veil`) until REVEAL, then their creature (`oppArt`, gated on `oppRevealed =
+  duelStage==='REVEAL'`). `.lb__arena-vs` + `.lb__arena-seam` ride the equator; on REVEAL the winner's half
+  glows (`is-win`) and the loser's desaturates (`is-lose`). The arena is absolutely centred (`top:39%`) so
+  it clears the opponent strip + the hand; hand cards stay full CardComposites sized via
+  `cardWidthCssValue`. (The old `.lb__column`/`.lb__cards`/`.duel-slot` whole-card column + `.lb__felt-ring`
+  were removed; the round-loss `CardDestroyer` burn/dissolve/crush is currently inert — `centerSlot*`
+  bindings are gone — and could be re-wired onto the loser's half later.) The chooser (`.lb__notices`,
   `z-index:1600`) sits just above the hand and stays clickable. The opponent hand is a small offset
   stack of card backs (`.lb__oparc-card`, no fan rotation) shown next to the score orbs, not a deck
-  pile. The round-result banner is `.lb__round-banner` inside `.lb__column` (absolute `top:50%` = the
-  VS) so it overlays the VS medallion instead of the player's card — note `.round-banner` is
+  pile. The round-result banner is `.lb__round-banner` under `.lb__table` (absolute `top:39%` = the
+  arena seam/VS) so it overlays the VS medallion — note `.round-banner` is
   `position:fixed`, which is why it must NOT live under a `transform`ed ancestor like `.lb__notices`.
   Score orbs show an icon (`.orb-ic` trophy / card-stack SVG) + number with a `title` tooltip (no text
   label). The old `.zone`/`.fixed-top-bar` CSS is unused; cards/flip/chooser/endscreen and
   `.hand.my-hand.fan` are unchanged. A **layout toggle** (`.lb__layout-toggle` by the player HUD)
   adds `.lb--side-hand` to `.lb`: the hand becomes a vertical column on the right rail, the log moves
-  to the left, and the battlefield cards grow (persisted in `localStorage['duel-side-hand']`).
+  to the left, and the arena shifts left + grows (persisted in `localStorage['duel-side-hand']`).
 - **CardComposite title = elastic 3-slice banner** (`/frames/title-{left,mid,right}.png`): fixed caps +
   a middle that STRETCHES with the name (anchored RIGHT, so long names grow the ribbon leftward like the
   printed cards). The stretch is **pure CSS** (flexbox) — keep it that way. The card number rides in the
@@ -415,14 +418,17 @@ web/                         SvelteKit frontend
 
 > Ordered roughly by priority. Update/trim as items land.
 
-- **[IN PROGRESS] Duel battlefield — masked card art (2-step).** **Step 1 DONE (2026-06-20):** removed the
-  "your card here" / "waiting" slot placeholders + the slot's framed outline, so the felt is empty until a
-  card is played and the played card lands in the central slot (`box-shadow:none` on `.lb__cards .duel-slot`;
-  both `slot-empty` placeholders deleted from the duel page). **Step 2 (next, per the user):** instead of
-  showing the whole card in the slot, mask ONLY the creature ART into the circular battlefield — fill the
-  player's part of the felt circle (`.lb__felt-ring`) with the played card's art (masked to the circle) and
-  the opponent's part with theirs once revealed (Hearthstone / MTG-Arena style). In-play cards are
-  `.lb__cards .duel-slot` (slot A = you, slot B = opponent).
+- **[ON BRANCH — review] Duel battlefield — masked card art (2-step).** **Step 1 DONE (2026-06-20, on
+  `main`):** removed the "your card here" / "waiting" slot placeholders + framed outline. **Step 2 DONE
+  (2026-06-20, on branch `feat/duel-circle-art`, DEPLOYED live for review — `main` is the stable fallback):**
+  replaced the whole-card center column with `.lb__arena`, a felt disc that masks the played card's creature
+  ART into two halves (top = opponent veil→reveal, bottom = you). See the "Duel board layout" gotcha for the
+  full structure. The attribute chooser was made compact (heading dropped — the turn-timer already labels it)
+  so the player's creature stays visible while choosing. **Open follow-ups before merge:** (a) the round-loss
+  `CardDestroyer` FX (burn/dissolve/crush) is currently inert — replaced by a simple `is-win`/`is-lose` tint;
+  decide whether to re-wire it onto the loser's half; (b) tune `object-position` per-half if creatures crop
+  awkwardly; (c) the opponent veil shows the card-back cropped to a band — refine if desired. To revert the
+  whole thing: `git checkout main` + rebuild + `pm2 restart cartomania-web`.
 
 1. **[SECURITY — do first] Rotate the live `admin`/`alice` passwords.** The live `.env` does NOT set
    `ADMIN_PASSWORD`/`ALICE_PASSWORD`, so the seed fell back to `admin123`/`alice123` — a publicly-known

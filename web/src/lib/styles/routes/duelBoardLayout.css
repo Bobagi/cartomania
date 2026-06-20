@@ -6,7 +6,8 @@
  *
  * The felt (.lb__table) fills the WHOLE viewport; the opponent strip, the hand +
  * HUD strip, the battle log and the chooser are absolute OVERLAYS on top of it, so
- * the big card column (opp card / VS / your card) is the focus and the hand sits on
+ * the circular battlefield ARENA (.lb__arena — the played cards' creature art masked
+ * into a felt disc, top = opponent / bottom = you) is the focus and the hand sits on
  * top at the bottom, always visible.
  */
 
@@ -161,16 +162,6 @@
 	flex: 0 0 auto;
 }
 
-/* the card stack is reversed so the opponent card shows on top while the
-   binding-heavy your-card markup stays first in the source. */
-.lb__cards {
-	display: flex;
-	flex-direction: column-reverse;
-	align-items: center;
-	gap: 6px;
-	min-height: 0;
-}
-
 /* ---------- row 2: the felt table ---------- */
 .lb__table {
 	position: absolute;
@@ -178,66 +169,14 @@
 	display: grid;
 	place-items: center;
 	/* leave room at the top for the opponent strip and at the bottom for the hand,
-	   so the big card column sits in the middle and isn't covered. */
+	   so the arena (absolutely centred) reads in the middle and isn't covered. */
 	padding: 10vh 0 25vh;
 	overflow: hidden;
 	background:
 		radial-gradient(58% 60% at 50% 50%, rgba(64, 128, 72, 0.16), transparent 70%),
 		radial-gradient(40% 44% at 50% 50%, rgba(231, 178, 74, 0.1), transparent 72%);
 }
-.lb__felt-ring {
-	position: absolute;
-	left: 50%;
-	top: 50%;
-	transform: translate(-50%, -50%);
-	width: min(68vh, 720px);
-	height: min(68vh, 720px);
-	border-radius: 50%;
-	border: 1.5px dashed rgba(231, 178, 74, 0.2);
-	pointer-events: none;
-}
-.lb__felt-ring::after {
-	content: '';
-	position: absolute;
-	inset: 26px;
-	border-radius: 50%;
-	border: 1px solid rgba(231, 178, 74, 0.12);
-}
-.lb__column {
-	position: relative;
-	z-index: 2;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 6px;
-	min-height: 0;
-}
-.lb__seat-label {
-	font-family: var(--font-display);
-	font-size: 13px;
-	font-weight: 800;
-	letter-spacing: 0.14em;
-	text-transform: uppercase;
-}
-.lb__seat-label--op {
-	color: #ffb38f;
-}
-.lb__seat-label--you {
-	color: #8fe7ff;
-}
-
-/* VS medallion + flanking lines */
-.lb__vsrow {
-	display: flex;
-	align-items: center;
-	gap: 18px;
-	margin: 2px 0;
-}
-.lb__vsrow .line {
-	width: clamp(40px, 7vw, 72px);
-	height: 1px;
-	background: linear-gradient(90deg, transparent, var(--gold-2), transparent);
-}
+/* VS medallion (centred on the arena seam) */
 .vs {
 	position: relative;
 	width: 54px;
@@ -345,27 +284,6 @@
 	max-width: 760px;
 }
 
-/* In-play cards are sized against viewport HEIGHT so the whole vertical column
-   (opponent card + VS + your card) fits one screen — even short laptops — without
-   the felt clipping the top card or hiding the chooser. */
-.lb__cards .duel-slot {
-	width: clamp(92px, 17vh, 225px) !important;
-	height: calc(clamp(92px, 17vh, 225px) * 1.33) !important;
-	/* The slot is just an invisible anchor that reserves the central spot: when empty
-	   the battlefield shows nothing, and a played card lands here on its own (its
-	   CardComposite frame is the only border — no extra boxed outline). */
-	box-shadow: none;
-}
-.lb__cards {
-	gap: 4px;
-}
-.lb__column {
-	gap: 3px;
-}
-.lb__seat-label {
-	font-size: 12px;
-}
-
 /* Chooser / hint / round banner pinned to the bottom of the felt (always visible,
    never pushes the cards out of view). */
 .lb__notices {
@@ -411,12 +329,11 @@
 	display: block;
 }
 
-/* The round-result banner overlays the VS medallion (nothing useful to see there)
-   instead of covering your card. It lives in .lb__column, so absolute top:50% =
-   the column's centre = the VS. */
+/* The round-result banner overlays the VS medallion (the arena seam). It lives under
+   .lb__table, so its absolute top matches the arena centre (.lb__arena top). */
 .lb__round-banner {
 	position: absolute;
-	top: 50%;
+	top: 39%;
 	z-index: 1700;
 }
 
@@ -452,10 +369,6 @@
    (bottom-left) and timer/surrender (bottom-right) keep their corners. */
 .lb--side-hand .lb__table {
 	padding: 8vh 18vh 7vh 2vh;
-}
-.lb--side-hand .lb__cards .duel-slot {
-	width: clamp(120px, 23vh, 300px) !important;
-	height: calc(clamp(120px, 23vh, 300px) * 1.33) !important;
 }
 .lb--side-hand .lb__notices {
 	bottom: 9vh;
@@ -523,4 +436,168 @@
 	.lb__log {
 		display: none;
 	}
+}
+
+/* ===========================================================================
+   Circular battlefield "arena" (step 2)
+   The played card is no longer shown whole in the centre: the creature ART is
+   masked into a felt disc. Bottom half = you (fills on pick), top half = the
+   opponent (a face-down veil that becomes the creature on REVEAL). The gold-rim
+   disc IS the battlefield ring now (the old .lb__felt-ring is retired).
+   =========================================================================== */
+.lb__arena {
+	position: absolute;
+	left: 50%;
+	top: 39%;
+	transform: translate(-50%, -50%);
+	width: min(58vh, 520px);
+	height: min(58vh, 520px);
+	border-radius: 50%;
+	overflow: hidden;
+	z-index: 2;
+	background: radial-gradient(circle at 50% 50%, rgba(12, 16, 26, 0.25), rgba(6, 9, 16, 0.74));
+	box-shadow:
+		inset 0 0 0 2px rgba(231, 178, 74, 0.42),
+		inset 0 0 46px rgba(0, 0, 0, 0.66),
+		0 20px 54px rgba(0, 0, 0, 0.55);
+}
+/* outer vignette so the art melts into the felt at the rim */
+.lb__arena::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	border-radius: 50%;
+	pointer-events: none;
+	z-index: 2;
+	background: radial-gradient(circle at 50% 50%, transparent 55%, rgba(6, 9, 16, 0.62) 100%);
+}
+
+.lb__arena-half {
+	position: absolute;
+	left: 0;
+	width: 100%;
+	height: 50%;
+	overflow: hidden;
+	z-index: 1;
+}
+.lb__arena-half--opp {
+	top: 0;
+}
+.lb__arena-half--you {
+	bottom: 0;
+}
+.lb__arena-half--you.is-removable {
+	cursor: pointer;
+}
+
+.lb__arena-art {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: center;
+	display: block;
+	animation: arenaArtIn 380ms cubic-bezier(0.18, 0.89, 0.32, 1.1) both;
+}
+.lb__arena-half--opp .lb__arena-art {
+	object-position: center 38%;
+}
+.lb__arena-half--you .lb__arena-art {
+	object-position: center 62%;
+}
+@keyframes arenaArtIn {
+	from {
+		opacity: 0;
+		transform: scale(1.07);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+/* opponent's hidden state: the Dracomania card-back, dimmed, as a face-down veil */
+.lb__arena-veil {
+	position: absolute;
+	inset: 0;
+	overflow: hidden;
+}
+.lb__arena-veil-img {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: center;
+	filter: brightness(0.55) saturate(0.85);
+}
+.lb__arena-veil::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: radial-gradient(circle at 50% 42%, rgba(22, 28, 48, 0.4), rgba(6, 9, 16, 0.8));
+}
+
+/* seam between the halves + the VS medallion riding on it */
+.lb__arena-seam {
+	position: absolute;
+	left: 7%;
+	right: 7%;
+	top: 50%;
+	height: 2px;
+	transform: translateY(-1px);
+	z-index: 4;
+	pointer-events: none;
+	background: linear-gradient(90deg, transparent, rgba(231, 178, 74, 0.7), transparent);
+	box-shadow: 0 0 12px rgba(231, 178, 74, 0.4);
+}
+.lb__arena-vs {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	z-index: 6;
+}
+
+/* round outcome: the winner's half glows, the loser's desaturates + darkens */
+.lb__arena-half.is-win::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: 3;
+	pointer-events: none;
+	box-shadow: inset 0 0 52px rgba(120, 240, 170, 0.5);
+	animation: arenaWinPulse 900ms ease-in-out infinite;
+}
+@keyframes arenaWinPulse {
+	0%,
+	100% {
+		opacity: 0.65;
+	}
+	50% {
+		opacity: 1;
+	}
+}
+.lb__arena-half.is-lose .lb__arena-art {
+	filter: grayscale(0.75) brightness(0.42) contrast(0.96);
+	transition: filter 650ms ease;
+}
+.lb__arena-half.is-lose::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: 3;
+	pointer-events: none;
+	background: linear-gradient(180deg, rgba(120, 16, 24, 0.18), rgba(80, 8, 14, 0.44));
+}
+
+/* Side-hand layout: shift the arena off the right rail and let it grow. */
+.lb--side-hand .lb__arena {
+	left: 42%;
+	width: min(68vh, 640px);
+	height: min(68vh, 640px);
+}
+.lb--side-hand .lb__round-banner {
+	left: 42%;
 }

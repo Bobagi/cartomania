@@ -685,6 +685,32 @@
 		? $gameStateStore!.hands[playerB].length
 		: 0;
 
+	// --- Circular battlefield ("arena", step 2) ---------------------------------
+	// The played card is no longer shown whole in the centre; instead the creature
+	// ART is masked into the felt circle — your half (bottom) fills the moment you
+	// pick, the opponent's half (top) stays a face-down veil until REVEAL.
+	$: youCardCode = currentDuelCenter?.aCardCode ?? null;
+	$: oppCardCode = currentDuelCenter?.bCardCode ?? null;
+	$: youArt = youCardCode ? (cardDetailsCacheByCode.get(youCardCode)?.imageUrl ?? null) : null;
+	$: oppArt = oppCardCode ? (cardDetailsCacheByCode.get(oppCardCode)?.imageUrl ?? null) : null;
+	$: youName = youCardCode ? (cardDetailsCacheByCode.get(youCardCode)?.name ?? youCardCode) : null;
+	$: oppName = oppCardCode ? (cardDetailsCacheByCode.get(oppCardCode)?.name ?? oppCardCode) : null;
+	$: oppRevealed = currentDuelStage === 'REVEAL';
+	$: oppHidden = Boolean(oppCardCode) && !oppRevealed;
+	$: oppPending = !oppCardCode && opponentLooksLikeBot && currentDuelStage === 'PICK_CARD';
+	$: youOutcome =
+		currentDuelStage === 'REVEAL' && currentDuelRoundWinner
+			? currentDuelRoundWinner === playerA
+				? 'win'
+				: 'lose'
+			: null;
+	$: oppOutcome =
+		currentDuelStage === 'REVEAL' && currentDuelRoundWinner
+			? currentDuelRoundWinner === playerB
+				? 'win'
+				: 'lose'
+			: null;
+
 	let myHandContainerElement: HTMLDivElement | null = null;
 	let myHandCardSpreadPixels: number | null = null;
 	function computeSpread() {
@@ -990,130 +1016,57 @@
 	</header>
 
 	<section class="lb__table">
-		<div class="lb__felt-ring" aria-hidden="true"></div>
-		<div class="lb__column">
-			<div class="lb__cards">
-				<div
-					class="duel-slot"
-					class:slot-removable={canReturnSelectedCardToHand}
-					style={`width:${cardWidthCssValue}; height:calc(${cardWidthCssValue} * 1.55);`}
-				>
-					{#if currentDuelCenter?.aCardCode}
-						<div
-							bind:this={centerSlotAElement}
-							class={`result-wrap ${currentDuelStage === 'REVEAL' && currentDuelRoundWinner === playerA ? 'winner-glow' : currentDuelStage === 'REVEAL' && currentDuelRoundWinner && currentDuelRoundWinner !== playerA ? 'loser-shake' : ''}`}
-							on:click={onCenterCardReturnToHand}
-							title={$t('duel.returnCard')}
-						>
-							<CardComposite
-								artImageUrl={cardDetailsCacheByCode.get($gameStateStore.duelCenter.aCardCode)
-									?.imageUrl ?? ''}
-								frameImageUrl={frameOverlayImageUrl ?? '/frames/default.png'}
-								titleImageUrl={titleOverlayImageUrl}
-								titleText={cardDetailsCacheByCode.get($gameStateStore.duelCenter.aCardCode)?.name ??
-									$gameStateStore.duelCenter.aCardCode}
-								aspectWidth={1444}
-								aspectHeight={1920}
-								artObjectFit="cover"
-								enableTilt={false}
-								descriptionText={cardDetailsCacheByCode.get($gameStateStore.duelCenter.aCardCode)
-									?.description ?? ''}
-								magicValue={cardDetailsCacheByCode.get($gameStateStore.duelCenter.aCardCode)
-									?.magic ?? 0}
-								mightValue={cardDetailsCacheByCode.get($gameStateStore.duelCenter.aCardCode)
-									?.might ?? 0}
-								fireValue={cardDetailsCacheByCode.get($gameStateStore.duelCenter.aCardCode)?.fire ??
-									0}
-								cornerNumberValue={cardDetailsCacheByCode.get($gameStateStore.duelCenter.aCardCode)
-									?.number ?? 0}
-							/>
-						</div>
-					{/if}
-				</div>
-
-				<div class="lb__vsrow">
-					<span class="line"></span>
-					<div class="vs" class:clash={currentDuelStage === 'REVEAL'}>
-						<span class="vs__spark"></span>
-						<span class="vs__disc">VS</span>
+		<!-- Circular battlefield (step 2): the played card's creature ART is masked into the
+		     felt circle — your half (bottom) fills on pick, the opponent's half (top) flips
+		     from a face-down veil to the revealed creature. The old whole-card slots are gone. -->
+		<div class="lb__arena">
+			<div class={`lb__arena-half lb__arena-half--opp ${oppOutcome ? 'is-' + oppOutcome : ''}`}>
+				{#if oppArt && oppRevealed}
+					<img
+						class="lb__arena-art"
+						src={oppArt}
+						alt={oppName}
+						data-cycle={centerRevealCycle}
+						decoding="async"
+					/>
+				{:else if oppHidden || oppPending}
+					<div class="lb__arena-veil" title={$t('duel.opponentCard')}>
+						<img class="lb__arena-veil-img" src={cardBackImageUrl} alt="" decoding="async" />
 					</div>
-					<span class="line"></span>
-				</div>
-
-				<div
-					class="duel-slot"
-					style={`width:${cardWidthCssValue}; height:calc(${cardWidthCssValue} * 1.55);`}
-				>
-					{#if currentDuelCenter?.bCardCode}
-						<div class="flip-wrap" data-cycle={centerRevealCycle}>
-							<div
-								class="flipper"
-								class:start-back={currentDuelStage !== 'REVEAL'}
-								class:animate={currentDuelStage === 'REVEAL'}
-								style={`--flip-ms:${FLIP_MS}ms;`}
-							>
-								<div class="face front">
-									<div
-										bind:this={centerSlotBElement}
-										class={`result-wrap ${currentDuelStage === 'REVEAL' && currentDuelRoundWinner === playerB ? 'winner-glow' : currentDuelStage === 'REVEAL' && currentDuelRoundWinner && currentDuelRoundWinner !== playerB ? 'loser-shake' : ''}`}
-									>
-										<CardComposite
-											artImageUrl={cardDetailsCacheByCode.get($gameStateStore.duelCenter.bCardCode)
-												?.imageUrl ?? ''}
-											frameImageUrl={frameOverlayImageUrl ?? '/frames/default.png'}
-											titleImageUrl={titleOverlayImageUrl}
-											titleText={cardDetailsCacheByCode.get($gameStateStore.duelCenter.bCardCode)
-												?.name ?? $gameStateStore.duelCenter.bCardCode}
-											aspectWidth={1444}
-											aspectHeight={1920}
-											artObjectFit="cover"
-											enableTilt={false}
-											descriptionText={cardDetailsCacheByCode.get(
-												$gameStateStore.duelCenter.bCardCode
-											)?.description ?? ''}
-											magicValue={cardDetailsCacheByCode.get($gameStateStore.duelCenter.bCardCode)
-												?.magic ?? 0}
-											mightValue={cardDetailsCacheByCode.get($gameStateStore.duelCenter.bCardCode)
-												?.might ?? 0}
-											fireValue={cardDetailsCacheByCode.get($gameStateStore.duelCenter.bCardCode)
-												?.fire ?? 0}
-											cornerNumberValue={cardDetailsCacheByCode.get(
-												$gameStateStore.duelCenter.bCardCode
-											)?.number ?? 0}
-										/>
-									</div>
-								</div>
-								<div class="face back">
-									<img
-										src={cardBackImageUrl}
-										alt="hidden"
-										style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;border-radius:10px;display:block;"
-										loading="lazy"
-										decoding="async"
-									/>
-								</div>
-							</div>
-						</div>
-					{:else if opponentLooksLikeBot && duelStage === 'PICK_CARD'}
-						<div class="slot-placeholder bot-card-back">
-							<img src={cardBackImageUrl} alt="Bot card hidden" loading="lazy" decoding="async" />
-						</div>
-					{/if}
-				</div>
+				{/if}
 			</div>
 
-			{#if roundBanner}
-				<div class={`round-banner lb__round-banner ${roundBanner.tone}`}>
-					<span class="round-banner-icon">{roundBanner.icon}</span>
-					<span class="round-banner-text">{roundBanner.text}</span>
-				</div>
-			{/if}
+			<div
+				class={`lb__arena-half lb__arena-half--you ${youOutcome ? 'is-' + youOutcome : ''}`}
+				class:is-removable={canReturnSelectedCardToHand}
+				role="button"
+				tabindex="0"
+				on:click={onCenterCardReturnToHand}
+				on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && onCenterCardReturnToHand()}
+				title={canReturnSelectedCardToHand ? $t('duel.returnCard') : ''}
+			>
+				{#if youArt}
+					<img class="lb__arena-art" src={youArt} alt={youName} decoding="async" />
+				{/if}
+			</div>
+
+			<div class="lb__arena-seam" aria-hidden="true"></div>
+			<div class="lb__arena-vs vs" class:clash={currentDuelStage === 'REVEAL'} aria-hidden="true">
+				<span class="vs__spark"></span>
+				<span class="vs__disc">VS</span>
+			</div>
 		</div>
+
+		{#if roundBanner}
+			<div class={`round-banner lb__round-banner ${roundBanner.tone}`}>
+				<span class="round-banner-icon">{roundBanner.icon}</span>
+				<span class="round-banner-text">{roundBanner.text}</span>
+			</div>
+		{/if}
 
 		<div class="lb__notices">
 			{#if duelStage === 'PICK_ATTRIBUTE' && chooserId === playerA}
-				<div class="notice chooser" style="margin-top:12px; text-align:center;">
-					<span>{$t('duel.chooseAttribute')}</span>
+				<div class="notice chooser" style="text-align:center;">
 					<div>
 						<button
 							class="btn attribute-option"
