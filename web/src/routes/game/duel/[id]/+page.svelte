@@ -1087,7 +1087,7 @@
 									<img
 										src={cardBackImageUrl}
 										alt="hidden"
-										style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:10px;display:block;"
+										style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;border-radius:10px;display:block;"
 										loading="lazy"
 										decoding="async"
 									/>
