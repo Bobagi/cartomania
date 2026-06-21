@@ -220,18 +220,20 @@ web/                         SvelteKit frontend
   matching half — yours on pick (`youArt`), the opponent's on REVEAL (`oppArt`, gated on `oppRevealed =
   duelStage==='REVEAL'`; the opponent half is empty/dark while hidden — no card or veil). The art is sized
   to the circle's **vertical RADIUS** (`.lb__arena-art { height:100%; width:auto; aspect-ratio:1 }`, the
-  half flex-centres it) so it's a centred square and the **left/right sides stay empty by design**
-  (reserved — the user will fill them later). The **power selector lives INSIDE the disc** (lower-inner):
-  `.lb__picker` → `.lb__pick` buttons whose `.lb__orb` renders each power LIKE the cards (the attribute
-  icon as a background image with its value centred on it, reusing `.card-attribute-value` for the EXACT
-  card font + outline; size via `--orb-size`) with a green AURA on hover; clicking calls `chooseAttr()`
-  (the arena is `pointer-events:none`, the picker opts back in). The old bottom `.notice.chooser` and the
-  whole-card overlay (`.lb__center`) were removed; the
-  `.lb__arena-half--you` is clickable to return your card to hand. Rotating arcane rings (`.lb__arena-rings`
-  → `.lb__arena-ring--{1,2,3}`, `@keyframes arenaSpin`, behind the disc) add motion. `.lb__arena-seam` +
-  `.lb__arena-vs` ride the equator. **At REVEAL the clash shows as two `.lb__orb`s** (`.lb__reveal-power`):
-  YOUR chosen power low with a green aura + the OPPONENT's power high (`.lb__reveal-power--opp`, top) with a
-  red aura — icon + value (`chosenAttr` + `aVal`/`bVal`), same card style. The winner's half glows
+  half flex-centres it) so it's a centred square; the **left/right sides** are filled with an ambient FOG
+  (`.lb__arena-haze` — a heavily-blurred copy of the SAME art, so it auto-matches the creature's colours;
+  masked to fade at the seam). **Power orbs ride the disc's CIRCUMFERENCE** (`.lb__powers`, concentric +
+  `pointer-events:none`): during PICK the 3 `.lb__pick` options spread along the LOWER arc
+  (`.lb__pick--{l,c,r}`); at REVEAL `.lb__pwr--you` sits at the bottom rim (green) + `.lb__pwr--opp` at the
+  top rim (red). Each `.lb__orb` renders a power LIKE the cards: `.lb__orb-icon` (the attribute icon, a bg
+  image) with `.lb__orb-val` (the value, reusing `.card-attribute-value` for the EXACT card font + outline;
+  size via `--orb-size`) centred on it. The AURA is a coloured `drop-shadow` on `.lb__orb-icon` (so it
+  traces the symbol's CONTOUR, not the number) — green on hover / your power, red on the opponent's.
+  Clicking calls `chooseAttr()`. The old `.notice.chooser` + whole-card overlay (`.lb__center`) were
+  removed; the `.lb__arena-half--you` is clickable to return your card to hand. Rotating arcane rings
+  (`.lb__arena-rings` → `.lb__arena-ring--{1,2,3}`, `@keyframes arenaSpin`, behind the disc) add motion.
+  `.lb__arena-seam` + `.lb__arena-vs` ride the equator (`chosenAttr` + `aVal`/`bVal` feed the clash orbs).
+  The winner's half glows
   (`is-win`) + the loser's desaturates (`is-lose`). **Round-loss `CardDestroyer` FX (burn/dissolve/crush) plays ON the loser's creature ART:**
   each `.lb__arena-art` is wrapped in a tight square `.lb__arena-art-wrap` (so the FX canvas/burn-map size
   right) and bound to `arenaArt{You,Opp}Element`; `findLoserCenterElement()` returns the card result-wrap if
@@ -441,10 +443,11 @@ web/                         SvelteKit frontend
   loser's creature ART; and the power selector + clash live **inside the disc** as card-style `.lb__orb`s
   (icon + value, reusing `.card-attribute-value`) — green aura on hover / your chosen power, the opponent's
   power shows high with a red aura at REVEAL. The per-round win/lose banner is hidden. See the "Duel board
-  layout" gotcha. **Open follow-ups before merge:** (a) the user plans to fill the empty left/right side
-  spaces of the disc — TBD; (b) the opponent half is empty while its card is hidden (no indicator); (c) the
-  loser's `is-lose` dark tint still overlays the destruction (could drop it). To revert the whole thing:
-  `git checkout main` + rebuild + `pm2 restart cartomania-web`.
+  layout" gotcha. **Open follow-ups before merge:** (a) the empty side spaces now have a FIRST-PASS ambient
+  fog (`.lb__arena-haze`, blurred art) — tune blur/opacity or swap for a real particle fog if wanted;
+  (b) the opponent half is empty while its card is hidden (no indicator); (c) the loser's `is-lose` dark
+  tint still overlays the destruction (could drop it). To revert the whole thing: `git checkout main` +
+  rebuild + `pm2 restart cartomania-web`.
 
 1. **[SECURITY — do first] Rotate the live `admin`/`alice` passwords.** The live `.env` does NOT set
    `ADMIN_PASSWORD`/`ALICE_PASSWORD`, so the seed fell back to `admin123`/`alice123` — a publicly-known

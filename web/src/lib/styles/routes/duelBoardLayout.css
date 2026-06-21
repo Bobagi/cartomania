@@ -562,6 +562,32 @@
 	display: block;
 	animation: arenaArtIn 380ms cubic-bezier(0.18, 0.89, 0.32, 1.1) both;
 }
+/* Ambient "fog": a heavily-blurred copy of the SAME creature art, filling the half behind
+   the sharp square — so the empty left/right of the disc glows with the art's own colours
+   (it auto-matches because it IS the art). The disc clips it to the circle. First pass —
+   tune blur/opacity/scale, or swap for a real particle fog later. */
+.lb__arena-haze {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: center;
+	transform: scale(1.18);
+	filter: blur(34px) saturate(1.4) brightness(0.82);
+	opacity: 0.5;
+	z-index: -1;
+	pointer-events: none;
+	animation: arenaArtIn 520ms ease both;
+}
+.lb__arena-half--opp .lb__arena-haze {
+	-webkit-mask-image: linear-gradient(to top, transparent 2%, #000 38%);
+	mask-image: linear-gradient(to top, transparent 2%, #000 38%);
+}
+.lb__arena-half--you .lb__arena-haze {
+	-webkit-mask-image: linear-gradient(to bottom, transparent 2%, #000 38%);
+	mask-image: linear-gradient(to bottom, transparent 2%, #000 38%);
+}
 @keyframes arenaArtIn {
 	from {
 		opacity: 0;
@@ -594,97 +620,100 @@
 	z-index: 4;
 }
 
-/* In-circle power orbs: each power is rendered like the card attributes — the icon
-   with its value centred on it (it reuses `.card-attribute-value` for the EXACT card
-   font + outline), just bigger to use the disc space. A radial AURA glows around it:
-   green on the selector (hover) and on your chosen power at REVEAL, red on the
-   opponent's revealed power. The selector (`.lb__picker`) is at the lower-inner of the
-   disc; at REVEAL your power stays low (green) and the opponent's shows high (red). */
-.lb__picker,
-.lb__reveal-power {
+/* Power icons ride the disc's CIRCUMFERENCE (concentric `.lb__powers`). Each power is
+   rendered like a card attribute — the icon with its value centred on it (reusing
+   `.card-attribute-value` for the exact card font + outline). The AURA is a coloured GLOW on
+   the ICON itself (drop-shadow → it traces the symbol's CONTOUR, not the number): green on
+   hover / your chosen power, red on the opponent's. The picks spread along the lower arc; at
+   REVEAL your power sits at the bottom of the rim, the opponent's at the top. */
+.lb__powers {
 	position: absolute;
 	left: 50%;
-	transform: translateX(-50%);
+	top: 39%;
+	transform: translate(-50%, -50%);
+	width: min(58vh, 520px);
+	height: min(58vh, 520px);
 	z-index: 7;
-	display: flex;
-	gap: clamp(14px, 3vh, 42px);
-}
-.lb__picker {
-	bottom: 11%;
-	pointer-events: auto;
-}
-.lb__reveal-power {
 	pointer-events: none;
 }
-.lb__reveal-power--you {
-	bottom: 11%;
-}
-.lb__reveal-power--opp {
-	top: 11%;
+.lb__pick,
+.lb__pwr {
+	position: absolute;
+	transform: translate(-50%, -50%);
 }
 .lb__pick {
 	background: none;
 	border: 0;
-	padding: 4px;
+	padding: 0;
 	cursor: pointer;
 	line-height: 0;
+	pointer-events: auto;
 }
 .lb__pick:disabled {
 	cursor: not-allowed;
 	opacity: 0.5;
 }
+/* the 3 options spread along the lower circumference */
+.lb__pick--l {
+	left: 18%;
+	top: 88%;
+}
+.lb__pick--c {
+	left: 50%;
+	top: 100%;
+}
+.lb__pick--r {
+	left: 82%;
+	top: 88%;
+}
+/* reveal: your power at the bottom of the rim, the opponent's at the top */
+.lb__pwr--you {
+	left: 50%;
+	top: 100%;
+}
+.lb__pwr--opp {
+	left: 50%;
+	top: 4%;
+}
 
 .lb__orb {
-	--orb-size: clamp(56px, 11vh, 104px);
-	--aura: transparent;
+	--orb-size: clamp(58px, 11.5vh, 112px);
 	position: relative;
 	display: grid;
 	place-items: center;
 	width: var(--orb-size);
 	height: var(--orb-size);
+	transition: transform 0.12s ease;
+}
+.lb__orb-icon {
+	position: absolute;
+	inset: 0;
 	background-size: contain;
 	background-repeat: no-repeat;
 	background-position: center;
-	filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.6));
-	transition: transform 0.12s ease;
-}
-.lb__orb::before {
-	content: '';
-	position: absolute;
-	inset: -24%;
-	border-radius: 50%;
-	background: radial-gradient(circle, var(--aura), transparent 68%);
-	opacity: 0;
-	transition: opacity 0.18s ease;
-	z-index: -1;
-	pointer-events: none;
+	filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.65));
+	transition: filter 0.2s ease;
 }
 .lb__orb-val {
-	--cc-val-size: calc(var(--orb-size) * 0.46);
+	--cc-val-size: calc(var(--orb-size) * 0.44);
+	position: relative;
+	z-index: 1;
 	letter-spacing: -0.1em;
 	transform: scaleX(0.92);
 	line-height: 1;
 }
-/* green aura — your power (and the selector hover) */
-.lb__orb--green,
-.lb__orb--hover {
-	--aura: rgba(74, 222, 128, 0.62);
+/* AURA = a coloured glow on the ICON's contour (not the number) */
+.lb__orb--green .lb__orb-icon,
+.lb__pick:hover:not(:disabled) .lb__orb--hover .lb__orb-icon {
+	filter: drop-shadow(0 0 4px rgba(74, 222, 128, 0.95))
+		drop-shadow(0 0 11px rgba(74, 222, 128, 0.8)) drop-shadow(0 0 22px rgba(74, 222, 128, 0.5));
 }
-.lb__orb--green::before {
-	opacity: 1;
-}
-.lb__pick:hover:not(:disabled) .lb__orb--hover::before {
-	opacity: 1;
+.lb__orb--red .lb__orb-icon {
+	filter: drop-shadow(0 0 4px rgba(248, 84, 84, 0.95)) drop-shadow(0 0 11px rgba(248, 84, 84, 0.8))
+		drop-shadow(0 0 22px rgba(248, 84, 84, 0.55));
 }
 .lb__pick:hover:not(:disabled) .lb__orb {
-	transform: translateY(-3px) scale(1.05);
-}
-/* red aura — the opponent's revealed power */
-.lb__orb--red {
-	--aura: rgba(248, 84, 84, 0.66);
-}
-.lb__orb--red::before {
-	opacity: 1;
+	transform: translateY(-4px) scale(1.07);
 }
 
 /* round outcome: the winner's half glows, the loser's desaturates + darkens */

@@ -69,9 +69,9 @@
 		fire: '/icons/fire_icon.png'
 	};
 	const POWER_OPTIONS = [
-		{ attr: 'magic', tkey: 'duel.chooseMagic' },
-		{ attr: 'might', tkey: 'duel.chooseMight' },
-		{ attr: 'fire', tkey: 'duel.chooseFire' }
+		{ attr: 'magic', tkey: 'duel.chooseMagic', pos: 'l' },
+		{ attr: 'might', tkey: 'duel.chooseMight', pos: 'c' },
+		{ attr: 'fire', tkey: 'duel.chooseFire', pos: 'r' }
 	] as const;
 
 	let errorMessageText: string | null = null;
@@ -1022,6 +1022,7 @@
 		<div class="lb__arena">
 			<div class={`lb__arena-half lb__arena-half--opp ${oppOutcome ? 'is-' + oppOutcome : ''}`}>
 				{#if oppArt && oppRevealed}
+					<img class="lb__arena-haze" src={oppArt} alt="" aria-hidden="true" decoding="async" />
 					<div class="lb__arena-art-wrap">
 						<img
 							class="lb__arena-art"
@@ -1044,6 +1045,7 @@
 				title={canReturnSelectedCardToHand ? $t('duel.returnCard') : ''}
 			>
 				{#if youArt}
+					<img class="lb__arena-haze" src={youArt} alt="" aria-hidden="true" decoding="async" />
 					<div class="lb__arena-art-wrap">
 						<img
 							class="lb__arena-art"
@@ -1060,48 +1062,42 @@
 				<span class="vs__spark"></span>
 				<span class="vs__disc">VS</span>
 			</div>
+		</div>
 
-			<!-- In-circle power selector (PICK): each power rendered like on the cards — the icon
-			     with its value centred on it (same font/outline); hover shows a green aura. -->
+		<!-- Power icons ride the disc's CIRCUMFERENCE (so they don't cover the central art): the 3
+		     options spread along the lower arc; at REVEAL your power sits at the bottom of the rim
+		     (green) and the opponent's at the top of the rim (red). Concentric with .lb__arena. -->
+		<div class="lb__powers">
 			{#if duelStage === 'PICK_ATTRIBUTE' && chooserId === playerA}
-				<div class="lb__picker">
-					{#each POWER_OPTIONS as opt (opt.attr)}
-						<button
-							class="lb__pick"
-							disabled={isGameOver()}
-							on:click={() => chooseAttr(opt.attr)}
-							title={$t(opt.tkey, { value: chooserCardDetails?.[opt.attr] ?? '–' })}
-							aria-label={$t(opt.tkey, { value: chooserCardDetails?.[opt.attr] ?? '–' })}
-						>
-							<span
-								class="lb__orb lb__orb--hover"
-								style={`background-image:url(${ATTR_ICON[opt.attr]})`}
-								aria-hidden="true"
-							>
-								<span class="card-attribute-value lb__orb-val"
-									>{chooserCardDetails?.[opt.attr] ?? '–'}</span
-								>
-							</span>
-						</button>
-					{/each}
-				</div>
-			{/if}
-
-			<!-- Clash (REVEAL): your chosen power (green aura, low) vs the opponent's (red aura, high). -->
-			{#if duelStage === 'REVEAL' && chosenAttr}
-				<div class="lb__reveal-power lb__reveal-power--opp" aria-hidden="true">
-					<span
-						class="lb__orb lb__orb--red"
-						style={`background-image:url(${ATTR_ICON[chosenAttr]})`}
+				{#each POWER_OPTIONS as opt (opt.attr)}
+					<button
+						class={`lb__pick lb__pick--${opt.pos}`}
+						disabled={isGameOver()}
+						on:click={() => chooseAttr(opt.attr)}
+						title={$t(opt.tkey, { value: chooserCardDetails?.[opt.attr] ?? '–' })}
+						aria-label={$t(opt.tkey, { value: chooserCardDetails?.[opt.attr] ?? '–' })}
 					>
+						<span class="lb__orb lb__orb--hover">
+							<span class="lb__orb-icon" style={`background-image:url(${ATTR_ICON[opt.attr]})`}
+							></span>
+							<span class="card-attribute-value lb__orb-val"
+								>{chooserCardDetails?.[opt.attr] ?? '–'}</span
+							>
+						</span>
+					</button>
+				{/each}
+			{:else if duelStage === 'REVEAL' && chosenAttr}
+				<div class="lb__pwr lb__pwr--opp" aria-hidden="true">
+					<span class="lb__orb lb__orb--red">
+						<span class="lb__orb-icon" style={`background-image:url(${ATTR_ICON[chosenAttr]})`}
+						></span>
 						<span class="card-attribute-value lb__orb-val">{oppPowerValue ?? '–'}</span>
 					</span>
 				</div>
-				<div class="lb__reveal-power lb__reveal-power--you" aria-hidden="true">
-					<span
-						class="lb__orb lb__orb--green"
-						style={`background-image:url(${ATTR_ICON[chosenAttr]})`}
-					>
+				<div class="lb__pwr lb__pwr--you" aria-hidden="true">
+					<span class="lb__orb lb__orb--green">
+						<span class="lb__orb-icon" style={`background-image:url(${ATTR_ICON[chosenAttr]})`}
+						></span>
 						<span class="card-attribute-value lb__orb-val">{playerPowerValue ?? '–'}</span>
 					</span>
 				</div>
