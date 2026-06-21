@@ -1,99 +1,72 @@
 /**
  * Void Flames — an ambient particle effect for the duel arena.
  *
- * Dark, smoky "flame tongues" emanate OUTWARD from each played card's art into the
- * empty space of the circular battlefield, like the black/void flames in games such as
- * Hearthstone. The flame COLOURS are sampled from the card's own art (a tiny offscreen
- * <canvas> read of the image — needs CORS, which the card-image host now sends), so the
- * flames always match the creature.
+ * Dark, smoky "flame tongues" emanate OUTWARD from each played card's art into the empty
+ * space of the circular battlefield, like the black/void flames in games such as
+ * Hearthstone. Each flame's colour is sampled from the art's EDGE at the point it
+ * emanates from, so the flames bleed the card's own border colours.
  *
  * Same family as the card destruction FX (`cardDestruction.ts`): a requestAnimationFrame
- * loop driving a <canvas> particle system. Here it's ambient/continuous and confined to
- * the disc, and it NEVER touches the art's pixels/edges — it only fills the empty space.
+ * loop driving a <canvas> particle system — ambient/continuous, confined to the disc, and
+ * it NEVER touches the art's pixels/edges.
  *
  * The engine self-discovers emitters each frame by querying `.lb__arena-art` inside the
  * root element, so the Svelte side just creates it once and calls start()/stop().
+ *
+ * Colour sampling reads the image pixels on a tiny <canvas>; the card-image host sends CORS
+ * (so it isn't tainted), and we fetch a cache-busted copy with crossorigin to dodge the
+ * classic "already cached without CORS → tainted" bug. Falls back to a neutral tone while
+ * the sample loads / if it ever fails.
  */
 
 export type RGB = [number, number, number];
 
-const FALLBACK_PALETTE: RGB[] = [
-	[150, 70, 210],
-	[95, 45, 165],
-	[200, 110, 235]
-];
+const FALLBACK: RGB = [88, 78, 110];
 
-// ---- palette sampling (cached by image src) --------------------------------
-const paletteCache = new Map<string, RGB[]>();
-const palettePending = new Set<string>();
-
-function getPalette(src: string): RGB[] {
-	return paletteCache.get(src) ?? FALLBACK_PALETTE;
+// ---- per-art edge-colour grid (sampled once per src) -----------------------
+interface Grid {
+	data: Uint8ClampedArray;
+	w: number;
+	h: number;
 }
+const gridCache = new Map<string, Grid | null>();
+const gridPending = new Set<string>();
 
-function ensurePalette(src: string): void {
-	if (!src || paletteCache.has(src) || palettePending.has(src)) return;
-	palettePending.add(src);
+function ensureGrid(src: string): void {
+	if (!src || gridCache.has(src) || gridPending.has(src)) return;
+	gridPending.add(src);
 	const img = new Image();
 	img.crossOrigin = 'anonymous';
 	img.onload = () => {
 		try {
-			const n = 14;
+			const n = 48;
 			const c = document.createElement('canvas');
 			c.width = n;
 			c.height = n;
 			const ctx = c.getContext('2d');
 			if (!ctx) throw new Error('no 2d');
 			ctx.drawImage(img, 0, 0, n, n);
-			const { data } = ctx.getImageData(0, 0, n, n);
-			paletteCache.set(src, extractPalette(data));
+			gridCache.set(src, { data: ctx.getImageData(0, 0, n, n).data, w: n, h: n });
 		} catch {
-			paletteCache.set(src, FALLBACK_PALETTE);
+			gridCache.set(src, null);
 		} finally {
-			palettePending.delete(src);
+			gridPending.delete(src);
 		}
 	};
 	img.onerror = () => {
-		paletteCache.set(src, FALLBACK_PALETTE);
-		palettePending.delete(src);
+		gridCache.set(src, null);
+		gridPending.delete(src);
 	};
-	img.src = src;
+	// cache-buster so the crossorigin request can't reuse a non-CORS cached copy
+	img.src = src + (src.includes('?') ? '&' : '?') + 'fx=1';
 }
 
-// Pick the most vivid (saturated, mid-bright) colours, bucketed so we get variety.
-function extractPalette(data: Uint8ClampedArray): RGB[] {
-	const buckets = new Map<string, { r: number; g: number; b: number; n: number; score: number }>();
-	for (let i = 0; i < data.length; i += 4) {
-		const r = data[i];
-		const g = data[i + 1];
-		const b = data[i + 2];
-		if (data[i + 3] < 40) continue;
-		const mx = Math.max(r, g, b);
-		const mn = Math.min(r, g, b);
-		const sat = mx === 0 ? 0 : (mx - mn) / mx;
-		const lum = (r + g + b) / 3;
-		if (lum < 24 || lum > 236) continue;
-		const score = sat * (1 - Math.abs(lum - 155) / 165);
-		const key = `${r >> 5}-${g >> 5}-${b >> 5}`;
-		const cur = buckets.get(key);
-		if (cur) {
-			cur.r += r;
-			cur.g += g;
-			cur.b += b;
-			cur.n++;
-			cur.score += score;
-		} else {
-			buckets.set(key, { r, g, b, n: 1, score });
-		}
-	}
-	const arr = [...buckets.values()]
-		.map((v) => ({
-			rgb: [Math.round(v.r / v.n), Math.round(v.g / v.n), Math.round(v.b / v.n)] as RGB,
-			score: v.score
-		}))
-		.sort((a, b) => b.score - a.score);
-	const pal = arr.slice(0, 5).map((x) => x.rgb);
-	return pal.length ? pal : FALLBACK_PALETTE;
+// Colour at a normalized (0..1) point of the art, brightened a touch so the flame reads.
+function colorAt(grid: Grid, nx: number, ny: number): RGB {
+	const x = Math.max(0, Math.min(grid.w - 1, (nx * grid.w) | 0));
+	const y = Math.max(0, Math.min(grid.h - 1, (ny * grid.h) | 0));
+	const i = (y * grid.w + x) * 4;
+	return [grid.data[i], grid.data[i + 1], grid.data[i + 2]];
 }
 
 // ---- particle engine -------------------------------------------------------
@@ -107,6 +80,7 @@ interface Particle {
 	size: number;
 	rgb: RGB;
 	seed: number;
+	buoy: number;
 }
 
 interface Emitter {
@@ -114,10 +88,12 @@ interface Emitter {
 	cy: number;
 	rx: number;
 	ry: number;
-	pal: RGB[];
+	src: string;
+	buoyDir: number; // +1 = drift DOWN (opponent, top → toward the player), -1 = UP
 }
 
-const MAX_PARTICLES = 320;
+const MAX_PARTICLES = 560;
+const RATE_PER_EMITTER = 96; // particles/sec — dense enough to fill a half
 
 export class VoidFlames {
 	private canvas: HTMLCanvasElement;
@@ -169,17 +145,20 @@ export class VoidFlames {
 	private emitters(canvasRect: DOMRect): Emitter[] {
 		const arts = this.root.querySelectorAll<HTMLImageElement>('.lb__arena-art');
 		const out: Emitter[] = [];
+		const midY = canvasRect.height / 2;
 		arts.forEach((el) => {
 			const b = el.getBoundingClientRect();
 			if (b.width < 4) return;
 			const src = el.currentSrc || el.src;
-			ensurePalette(src);
+			ensureGrid(src);
+			const cy = b.top - canvasRect.top + b.height / 2;
 			out.push({
 				cx: b.left - canvasRect.left + b.width / 2,
-				cy: b.top - canvasRect.top + b.height / 2,
+				cy,
 				rx: b.width / 2,
 				ry: b.height / 2,
-				pal: getPalette(src)
+				src,
+				buoyDir: cy < midY ? 1 : -1
 			});
 		});
 		return out;
@@ -187,27 +166,29 @@ export class VoidFlames {
 
 	private spawn(em: Emitter): void {
 		if (this.parts.length >= MAX_PARTICLES) return;
-		// Bias spawns toward the art's SIDES (where the empty space is), so the flames lick
-		// out into the void rather than over the seam/rim. Push OUTWARD with a gentle rise.
-		const a = Math.atan2(
-			Math.sin(Math.random() * Math.PI * 2) * 0.55,
-			Math.cos(Math.random() * Math.PI * 2)
-		);
-		const px = em.cx + Math.cos(a) * em.rx * 0.9;
-		const py = em.cy + Math.sin(a) * em.ry * 0.9;
-		const speed = 26 + Math.random() * 62;
-		const rgb = em.pal[(Math.random() * em.pal.length) | 0] ?? FALLBACK_PALETTE[0];
-		const life = 1.3 + Math.random() * 2.1;
+		const a = Math.random() * Math.PI * 2;
+		// spawn just inside the art's perimeter and push OUTWARD into the empty space
+		const px = em.cx + Math.cos(a) * em.rx * 0.92;
+		const py = em.cy + Math.sin(a) * em.ry * 0.92;
+		// colour = the art's edge colour where the flame leaves the card
+		const grid = gridCache.get(em.src);
+		const rgb: RGB = grid
+			? colorAt(grid, 0.5 + Math.cos(a) * 0.46, 0.5 + Math.sin(a) * 0.46)
+			: FALLBACK;
+		const speed = 30 + Math.random() * 80;
+		const life = 1.7 + Math.random() * 2.7;
+		const buoy = em.buoyDir * (26 + Math.random() * 22);
 		this.parts.push({
 			x: px,
 			y: py,
 			vx: Math.cos(a) * speed,
-			vy: Math.sin(a) * speed - (8 + Math.random() * 16),
+			vy: Math.sin(a) * speed + buoy * 0.4,
 			life,
 			max: life,
-			size: 7 + Math.random() * 15,
+			size: 12 + Math.random() * 20,
 			rgb,
-			seed: Math.random() * 1000
+			seed: Math.random() * 1000,
+			buoy
 		});
 	}
 
@@ -221,9 +202,8 @@ export class VoidFlames {
 		ctx.clearRect(0, 0, this.cw, this.ch);
 
 		const ems = this.emitters(cr);
-		const ratePerEmitter = 48;
 		this.acc += dt;
-		const step = 1 / ratePerEmitter;
+		const step = 1 / RATE_PER_EMITTER;
 		while (this.acc > step) {
 			this.acc -= step;
 			for (const em of ems) this.spawn(em);
@@ -236,31 +216,30 @@ export class VoidFlames {
 			if (p.life <= 0) continue;
 			const t = p.max - p.life;
 			// curl perpendicular to motion → wavy, tentacle-like tongues
-			const curl = Math.sin(p.seed + t * 3.4) * 36;
+			const curl = Math.sin(p.seed + t * 3.4) * 38;
 			const a0 = Math.atan2(p.vy, p.vx);
 			p.vx += Math.cos(a0 + Math.PI / 2) * curl * dt;
-			p.vy += Math.sin(a0 + Math.PI / 2) * curl * dt - 22 * dt; // gentle buoyancy
+			p.vy += Math.sin(a0 + Math.PI / 2) * curl * dt + p.buoy * dt; // buoyancy (per side)
 			p.x += p.vx * dt;
 			p.y += p.vy * dt;
 			p.vx *= 0.985;
 			p.vy *= 0.99;
 			const k = p.life / p.max; // 1 → 0
-			// Dark flame: low alpha + dimmed colours → a dark, colour-tinted flare (not bright
-			// fire). Each particle is stretched along its motion into a tongue.
-			const alpha = Math.min(1, k * 1.9) * 0.26;
-			const rad = p.size * (0.7 + (1 - k) * 2.1);
+			// dark, colour-tinted flare; stretched along motion into a tongue
+			const alpha = Math.min(1, k * 1.9) * 0.24;
+			const rad = p.size * (0.7 + (1 - k) * 2.2);
 			const speed = Math.hypot(p.vx, p.vy);
-			const elong = 1 + Math.min(3.6, speed / 30); // faster → longer tongue
+			const elong = 1 + Math.min(3.6, speed / 30);
 			const [r, g, b] = p.rgb;
 			ctx.save();
 			ctx.translate(p.x, p.y);
 			ctx.rotate(a0);
 			ctx.scale(elong, 1);
 			const grd = ctx.createRadialGradient(0, 0, 0, 0, 0, rad);
-			grd.addColorStop(0, `rgba(${(r * 0.72) | 0},${(g * 0.66) | 0},${(b * 0.8) | 0},${alpha})`);
+			grd.addColorStop(0, `rgba(${(r * 0.82) | 0},${(g * 0.76) | 0},${(b * 0.9) | 0},${alpha})`);
 			grd.addColorStop(
 				0.5,
-				`rgba(${(r * 0.3) | 0},${(g * 0.26) | 0},${(b * 0.4) | 0},${alpha * 0.42})`
+				`rgba(${(r * 0.34) | 0},${(g * 0.3) | 0},${(b * 0.44) | 0},${alpha * 0.45})`
 			);
 			grd.addColorStop(1, 'rgba(0,0,0,0)');
 			ctx.fillStyle = grd;

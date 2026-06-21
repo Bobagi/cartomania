@@ -560,6 +560,10 @@
 	object-fit: cover;
 	object-position: center;
 	display: block;
+	/* Feather ONLY the outer edge so the art blends into the flames (centre stays sharp —
+	   minimal effect on the art itself); softens the hard square edge. */
+	-webkit-mask-image: radial-gradient(closest-side, #000 85%, transparent 100%);
+	mask-image: radial-gradient(closest-side, #000 85%, transparent 100%);
 	animation: arenaArtIn 380ms cubic-bezier(0.18, 0.89, 0.32, 1.1) both;
 }
 /* Void-flame particle canvas: ambient flames that emanate from each played card's art into

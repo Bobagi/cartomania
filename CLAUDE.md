@@ -225,10 +225,14 @@ web/                         SvelteKit frontend
   half flex-centres it) so it's a centred square; the **left/right sides** are filled by **void flames** —
   `web/src/lib/cards/voidFlames.ts` (`VoidFlames`): a `<canvas>` (`.lb__flames`, behind the halves) particle
   system (same family as the destruction FX) that emits dark, art-coloured "flame tongues" OUTWARD from each
-  played card's art into the empty space, never touching the art's pixels/edges. Colours are **sampled from
-  the card art** (a tiny offscreen-canvas read — needs CORS, which `bobagi.space/images/` now sends; falls
-  back to a violet palette). The engine self-discovers emitters by querying `.lb__arena-art`; the duel page
-  just `new VoidFlames(canvas, arenaEl)` + `start()`/`stop()`. **Power orbs ride the disc's CIRCUMFERENCE** (`.lb__powers`, concentric +
+  played card's art into the empty space, never touching the art's pixels. Each flame's colour is **sampled
+  from the art's EDGE** at the point it leaves the card (a tiny offscreen-canvas pixel read — needs CORS,
+  which `bobagi.space/images/` now sends; uses a `?fx` **cache-buster** so the crossorigin fetch can't reuse
+  a non-CORS cached copy → that bug made the flames fall back to a neutral violet; samples per `src` into a
+  48×48 grid). The opponent's flames drift toward the player (buoyancy per side); the art's outer edge is
+  feathered (a subtle `radial mask`, centre stays sharp) so it blends into the flames. The engine
+  self-discovers emitters by querying `.lb__arena-art`; the duel page just `new VoidFlames(canvas, arenaEl)`
+  + `start()`/`stop()`. **Power orbs ride the disc's CIRCUMFERENCE** (`.lb__powers`, concentric +
   `pointer-events:none`): during PICK the 3 `.lb__pick` options spread along the LOWER arc
   (`.lb__pick--{l,c,r}`); at REVEAL `.lb__pwr--you` sits at the bottom rim (green) + `.lb__pwr--opp` at the
   top rim (red). Each `.lb__orb` renders a power LIKE the cards: `.lb__orb-icon` (the attribute icon, a bg
