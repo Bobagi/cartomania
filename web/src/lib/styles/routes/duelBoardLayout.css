@@ -462,7 +462,8 @@
 		inset 0 0 46px rgba(0, 0, 0, 0.66),
 		0 20px 54px rgba(0, 0, 0, 0.55);
 }
-/* outer vignette so the art melts into the felt at the rim */
+/* The void encroaching from the rim — dark + reaching well inward, so the art's outer edges
+   get "consumed" by the dark as they fray into the fog. */
 .lb__arena::after {
 	content: '';
 	position: absolute;
@@ -470,7 +471,12 @@
 	border-radius: 50%;
 	pointer-events: none;
 	z-index: 2;
-	background: radial-gradient(circle at 50% 50%, transparent 55%, rgba(6, 9, 16, 0.62) 100%);
+	background: radial-gradient(
+		circle at 50% 50%,
+		transparent 36%,
+		rgba(5, 7, 14, 0.5) 68%,
+		rgba(2, 3, 8, 0.94) 100%
+	);
 }
 
 /* Rotating arcane rings concentric with the disc (decorative, behind the felt). */
@@ -560,12 +566,26 @@
 	object-fit: cover;
 	object-position: center;
 	display: block;
+	/* Dissolve the art's edges so there's NO hard square edge — the creature frays into the
+	   void/fog. Center stays sharp; edges + corners fade to transparent. */
+	-webkit-mask-image: radial-gradient(
+		closest-side at 50% 50%,
+		#000 56%,
+		rgba(0, 0, 0, 0.45) 82%,
+		transparent 100%
+	);
+	mask-image: radial-gradient(
+		closest-side at 50% 50%,
+		#000 56%,
+		rgba(0, 0, 0, 0.45) 82%,
+		transparent 100%
+	);
 	animation: arenaArtIn 380ms cubic-bezier(0.18, 0.89, 0.32, 1.1) both;
 }
-/* Ambient "fog": a heavily-blurred copy of the SAME creature art, filling the half behind
-   the sharp square — so the empty left/right of the disc glows with the art's own colours
-   (it auto-matches because it IS the art). The disc clips it to the circle. First pass —
-   tune blur/opacity/scale, or swap for a real particle fog later. */
+/* Ambient VOID fog: a heavily-blurred + darkened copy of the SAME creature art, so the
+   empty space reads as a dark void emanating from the art (auto-matches its colours because
+   it IS the art). The edge-masked art frays INTO this; the disc clips it; a slow drift makes
+   the void feel alive/consuming. */
 .lb__arena-haze {
 	position: absolute;
 	inset: 0;
@@ -573,12 +593,23 @@
 	height: 100%;
 	object-fit: cover;
 	object-position: center;
-	transform: scale(1.18);
-	filter: blur(34px) saturate(1.4) brightness(0.82);
-	opacity: 0.5;
+	filter: blur(44px) saturate(1.15) brightness(0.42) contrast(1.1);
+	opacity: 0.7;
 	z-index: -1;
 	pointer-events: none;
-	animation: arenaArtIn 520ms ease both;
+	will-change: transform, opacity;
+	animation: voidDrift 9s ease-in-out infinite;
+}
+@keyframes voidDrift {
+	0%,
+	100% {
+		transform: scale(1.26) rotate(0deg);
+		opacity: 0.62;
+	}
+	50% {
+		transform: scale(1.44) rotate(2.5deg);
+		opacity: 0.8;
+	}
 }
 .lb__arena-half--opp .lb__arena-haze {
 	-webkit-mask-image: linear-gradient(to top, transparent 2%, #000 38%);

@@ -220,9 +220,11 @@ web/                         SvelteKit frontend
   matching half — yours on pick (`youArt`), the opponent's on REVEAL (`oppArt`, gated on `oppRevealed =
   duelStage==='REVEAL'`; the opponent half is empty/dark while hidden — no card or veil). The art is sized
   to the circle's **vertical RADIUS** (`.lb__arena-art { height:100%; width:auto; aspect-ratio:1 }`, the
-  half flex-centres it) so it's a centred square; the **left/right sides** are filled with an ambient FOG
-  (`.lb__arena-haze` — a heavily-blurred copy of the SAME art, so it auto-matches the creature's colours;
-  masked to fade at the seam). **Power orbs ride the disc's CIRCUMFERENCE** (`.lb__powers`, concentric +
+  half flex-centres it). The art's edges are **dissolved** with a radial `mask-image` (no hard square
+  edge — it frays into the void), and the empty space is a dark **VOID FOG**: `.lb__arena-haze`, a
+  heavily-blurred + darkened copy of the SAME art (auto-matches the creature's colours), slowly drifting
+  (`@keyframes voidDrift`) and masked to fade at the seam, with a strong rim vignette (`.lb__arena::after`)
+  that "consumes" the outer edges into darkness. **Power orbs ride the disc's CIRCUMFERENCE** (`.lb__powers`, concentric +
   `pointer-events:none`): during PICK the 3 `.lb__pick` options spread along the LOWER arc
   (`.lb__pick--{l,c,r}`); at REVEAL `.lb__pwr--you` sits at the bottom rim (green) + `.lb__pwr--opp` at the
   top rim (red). Each `.lb__orb` renders a power LIKE the cards: `.lb__orb-icon` (the attribute icon, a bg
@@ -443,10 +445,11 @@ web/                         SvelteKit frontend
   loser's creature ART; and the power selector + clash live **inside the disc** as card-style `.lb__orb`s
   (icon + value, reusing `.card-attribute-value`) — green aura on hover / your chosen power, the opponent's
   power shows high with a red aura at REVEAL. The per-round win/lose banner is hidden. See the "Duel board
-  layout" gotcha. **Open follow-ups before merge:** (a) the empty side spaces now have a FIRST-PASS ambient
-  fog (`.lb__arena-haze`, blurred art) — tune blur/opacity or swap for a real particle fog if wanted;
-  (b) the opponent half is empty while its card is hidden (no indicator); (c) the loser's `is-lose` dark
-  tint still overlays the destruction (could drop it). To revert the whole thing: `git checkout main` +
+  layout" gotcha. **Open follow-ups before merge:** (a) the empty space is a dark VOID FOG (edge-dissolve
+  mask + blurred-art haze + rim vignette + drift) — could escalate to animated tendrils / real particles if
+  the user wants more "consuming" motion; (b) the opponent half is empty while its card is hidden (no
+  indicator); (c) the loser's `is-lose` dark tint still overlays the destruction (could drop it). To revert
+  the whole thing: `git checkout main` +
   rebuild + `pm2 restart cartomania-web`.
 
 1. **[SECURITY — do first] Rotate the live `admin`/`alice` passwords.** The live `.env` does NOT set
