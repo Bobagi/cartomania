@@ -1016,10 +1016,10 @@
 	</header>
 
 	<section class="lb__table">
-		<!-- Circular battlefield arena: the played card's creature ART is masked into the felt
-		     circle (background) with rotating arcane rings, and the WHOLE card is shown on TOP for
-		     clarity (name + attributes). Your half (bottom) fills on pick; the opponent's half (top)
-		     reveals on REVEAL. The opponent's card-back is shown UPRIGHT (the on-top flip card). -->
+		<!-- Circular battlefield arena (art only): the played card's creature ART is masked into the
+		     felt disc, sized to the circle's vertical RADIUS and centred (the left/right sides stay
+		     empty by design — reserved for later). Rotating arcane rings add motion, and the attribute
+		     selector lives INSIDE the disc (lower-inner): an icon + value per power; click one to choose. -->
 		<div class="lb__arena-rings" aria-hidden="true">
 			<span class="lb__arena-ring lb__arena-ring--1"></span>
 			<span class="lb__arena-ring lb__arena-ring--2"></span>
@@ -1037,95 +1037,63 @@
 					/>
 				{/if}
 			</div>
-			<div class={`lb__arena-half lb__arena-half--you ${youOutcome ? 'is-' + youOutcome : ''}`}>
+			<div
+				class={`lb__arena-half lb__arena-half--you ${youOutcome ? 'is-' + youOutcome : ''}`}
+				class:is-removable={canReturnSelectedCardToHand}
+				role="button"
+				tabindex="0"
+				on:click={onCenterCardReturnToHand}
+				on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && onCenterCardReturnToHand()}
+				title={canReturnSelectedCardToHand ? $t('duel.returnCard') : ''}
+			>
 				{#if youArt}
 					<img class="lb__arena-art" src={youArt} alt={youName} decoding="async" />
 				{/if}
 			</div>
 			<div class="lb__arena-seam" aria-hidden="true"></div>
-		</div>
-
-		<!-- Whole cards on TOP (clarity): opponent (flip — upright card-back until REVEAL) / VS / you. -->
-		<div class="lb__center">
-			<div class="lb__center-slot">
-				{#if oppCardCode}
-					<div class="flip-wrap" data-cycle={centerRevealCycle}>
-						<div
-							class="flipper"
-							class:start-back={currentDuelStage !== 'REVEAL'}
-							class:animate={currentDuelStage === 'REVEAL'}
-							style={`--flip-ms:${FLIP_MS}ms;`}
-						>
-							<div class="face front">
-								<div
-									bind:this={centerSlotBElement}
-									class={`result-wrap ${currentDuelStage === 'REVEAL' && currentDuelRoundWinner === playerB ? 'winner-glow' : currentDuelStage === 'REVEAL' && currentDuelRoundWinner && currentDuelRoundWinner !== playerB ? 'loser-shake' : ''}`}
-								>
-									<CardComposite
-										artImageUrl={oppCard?.imageUrl ?? ''}
-										frameImageUrl={frameOverlayImageUrl ?? '/frames/default.png'}
-										titleImageUrl={titleOverlayImageUrl}
-										titleText={oppCard?.name ?? oppCardCode}
-										aspectWidth={1444}
-										aspectHeight={1920}
-										artObjectFit="cover"
-										enableTilt={false}
-										descriptionText={oppCard?.description ?? ''}
-										magicValue={oppCard?.magic ?? 0}
-										mightValue={oppCard?.might ?? 0}
-										fireValue={oppCard?.fire ?? 0}
-										cornerNumberValue={oppCard?.number ?? 0}
-									/>
-								</div>
-							</div>
-							<div class="face back">
-								<img
-									src={cardBackImageUrl}
-									alt="hidden"
-									style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;border-radius:10px;display:block;"
-									loading="lazy"
-									decoding="async"
-								/>
-							</div>
-						</div>
-					</div>
-				{/if}
-			</div>
-
-			<div class="lb__center-vs vs" class:clash={currentDuelStage === 'REVEAL'} aria-hidden="true">
+			<div class="lb__arena-vs vs" class:clash={currentDuelStage === 'REVEAL'} aria-hidden="true">
 				<span class="vs__spark"></span>
 				<span class="vs__disc">VS</span>
 			</div>
 
-			<div class="lb__center-slot" class:slot-removable={canReturnSelectedCardToHand}>
-				{#if youCardCode}
-					<div
-						bind:this={centerSlotAElement}
-						class={`result-wrap ${currentDuelStage === 'REVEAL' && currentDuelRoundWinner === playerA ? 'winner-glow' : currentDuelStage === 'REVEAL' && currentDuelRoundWinner && currentDuelRoundWinner !== playerA ? 'loser-shake' : ''}`}
-						role="button"
-						tabindex="0"
-						on:click={onCenterCardReturnToHand}
-						on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && onCenterCardReturnToHand()}
-						title={canReturnSelectedCardToHand ? $t('duel.returnCard') : ''}
+			<!-- In-circle power selector: icon + value per attribute, lower-inner of the disc. -->
+			{#if duelStage === 'PICK_ATTRIBUTE' && chooserId === playerA}
+				<div class="lb__picker">
+					<button
+						class="lb__pick"
+						class:is-best={isHighlightedAttribute('magic')}
+						disabled={isGameOver()}
+						on:click={() => chooseAttr('magic')}
+						title={$t('duel.chooseMagic', { value: chooserCardDetails?.magic ?? '–' })}
+						aria-label={$t('duel.chooseMagic', { value: chooserCardDetails?.magic ?? '–' })}
 					>
-						<CardComposite
-							artImageUrl={youCard?.imageUrl ?? ''}
-							frameImageUrl={frameOverlayImageUrl ?? '/frames/default.png'}
-							titleImageUrl={titleOverlayImageUrl}
-							titleText={youCard?.name ?? youCardCode}
-							aspectWidth={1444}
-							aspectHeight={1920}
-							artObjectFit="cover"
-							enableTilt={false}
-							descriptionText={youCard?.description ?? ''}
-							magicValue={youCard?.magic ?? 0}
-							mightValue={youCard?.might ?? 0}
-							fireValue={youCard?.fire ?? 0}
-							cornerNumberValue={youCard?.number ?? 0}
-						/>
-					</div>
-				{/if}
-			</div>
+						<img src="/icons/magic_icon.png" alt="Magic icon" loading="lazy" decoding="async" />
+						<span class="lb__pick-val">{chooserCardDetails?.magic ?? '–'}</span>
+					</button>
+					<button
+						class="lb__pick"
+						class:is-best={isHighlightedAttribute('might')}
+						disabled={isGameOver()}
+						on:click={() => chooseAttr('might')}
+						title={$t('duel.chooseMight', { value: chooserCardDetails?.might ?? '–' })}
+						aria-label={$t('duel.chooseMight', { value: chooserCardDetails?.might ?? '–' })}
+					>
+						<img src="/icons/strength_icon.png" alt="Might icon" loading="lazy" decoding="async" />
+						<span class="lb__pick-val">{chooserCardDetails?.might ?? '–'}</span>
+					</button>
+					<button
+						class="lb__pick"
+						class:is-best={isHighlightedAttribute('fire')}
+						disabled={isGameOver()}
+						on:click={() => chooseAttr('fire')}
+						title={$t('duel.chooseFire', { value: chooserCardDetails?.fire ?? '–' })}
+						aria-label={$t('duel.chooseFire', { value: chooserCardDetails?.fire ?? '–' })}
+					>
+						<img src="/icons/fire_icon.png" alt="Fire icon" loading="lazy" decoding="async" />
+						<span class="lb__pick-val">{chooserCardDetails?.fire ?? '–'}</span>
+					</button>
+				</div>
+			{/if}
 		</div>
 
 		{#if roundBanner}
@@ -1136,57 +1104,8 @@
 		{/if}
 
 		<div class="lb__notices">
-			{#if duelStage === 'PICK_ATTRIBUTE' && chooserId === playerA}
-				<div class="notice chooser" style="text-align:center;">
-					<div>
-						<button
-							class="btn attribute-option"
-							class:attribute-highlight={isHighlightedAttribute('magic')}
-							disabled={isGameOver()}
-							on:click={() => chooseAttr('magic')}
-							title={$t('duel.chooseMagic', { value: chooserCardDetails?.magic ?? '–' })}
-							aria-label={$t('duel.chooseMagic', { value: chooserCardDetails?.magic ?? '–' })}
-						>
-							<img src="/icons/magic_icon.png" alt="Magic icon" loading="lazy" decoding="async" />
-							{#if chooserCardDetails}
-								<span class="attribute-value">{chooserCardDetails.magic}</span>
-							{/if}
-						</button>
-						<button
-							class="btn attribute-option"
-							class:attribute-highlight={isHighlightedAttribute('might')}
-							disabled={isGameOver()}
-							on:click={() => chooseAttr('might')}
-							title={$t('duel.chooseMight', { value: chooserCardDetails?.might ?? '–' })}
-							aria-label={$t('duel.chooseMight', { value: chooserCardDetails?.might ?? '–' })}
-						>
-							<img
-								src="/icons/strength_icon.png"
-								alt="Might icon"
-								loading="lazy"
-								decoding="async"
-							/>
-							{#if chooserCardDetails}
-								<span class="attribute-value">{chooserCardDetails.might}</span>
-							{/if}
-						</button>
-						<button
-							class="btn attribute-option"
-							class:attribute-highlight={isHighlightedAttribute('fire')}
-							disabled={isGameOver()}
-							on:click={() => chooseAttr('fire')}
-							title={$t('duel.chooseFire', { value: chooserCardDetails?.fire ?? '–' })}
-							aria-label={$t('duel.chooseFire', { value: chooserCardDetails?.fire ?? '–' })}
-						>
-							<img src="/icons/fire_icon.png" alt="Fire icon" loading="lazy" decoding="async" />
-							{#if chooserCardDetails}
-								<span class="attribute-value">{chooserCardDetails.fire}</span>
-							{/if}
-						</button>
-					</div>
-				</div>
-			{:else if duelStage === 'PICK_ATTRIBUTE'}
-				<div class="notice warn" style="margin-top:12px; text-align:center;">
+			{#if duelStage === 'PICK_ATTRIBUTE' && chooserId !== playerA}
+				<div class="notice warn" style="text-align:center;">
 					{$t('duel.waitingForAttribute', { name: chooserUsername })}
 				</div>
 			{/if}

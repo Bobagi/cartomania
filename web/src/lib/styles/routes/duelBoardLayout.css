@@ -529,6 +529,9 @@
 	height: 50%;
 	overflow: hidden;
 	z-index: 1;
+	display: flex;
+	justify-content: center;
+	align-items: center;
 }
 .lb__arena-half--opp {
 	top: 0;
@@ -536,22 +539,22 @@
 .lb__arena-half--you {
 	bottom: 0;
 }
+.lb__arena-half--you.is-removable {
+	cursor: pointer;
+}
 
+/* The art is sized to the circle's vertical RADIUS (the half is one radius tall) and
+   kept square + centred, so the left/right sides of the disc stay empty by design
+   (reserved for later). */
 .lb__arena-art {
-	position: absolute;
-	inset: 0;
-	width: 100%;
 	height: 100%;
+	width: auto;
+	max-width: 100%;
+	aspect-ratio: 1 / 1;
 	object-fit: cover;
 	object-position: center;
 	display: block;
 	animation: arenaArtIn 380ms cubic-bezier(0.18, 0.89, 0.32, 1.1) both;
-}
-.lb__arena-half--opp .lb__arena-art {
-	object-position: center 38%;
-}
-.lb__arena-half--you .lb__arena-art {
-	object-position: center 62%;
 }
 @keyframes arenaArtIn {
 	from {
@@ -577,34 +580,72 @@
 	background: linear-gradient(90deg, transparent, rgba(231, 178, 74, 0.7), transparent);
 	box-shadow: 0 0 12px rgba(231, 178, 74, 0.4);
 }
-/* The WHOLE cards shown ON TOP of the arena art (clarity: name + attributes). Centred
-   on the arena, above it but below the hand so hovered hand cards still lift over them. */
-.lb__center {
+.lb__arena-vs {
 	position: absolute;
 	left: 50%;
-	top: 39%;
+	top: 50%;
 	transform: translate(-50%, -50%);
-	z-index: 3;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 2px;
-	pointer-events: none;
+	z-index: 4;
 }
-.lb__center > * {
+
+/* In-circle power selector (lower-inner of the disc): an icon + value per attribute;
+   clicking one chooses that power. The arena is pointer-events:none, so this opts back in. */
+.lb__picker {
+	position: absolute;
+	left: 50%;
+	bottom: 13%;
+	transform: translateX(-50%);
+	z-index: 5;
+	display: flex;
+	gap: clamp(8px, 1.6vh, 18px);
 	pointer-events: auto;
 }
-.lb__center-slot {
-	width: clamp(82px, 14vh, 150px);
-	aspect-ratio: 1444 / 1920;
+.lb__pick {
+	display: inline-flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 3px;
+	width: clamp(46px, 7vh, 74px);
+	padding: 7px 4px 5px;
+	border-radius: 13px;
+	border: 1px solid rgba(231, 178, 74, 0.4);
+	background: rgba(10, 12, 18, 0.62);
+	backdrop-filter: blur(4px);
+	color: #f3f7fb;
+	cursor: pointer;
+	transition:
+		transform 0.1s ease,
+		background 0.18s ease,
+		border-color 0.18s ease,
+		box-shadow 0.18s ease;
 }
-.lb__center-slot .result-wrap,
-.lb__center-slot .flip-wrap {
-	width: 100%;
+.lb__pick img {
+	width: clamp(24px, 3.6vh, 40px);
+	height: auto;
+	filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6));
 }
-.lb__center-vs {
-	margin: -8px 0;
-	z-index: 2;
+.lb__pick-val {
+	font-weight: 800;
+	font-size: clamp(13px, 1.8vh, 17px);
+	line-height: 1;
+	font-variant-numeric: tabular-nums;
+}
+.lb__pick:hover:not(:disabled) {
+	background: rgba(20, 24, 34, 0.8);
+	border-color: rgba(231, 178, 74, 0.7);
+	transform: translateY(-2px);
+}
+.lb__pick:active:not(:disabled) {
+	transform: translateY(0);
+}
+.lb__pick:disabled {
+	opacity: 0.55;
+	cursor: not-allowed;
+}
+.lb__pick.is-best {
+	background: linear-gradient(160deg, rgba(46, 129, 78, 0.92), rgba(25, 78, 46, 0.9));
+	border-color: rgba(120, 255, 170, 0.6);
+	box-shadow: 0 0 16px rgba(102, 255, 168, 0.4);
 }
 
 /* round outcome: the winner's half glows, the loser's desaturates + darkens */
@@ -639,18 +680,12 @@
 	background: linear-gradient(180deg, rgba(120, 16, 24, 0.18), rgba(80, 8, 14, 0.44));
 }
 
-/* Side-hand layout: shift the arena (disc + rings + cards) off the right rail and grow it. */
+/* Side-hand layout: shift the arena (disc + rings) off the right rail and grow it. */
 .lb--side-hand .lb__arena,
 .lb--side-hand .lb__arena-rings {
 	left: 42%;
 	width: min(68vh, 640px);
 	height: min(68vh, 640px);
-}
-.lb--side-hand .lb__center {
-	left: 42%;
-}
-.lb--side-hand .lb__center-slot {
-	width: clamp(92px, 16vh, 170px);
 }
 .lb--side-hand .lb__round-banner {
 	left: 42%;
