@@ -116,6 +116,12 @@ export class VoidFlames {
 
 	start(): void {
 		if (this.running || !this.ctx) return;
+		// Accessibility: honour reduced-motion — skip the animated particle flames entirely.
+		if (
+			typeof window !== 'undefined' &&
+			window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+		)
+			return;
 		this.running = true;
 		this.last = performance.now();
 		this.raf = requestAnimationFrame(this.tick);

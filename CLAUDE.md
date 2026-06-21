@@ -216,22 +216,23 @@ web/                         SvelteKit frontend
 - **Duel board layout = the designer's "mesa".** The board is `.lb` (in `duelBoardLayout.css`): the
   felt (`.lb__table`) fills the WHOLE viewport and everything else (opponent strip `.lb__opp`, hand+HUD
   strip `.lb__you`, log `.lb__log`, chooser `.lb__notices`) is an absolute OVERLAY on top — so the big
-  circular **arena** is the focus and the hand sits on top at the bottom. **Art-only centre** (step 2,
-  branch `feat/duel-circle-art`): `.lb__arena` is a gold-rimmed felt DISC split into `.lb__arena-half--opp`
-  (top) + `.lb__arena-half--you` (bottom). The played card's **creature ART** (square `imageUrl`) fills the
-  matching half — yours on pick (`youArt`), the opponent's on REVEAL (`oppArt`, gated on `oppRevealed =
-  duelStage==='REVEAL'`; the opponent half is empty/dark while hidden — no card or veil). The art is sized
-  to the circle's **vertical RADIUS** (`.lb__arena-art { height:100%; width:auto; aspect-ratio:1 }`, the
-  half flex-centres it) so it's a centred square; the **left/right sides** are filled by **void flames** —
+  rounded-square **arena** is the focus and the hand sits on top at the bottom. **Framed-card centre** (step
+  2, branch `feat/duel-circle-art`): `.lb__arena` is a gold-rimmed **rounded SQUARE** (`border-radius:9%`)
+  split into `.lb__arena-half--opp` (top) + `.lb__arena-half--you` (bottom). The played card's **creature
+  ART** fills the matching half — yours on pick (`youArt`), the opponent's on REVEAL (`oppArt`, gated on
+  `oppRevealed = duelStage==='REVEAL'`; the opponent half is empty/dark while hidden — no card or veil). The
+  art is a centred square (`.lb__arena-art`, in `.lb__arena-art-wrap`) **wrapped by the card border frame**
+  (`.lb__arena-frame` = the default `/frames/default.png` template, stretched around it) so the field card
+  looks like a real card / the hand cards (MTG-Arena style). The empty space is filled by **void flames** —
   `web/src/lib/cards/voidFlames.ts` (`VoidFlames`): a `<canvas>` (`.lb__flames`, behind the halves) particle
-  system (same family as the destruction FX) that emits dark, art-coloured "flame tongues" OUTWARD from each
-  played card's art into the empty space, never touching the art's pixels. Each flame's colour is **sampled
-  from the art's EDGE** at the point it leaves the card (a tiny offscreen-canvas pixel read — needs CORS,
-  which `bobagi.space/images/` now sends; uses a `?fx` **cache-buster** so the crossorigin fetch can't reuse
-  a non-CORS cached copy → that bug made the flames fall back to a neutral violet; samples per `src` into a
-  48×48 grid). The opponent's flames drift toward the player (buoyancy per side); the art's outer edge is
-  feathered (a subtle `radial mask`, centre stays sharp) so it blends into the flames. The engine
-  self-discovers emitters by querying `.lb__arena-art`; the duel page just `new VoidFlames(canvas, arenaEl)`
+  system (same family as the destruction FX, honours `prefers-reduced-motion`) that emits dark, art-coloured
+  "flame tongues" OUTWARD from each played card into the empty space. Each flame's colour is **sampled from
+  the art's EDGE** at the point it leaves the card (a tiny offscreen-canvas pixel read — needs CORS, which
+  `bobagi.space/images/` now sends; uses a `?fx` **cache-buster** so the crossorigin fetch can't reuse a
+  non-CORS cached copy → that bug made the flames fall back to a neutral violet; samples per `src` into a
+  48×48 grid). The opponent's flames drift toward the player (buoyancy per side). The rotating decorative
+  rings (`.lb__arena-rings`) are now rotating SQUARES too. The engine self-discovers emitters by querying
+  `.lb__arena-art`; the duel page just `new VoidFlames(canvas, arenaEl)`
   + `start()`/`stop()`. **Power orbs ride the disc's CIRCUMFERENCE** (`.lb__powers`, concentric +
   `pointer-events:none`): during PICK the 3 `.lb__pick` options spread along the LOWER arc
   (`.lb__pick--{l,c,r}`); at REVEAL `.lb__pwr--you` sits at the bottom rim (green) + `.lb__pwr--opp` at the
