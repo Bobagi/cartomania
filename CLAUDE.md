@@ -162,6 +162,8 @@ web/                         SvelteKit frontend
                            {card, wrap, canvas}; strictly confined to the card (kills shadow/halo)
       CardFxFilters.svelte the two SVG filters (#fx-destroy/#fx-crush); render ONCE per page
       holoTilt.ts          tilt rAF loop → foil CSS vars; foil palettes + foilStyleVars()
+      voidFlames.ts        VoidFlames: canvas particle system — dark, art-coloured flames out of the
+                           played-card art into the empty disc space (colours sampled from the art)
       cardFx.css           foil layers (irid/sheen/specular/glow) + destruction CSS
   src/routes/cards-lab/+page.svelte        TUNING screen: real card + holo foil + Burn/Crush/
                            Dissolve, every param adjustable (localStorage), Export JSON to bake
@@ -220,9 +222,13 @@ web/                         SvelteKit frontend
   matching half — yours on pick (`youArt`), the opponent's on REVEAL (`oppArt`, gated on `oppRevealed =
   duelStage==='REVEAL'`; the opponent half is empty/dark while hidden — no card or veil). The art is sized
   to the circle's **vertical RADIUS** (`.lb__arena-art { height:100%; width:auto; aspect-ratio:1 }`, the
-  half flex-centres it) so it's a centred square; the **left/right sides** are filled with an ambient FOG
-  (`.lb__arena-haze` — a heavily-blurred copy of the SAME art, so it auto-matches the creature's colours;
-  masked to fade at the seam). **Power orbs ride the disc's CIRCUMFERENCE** (`.lb__powers`, concentric +
+  half flex-centres it) so it's a centred square; the **left/right sides** are filled by **void flames** —
+  `web/src/lib/cards/voidFlames.ts` (`VoidFlames`): a `<canvas>` (`.lb__flames`, behind the halves) particle
+  system (same family as the destruction FX) that emits dark, art-coloured "flame tongues" OUTWARD from each
+  played card's art into the empty space, never touching the art's pixels/edges. Colours are **sampled from
+  the card art** (a tiny offscreen-canvas read — needs CORS, which `bobagi.space/images/` now sends; falls
+  back to a violet palette). The engine self-discovers emitters by querying `.lb__arena-art`; the duel page
+  just `new VoidFlames(canvas, arenaEl)` + `start()`/`stop()`. **Power orbs ride the disc's CIRCUMFERENCE** (`.lb__powers`, concentric +
   `pointer-events:none`): during PICK the 3 `.lb__pick` options spread along the LOWER arc
   (`.lb__pick--{l,c,r}`); at REVEAL `.lb__pwr--you` sits at the bottom rim (green) + `.lb__pwr--opp` at the
   top rim (red). Each `.lb__orb` renders a power LIKE the cards: `.lb__orb-icon` (the attribute icon, a bg
@@ -443,11 +449,11 @@ web/                         SvelteKit frontend
   loser's creature ART; and the power selector + clash live **inside the disc** as card-style `.lb__orb`s
   (icon + value, reusing `.card-attribute-value`) — green aura on hover / your chosen power, the opponent's
   power shows high with a red aura at REVEAL. The per-round win/lose banner is hidden. See the "Duel board
-  layout" gotcha. **Open follow-ups before merge:** (a) the empty side spaces now have a FIRST-PASS ambient
-  fog (`.lb__arena-haze`, blurred art) — tune blur/opacity or swap for a real particle fog if wanted;
-  (b) the opponent half is empty while its card is hidden (no indicator); (c) the loser's `is-lose` dark
-  tint still overlays the destruction (could drop it). To revert the whole thing: `git checkout main` +
-  rebuild + `pm2 restart cartomania-web`.
+  layout" gotcha. **Open follow-ups before merge:** (a) the empty side spaces are filled by the `VoidFlames`
+  canvas (dark, art-coloured flames) — tune intensity/length/darkness in `voidFlames.ts` per taste (the user
+  wants a Hearthstone-style "black flame"); (b) the opponent half is empty while its card is hidden (no
+  indicator); (c) the loser's `is-lose` dark tint still overlays the destruction (could drop it). To revert
+  the whole thing: `git checkout main` + rebuild + `pm2 restart cartomania-web`.
 
 1. **[SECURITY — do first] Rotate the live `admin`/`alice` passwords.** The live `.env` does NOT set
    `ADMIN_PASSWORD`/`ALICE_PASSWORD`, so the seed fell back to `admin123`/`alice123` — a publicly-known

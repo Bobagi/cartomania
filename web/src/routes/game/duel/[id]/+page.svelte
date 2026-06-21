@@ -23,6 +23,7 @@
 		type DestructionType
 	} from '$lib/cards/cardDestruction';
 	import '$lib/cards/cardFx.css';
+	import { VoidFlames } from '$lib/cards/voidFlames';
 	import { detectChosenAttributeMode, normalizeDuelCenterForView } from '$lib/duel/duelCenter';
 	import { buildHistoryFromLog, buildLiveRound } from '$lib/duel/history';
 	import { t } from '$lib/i18n';
@@ -148,6 +149,11 @@
 	// so the burn/dissolve/crush keeps working on BOTH representations (cards AND art).
 	let arenaArtYouElement: HTMLImageElement | null = null;
 	let arenaArtOppElement: HTMLImageElement | null = null;
+	// Ambient void-flame particle effect (canvas inside the arena disc; colours sampled
+	// from each played card's art — see voidFlames.ts).
+	let arenaEl: HTMLDivElement | null = null;
+	let flamesCanvasEl: HTMLCanvasElement | null = null;
+	let voidFlames: VoidFlames | null = null;
 	let lastDefeatEffectCycleId: number | null = null;
 
 	let hasInitialStateLoaded = false;
@@ -657,6 +663,10 @@
 		await ensureCatalogLoaded();
 		await loadGameStateOrFinalResult();
 		setupMyHandResizeObserver();
+		if (flamesCanvasEl && arenaEl) {
+			voidFlames = new VoidFlames(flamesCanvasEl, arenaEl);
+			voidFlames.start();
+		}
 	});
 
 	onDestroy(() => {
@@ -669,6 +679,7 @@
 			window.clearInterval(duelStatePollHandle);
 			duelStatePollHandle = null;
 		}
+		voidFlames?.stop();
 		clearActiveDestruction();
 	});
 
@@ -1019,10 +1030,10 @@
 			<span class="lb__arena-ring lb__arena-ring--2"></span>
 			<span class="lb__arena-ring lb__arena-ring--3"></span>
 		</div>
-		<div class="lb__arena">
+		<div class="lb__arena" bind:this={arenaEl}>
+			<canvas class="lb__flames" bind:this={flamesCanvasEl} aria-hidden="true"></canvas>
 			<div class={`lb__arena-half lb__arena-half--opp ${oppOutcome ? 'is-' + oppOutcome : ''}`}>
 				{#if oppArt && oppRevealed}
-					<img class="lb__arena-haze" src={oppArt} alt="" aria-hidden="true" decoding="async" />
 					<div class="lb__arena-art-wrap">
 						<img
 							class="lb__arena-art"
@@ -1045,7 +1056,6 @@
 				title={canReturnSelectedCardToHand ? $t('duel.returnCard') : ''}
 			>
 				{#if youArt}
-					<img class="lb__arena-haze" src={youArt} alt="" aria-hidden="true" decoding="async" />
 					<div class="lb__arena-art-wrap">
 						<img
 							class="lb__arena-art"
