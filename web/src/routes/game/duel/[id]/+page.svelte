@@ -131,6 +131,11 @@
 	let opponentHandContainerElement: HTMLDivElement | null = null;
 	let centerSlotAElement: HTMLDivElement | null = null;
 	let centerSlotBElement: HTMLDivElement | null = null;
+	// The arena creature-art <img>s — the destruction target for the art-only layout.
+	// The old card result-wraps (centerSlot{A,B}Element) still take priority when present,
+	// so the burn/dissolve/crush keeps working on BOTH representations (cards AND art).
+	let arenaArtYouElement: HTMLImageElement | null = null;
+	let arenaArtOppElement: HTMLImageElement | null = null;
 	let lastDefeatEffectCycleId: number | null = null;
 
 	let hasInitialStateLoaded = false;
@@ -627,8 +632,10 @@
 	function findLoserCenterElement(): HTMLElement | null {
 		const winner = currentDuelRoundWinner;
 		if (!winner) return null;
-		if (winner === playerA) return centerSlotBElement;
-		if (winner === playerB) return centerSlotAElement;
+		// Prefer the whole-card element when it's rendered (old method); otherwise fall
+		// back to the arena creature-art <img> (new method) — so the FX works on both.
+		if (winner === playerA) return centerSlotBElement ?? arenaArtOppElement;
+		if (winner === playerB) return centerSlotAElement ?? arenaArtYouElement;
 		return null;
 	}
 
@@ -1028,13 +1035,16 @@
 		<div class="lb__arena">
 			<div class={`lb__arena-half lb__arena-half--opp ${oppOutcome ? 'is-' + oppOutcome : ''}`}>
 				{#if oppArt && oppRevealed}
-					<img
-						class="lb__arena-art"
-						src={oppArt}
-						alt={oppName}
-						data-cycle={centerRevealCycle}
-						decoding="async"
-					/>
+					<div class="lb__arena-art-wrap">
+						<img
+							class="lb__arena-art"
+							bind:this={arenaArtOppElement}
+							src={oppArt}
+							alt={oppName}
+							data-cycle={centerRevealCycle}
+							decoding="async"
+						/>
+					</div>
 				{/if}
 			</div>
 			<div
@@ -1047,7 +1057,15 @@
 				title={canReturnSelectedCardToHand ? $t('duel.returnCard') : ''}
 			>
 				{#if youArt}
-					<img class="lb__arena-art" src={youArt} alt={youName} decoding="async" />
+					<div class="lb__arena-art-wrap">
+						<img
+							class="lb__arena-art"
+							bind:this={arenaArtYouElement}
+							src={youArt}
+							alt={youName}
+							decoding="async"
+						/>
+					</div>
 				{/if}
 			</div>
 			<div class="lb__arena-seam" aria-hidden="true"></div>

@@ -228,8 +228,12 @@ web/                         SvelteKit frontend
   `.lb__arena-half--you` is clickable to return your card to hand. Rotating arcane rings (`.lb__arena-rings`
   → `.lb__arena-ring--{1,2,3}`, `@keyframes arenaSpin`, behind the disc) add motion. `.lb__arena-seam` +
   `.lb__arena-vs` ride the equator; on REVEAL the winner's half glows (`is-win`) + the loser's desaturates
-  (`is-lose`). The arena is absolutely centred (`top:39%`); the old `.lb__column`/`.lb__felt-ring` were
-  removed (`CardDestroyer` round-loss FX is inert again — no center card to bind). The `.lb__notices` (now
+  (`is-lose`). **Round-loss `CardDestroyer` FX (burn/dissolve/crush) plays ON the loser's creature ART:**
+  each `.lb__arena-art` is wrapped in a tight square `.lb__arena-art-wrap` (so the FX canvas/burn-map size
+  right) and bound to `arenaArt{You,Opp}Element`; `findLoserCenterElement()` returns the card result-wrap if
+  rendered, ELSE the arena-art img — so the SAME engine works on BOTH the cards and the art (the half no
+  longer clips, only the disc does, so embers spread in the circle). The arena is absolutely centred
+  (`top:39%`); the old `.lb__column`/`.lb__felt-ring` were removed. The `.lb__notices` (now
   only the "waiting for opponent's attribute" warn, `z-index:1600`) sits just above the hand. The opponent hand is a small offset
   stack of card backs (`.lb__oparc-card`, no fan rotation) shown next to the score orbs, not a deck
   pile. The round-result banner is `.lb__round-banner` under `.lb__table` (absolute `top:39%` = the
@@ -367,9 +371,11 @@ web/                         SvelteKit frontend
   completion on its own (`@nestjs/schedule`), so a match continues & finishes even with no browser open;
   the client is a pure renderer (polls state, `CLIENT_DRIVES_TIMEOUTS=false`, only sends real moves).
 - **Card FX** (designer handoff in `web/src/lib/cards`): holographic foil tilt-shine + burn/dissolve/
-  crush destruction, strictly confined to the card. The duel round-loss effect is now the destruction
-  (fire→burn, magic→dissolve, might→crush via `playDuelDestruction` on the losing card). Tune everything
-  at **`/cards-lab`** and Export the JSON; baked-in defaults live in `cardDestruction.ts` / `holoTilt.ts`.
+  crush destruction, strictly confined to the card. The duel round-loss effect is the destruction
+  (fire→burn, magic→dissolve, might→crush via `playDuelDestruction`) — it plays on the loser's card OR, in
+  the `feat/duel-circle-art` arena, on the loser's **creature art** (same engine, see the duel-board gotcha).
+  Tune everything at **`/cards-lab`** and Export the JSON; baked-in defaults live in `cardDestruction.ts` /
+  `holoTilt.ts`.
 - Attribute Duel is fully playable end-to-end (the round-winner bug is fixed; matches resolve a winner).
 - Whole-app UI redesign done (dark-fantasy gold theme): landing/login, dashboard, friends modal,
   gallery, and the single-screen duel board with a scrollable battle log and Hearthstone-style hand
