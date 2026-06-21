@@ -455,6 +455,7 @@
 	border-radius: 50%;
 	overflow: hidden;
 	z-index: 2;
+	pointer-events: none;
 	background: radial-gradient(circle at 50% 50%, rgba(12, 16, 26, 0.25), rgba(6, 9, 16, 0.74));
 	box-shadow:
 		inset 0 0 0 2px rgba(231, 178, 74, 0.42),
@@ -472,6 +473,55 @@
 	background: radial-gradient(circle at 50% 50%, transparent 55%, rgba(6, 9, 16, 0.62) 100%);
 }
 
+/* Rotating arcane rings concentric with the disc (decorative, behind the felt). */
+.lb__arena-rings {
+	position: absolute;
+	left: 50%;
+	top: 39%;
+	transform: translate(-50%, -50%);
+	width: min(58vh, 520px);
+	height: min(58vh, 520px);
+	z-index: 1;
+	pointer-events: none;
+}
+.lb__arena-ring {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	border-radius: 50%;
+	border-style: dashed;
+	border-color: rgba(231, 178, 74, 0.22);
+	transform: translate(-50%, -50%);
+}
+.lb__arena-ring--1 {
+	width: 105%;
+	height: 105%;
+	border-width: 2px;
+	border-color: rgba(231, 178, 74, 0.55);
+	filter: drop-shadow(0 0 4px rgba(231, 178, 74, 0.3));
+	animation: arenaSpin 30s linear infinite;
+}
+.lb__arena-ring--2 {
+	width: 115%;
+	height: 115%;
+	border-width: 1.5px;
+	border-style: dotted;
+	border-color: rgba(231, 178, 74, 0.42);
+	animation: arenaSpin 46s linear infinite reverse;
+}
+.lb__arena-ring--3 {
+	width: 127%;
+	height: 127%;
+	border-width: 1.5px;
+	border-color: rgba(231, 178, 74, 0.28);
+	animation: arenaSpin 66s linear infinite;
+}
+@keyframes arenaSpin {
+	to {
+		transform: translate(-50%, -50%) rotate(360deg);
+	}
+}
+
 .lb__arena-half {
 	position: absolute;
 	left: 0;
@@ -485,9 +535,6 @@
 }
 .lb__arena-half--you {
 	bottom: 0;
-}
-.lb__arena-half--you.is-removable {
-	cursor: pointer;
 }
 
 .lb__arena-art {
@@ -517,28 +564,6 @@
 	}
 }
 
-/* opponent's hidden state: the Dracomania card-back, dimmed, as a face-down veil */
-.lb__arena-veil {
-	position: absolute;
-	inset: 0;
-	overflow: hidden;
-}
-.lb__arena-veil-img {
-	position: absolute;
-	inset: 0;
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
-	object-position: center;
-	filter: brightness(0.55) saturate(0.85);
-}
-.lb__arena-veil::after {
-	content: '';
-	position: absolute;
-	inset: 0;
-	background: radial-gradient(circle at 50% 42%, rgba(22, 28, 48, 0.4), rgba(6, 9, 16, 0.8));
-}
-
 /* seam between the halves + the VS medallion riding on it */
 .lb__arena-seam {
 	position: absolute;
@@ -552,12 +577,34 @@
 	background: linear-gradient(90deg, transparent, rgba(231, 178, 74, 0.7), transparent);
 	box-shadow: 0 0 12px rgba(231, 178, 74, 0.4);
 }
-.lb__arena-vs {
+/* The WHOLE cards shown ON TOP of the arena art (clarity: name + attributes). Centred
+   on the arena, above it but below the hand so hovered hand cards still lift over them. */
+.lb__center {
 	position: absolute;
 	left: 50%;
-	top: 50%;
+	top: 39%;
 	transform: translate(-50%, -50%);
-	z-index: 6;
+	z-index: 3;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+	pointer-events: none;
+}
+.lb__center > * {
+	pointer-events: auto;
+}
+.lb__center-slot {
+	width: clamp(82px, 14vh, 150px);
+	aspect-ratio: 1444 / 1920;
+}
+.lb__center-slot .result-wrap,
+.lb__center-slot .flip-wrap {
+	width: 100%;
+}
+.lb__center-vs {
+	margin: -8px 0;
+	z-index: 2;
 }
 
 /* round outcome: the winner's half glows, the loser's desaturates + darkens */
@@ -592,12 +639,26 @@
 	background: linear-gradient(180deg, rgba(120, 16, 24, 0.18), rgba(80, 8, 14, 0.44));
 }
 
-/* Side-hand layout: shift the arena off the right rail and let it grow. */
-.lb--side-hand .lb__arena {
+/* Side-hand layout: shift the arena (disc + rings + cards) off the right rail and grow it. */
+.lb--side-hand .lb__arena,
+.lb--side-hand .lb__arena-rings {
 	left: 42%;
 	width: min(68vh, 640px);
 	height: min(68vh, 640px);
 }
+.lb--side-hand .lb__center {
+	left: 42%;
+}
+.lb--side-hand .lb__center-slot {
+	width: clamp(92px, 16vh, 170px);
+}
 .lb--side-hand .lb__round-banner {
 	left: 42%;
+}
+
+/* Respect reduced-motion: stop the arena rings from spinning. */
+@media (prefers-reduced-motion: reduce) {
+	.lb__arena-ring {
+		animation: none;
+	}
 }

@@ -214,18 +214,19 @@ web/                         SvelteKit frontend
 - **Duel board layout = the designer's "mesa".** The board is `.lb` (in `duelBoardLayout.css`): the
   felt (`.lb__table`) fills the WHOLE viewport and everything else (opponent strip `.lb__opp`, hand+HUD
   strip `.lb__you`, log `.lb__log`, chooser `.lb__notices`) is an absolute OVERLAY on top — so the big
-  circular **arena** is the focus and the hand sits on top at the bottom. **The played card is no longer
-  shown whole** (step 2, branch `feat/duel-circle-art`): the centre is `.lb__arena`, a gold-rimmed felt
-  DISC split into `.lb__arena-half--opp` (top) and `.lb__arena-half--you` (bottom). The played card's
-  **creature ART** (the square `imageUrl`, masked with `object-fit:cover`) fills the matching half — your
-  half the instant you pick (`youArt`), the opponent's half a face-down card-back **veil**
-  (`.lb__arena-veil`) until REVEAL, then their creature (`oppArt`, gated on `oppRevealed =
-  duelStage==='REVEAL'`). `.lb__arena-vs` + `.lb__arena-seam` ride the equator; on REVEAL the winner's half
-  glows (`is-win`) and the loser's desaturates (`is-lose`). The arena is absolutely centred (`top:39%`) so
-  it clears the opponent strip + the hand; hand cards stay full CardComposites sized via
-  `cardWidthCssValue`. (The old `.lb__column`/`.lb__cards`/`.duel-slot` whole-card column + `.lb__felt-ring`
-  were removed; the round-loss `CardDestroyer` burn/dissolve/crush is currently inert — `centerSlot*`
-  bindings are gone — and could be re-wired onto the loser's half later.) The chooser (`.lb__notices`,
+  circular **arena** is the focus and the hand sits on top at the bottom. **Hybrid centre** (step 2,
+  branch `feat/duel-circle-art`): `.lb__arena` is a gold-rimmed felt DISC split into `.lb__arena-half--opp`
+  (top) + `.lb__arena-half--you` (bottom); the played card's **creature ART** (square `imageUrl`,
+  `object-fit:cover`) fills the matching half as an atmospheric background — yours on pick (`youArt`), the
+  opponent's on REVEAL (`oppArt`, gated on `oppRevealed = duelStage==='REVEAL'`). The **whole cards** are
+  ALSO drawn on TOP (`.lb__center`, z-index 3 — two `.lb__center-slot` CardComposites + a `.lb__center-vs`)
+  so the player still reads the name + attributes; the opponent slot is a `flip-wrap` showing the card-back
+  UPRIGHT (`object-fit:contain`) until REVEAL, then flipping to the creature. Rotating arcane rings
+  (`.lb__arena-rings` → `.lb__arena-ring--{1,2,3}`, `@keyframes arenaSpin`, behind the disc) add motion.
+  `.lb__arena-seam` rides the equator; on REVEAL the winner's half glows (`is-win`) + the loser's desaturates
+  (`is-lose`), AND the loser's on-top card runs the `CardDestroyer` burn/dissolve/crush (re-enabled by the
+  restored `centerSlot{A,B}Element` bindings). The arena is absolutely centred (`top:39%`); the old
+  `.lb__column`/`.lb__felt-ring` were removed. The chooser (`.lb__notices`,
   `z-index:1600`) sits just above the hand and stays clickable. The opponent hand is a small offset
   stack of card backs (`.lb__oparc-card`, no fan rotation) shown next to the score orbs, not a deck
   pile. The round-result banner is `.lb__round-banner` under `.lb__table` (absolute `top:39%` = the
@@ -420,15 +421,17 @@ web/                         SvelteKit frontend
 
 - **[ON BRANCH — review] Duel battlefield — masked card art (2-step).** **Step 1 DONE (2026-06-20, on
   `main`):** removed the "your card here" / "waiting" slot placeholders + framed outline. **Step 2 DONE
-  (2026-06-20, on branch `feat/duel-circle-art`, DEPLOYED live for review — `main` is the stable fallback):**
-  replaced the whole-card center column with `.lb__arena`, a felt disc that masks the played card's creature
-  ART into two halves (top = opponent veil→reveal, bottom = you). See the "Duel board layout" gotcha for the
-  full structure. The attribute chooser was made compact (heading dropped — the turn-timer already labels it)
-  so the player's creature stays visible while choosing. **Open follow-ups before merge:** (a) the round-loss
-  `CardDestroyer` FX (burn/dissolve/crush) is currently inert — replaced by a simple `is-win`/`is-lose` tint;
-  decide whether to re-wire it onto the loser's half; (b) tune `object-position` per-half if creatures crop
-  awkwardly; (c) the opponent veil shows the card-back cropped to a band — refine if desired. To revert the
-  whole thing: `git checkout main` + rebuild + `pm2 restart cartomania-web`.
+  (2026-06-20/21, on branch `feat/duel-circle-art`, DEPLOYED live for review — `main` is the stable
+  fallback):** `.lb__arena` is a felt disc that masks the played card's creature ART into two halves
+  (top = opponent on reveal, bottom = you), with **rotating arcane rings** (`.lb__arena-rings`) and the
+  **whole cards drawn on top** (`.lb__center`) for clarity (per the user's 2026-06-21 feedback — the opponent
+  on-top card shows the card-back UPRIGHT until reveal). The attribute chooser was made compact (heading
+  dropped — the turn-timer already labels it). Round-loss `CardDestroyer` FX is re-enabled on the loser's
+  on-top card. See the "Duel board layout" gotcha for the full structure. **Open follow-ups before merge:**
+  (a) tune `object-position` per-half + the on-top card size if creatures crop / cards feel small; (b) the
+  on-top cards still partially overlap the compact chooser during PICK_ATTRIBUTE; (c) decide if the on-top
+  card + arena art is too redundant (the user said "refine later"). To revert the whole thing:
+  `git checkout main` + rebuild + `pm2 restart cartomania-web`.
 
 1. **[SECURITY — do first] Rotate the live `admin`/`alice` passwords.** The live `.env` does NOT set
    `ADMIN_PASSWORD`/`ALICE_PASSWORD`, so the seed fell back to `admin123`/`alice123` — a publicly-known

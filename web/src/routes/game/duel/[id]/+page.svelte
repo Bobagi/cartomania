@@ -686,18 +686,18 @@
 		: 0;
 
 	// --- Circular battlefield ("arena", step 2) ---------------------------------
-	// The played card is no longer shown whole in the centre; instead the creature
-	// ART is masked into the felt circle — your half (bottom) fills the moment you
-	// pick, the opponent's half (top) stays a face-down veil until REVEAL.
+	// The played card's creature ART is masked into the felt circle (background) AND
+	// the whole card is shown on top for clarity (name + attributes). Your half
+	// (bottom) fills the moment you pick; the opponent's half (top) reveals on REVEAL.
 	$: youCardCode = currentDuelCenter?.aCardCode ?? null;
 	$: oppCardCode = currentDuelCenter?.bCardCode ?? null;
-	$: youArt = youCardCode ? (cardDetailsCacheByCode.get(youCardCode)?.imageUrl ?? null) : null;
-	$: oppArt = oppCardCode ? (cardDetailsCacheByCode.get(oppCardCode)?.imageUrl ?? null) : null;
-	$: youName = youCardCode ? (cardDetailsCacheByCode.get(youCardCode)?.name ?? youCardCode) : null;
-	$: oppName = oppCardCode ? (cardDetailsCacheByCode.get(oppCardCode)?.name ?? oppCardCode) : null;
+	$: youCard = youCardCode ? (cardDetailsCacheByCode.get(youCardCode) ?? null) : null;
+	$: oppCard = oppCardCode ? (cardDetailsCacheByCode.get(oppCardCode) ?? null) : null;
+	$: youArt = youCard?.imageUrl ?? null;
+	$: oppArt = oppCard?.imageUrl ?? null;
+	$: youName = youCard?.name ?? youCardCode;
+	$: oppName = oppCard?.name ?? oppCardCode;
 	$: oppRevealed = currentDuelStage === 'REVEAL';
-	$: oppHidden = Boolean(oppCardCode) && !oppRevealed;
-	$: oppPending = !oppCardCode && opponentLooksLikeBot && currentDuelStage === 'PICK_CARD';
 	$: youOutcome =
 		currentDuelStage === 'REVEAL' && currentDuelRoundWinner
 			? currentDuelRoundWinner === playerA
@@ -1016,9 +1016,15 @@
 	</header>
 
 	<section class="lb__table">
-		<!-- Circular battlefield (step 2): the played card's creature ART is masked into the
-		     felt circle — your half (bottom) fills on pick, the opponent's half (top) flips
-		     from a face-down veil to the revealed creature. The old whole-card slots are gone. -->
+		<!-- Circular battlefield arena: the played card's creature ART is masked into the felt
+		     circle (background) with rotating arcane rings, and the WHOLE card is shown on TOP for
+		     clarity (name + attributes). Your half (bottom) fills on pick; the opponent's half (top)
+		     reveals on REVEAL. The opponent's card-back is shown UPRIGHT (the on-top flip card). -->
+		<div class="lb__arena-rings" aria-hidden="true">
+			<span class="lb__arena-ring lb__arena-ring--1"></span>
+			<span class="lb__arena-ring lb__arena-ring--2"></span>
+			<span class="lb__arena-ring lb__arena-ring--3"></span>
+		</div>
 		<div class="lb__arena">
 			<div class={`lb__arena-half lb__arena-half--opp ${oppOutcome ? 'is-' + oppOutcome : ''}`}>
 				{#if oppArt && oppRevealed}
@@ -1029,31 +1035,96 @@
 						data-cycle={centerRevealCycle}
 						decoding="async"
 					/>
-				{:else if oppHidden || oppPending}
-					<div class="lb__arena-veil" title={$t('duel.opponentCard')}>
-						<img class="lb__arena-veil-img" src={cardBackImageUrl} alt="" decoding="async" />
-					</div>
 				{/if}
 			</div>
-
-			<div
-				class={`lb__arena-half lb__arena-half--you ${youOutcome ? 'is-' + youOutcome : ''}`}
-				class:is-removable={canReturnSelectedCardToHand}
-				role="button"
-				tabindex="0"
-				on:click={onCenterCardReturnToHand}
-				on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && onCenterCardReturnToHand()}
-				title={canReturnSelectedCardToHand ? $t('duel.returnCard') : ''}
-			>
+			<div class={`lb__arena-half lb__arena-half--you ${youOutcome ? 'is-' + youOutcome : ''}`}>
 				{#if youArt}
 					<img class="lb__arena-art" src={youArt} alt={youName} decoding="async" />
 				{/if}
 			</div>
-
 			<div class="lb__arena-seam" aria-hidden="true"></div>
-			<div class="lb__arena-vs vs" class:clash={currentDuelStage === 'REVEAL'} aria-hidden="true">
+		</div>
+
+		<!-- Whole cards on TOP (clarity): opponent (flip — upright card-back until REVEAL) / VS / you. -->
+		<div class="lb__center">
+			<div class="lb__center-slot">
+				{#if oppCardCode}
+					<div class="flip-wrap" data-cycle={centerRevealCycle}>
+						<div
+							class="flipper"
+							class:start-back={currentDuelStage !== 'REVEAL'}
+							class:animate={currentDuelStage === 'REVEAL'}
+							style={`--flip-ms:${FLIP_MS}ms;`}
+						>
+							<div class="face front">
+								<div
+									bind:this={centerSlotBElement}
+									class={`result-wrap ${currentDuelStage === 'REVEAL' && currentDuelRoundWinner === playerB ? 'winner-glow' : currentDuelStage === 'REVEAL' && currentDuelRoundWinner && currentDuelRoundWinner !== playerB ? 'loser-shake' : ''}`}
+								>
+									<CardComposite
+										artImageUrl={oppCard?.imageUrl ?? ''}
+										frameImageUrl={frameOverlayImageUrl ?? '/frames/default.png'}
+										titleImageUrl={titleOverlayImageUrl}
+										titleText={oppCard?.name ?? oppCardCode}
+										aspectWidth={1444}
+										aspectHeight={1920}
+										artObjectFit="cover"
+										enableTilt={false}
+										descriptionText={oppCard?.description ?? ''}
+										magicValue={oppCard?.magic ?? 0}
+										mightValue={oppCard?.might ?? 0}
+										fireValue={oppCard?.fire ?? 0}
+										cornerNumberValue={oppCard?.number ?? 0}
+									/>
+								</div>
+							</div>
+							<div class="face back">
+								<img
+									src={cardBackImageUrl}
+									alt="hidden"
+									style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;border-radius:10px;display:block;"
+									loading="lazy"
+									decoding="async"
+								/>
+							</div>
+						</div>
+					</div>
+				{/if}
+			</div>
+
+			<div class="lb__center-vs vs" class:clash={currentDuelStage === 'REVEAL'} aria-hidden="true">
 				<span class="vs__spark"></span>
 				<span class="vs__disc">VS</span>
+			</div>
+
+			<div class="lb__center-slot" class:slot-removable={canReturnSelectedCardToHand}>
+				{#if youCardCode}
+					<div
+						bind:this={centerSlotAElement}
+						class={`result-wrap ${currentDuelStage === 'REVEAL' && currentDuelRoundWinner === playerA ? 'winner-glow' : currentDuelStage === 'REVEAL' && currentDuelRoundWinner && currentDuelRoundWinner !== playerA ? 'loser-shake' : ''}`}
+						role="button"
+						tabindex="0"
+						on:click={onCenterCardReturnToHand}
+						on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && onCenterCardReturnToHand()}
+						title={canReturnSelectedCardToHand ? $t('duel.returnCard') : ''}
+					>
+						<CardComposite
+							artImageUrl={youCard?.imageUrl ?? ''}
+							frameImageUrl={frameOverlayImageUrl ?? '/frames/default.png'}
+							titleImageUrl={titleOverlayImageUrl}
+							titleText={youCard?.name ?? youCardCode}
+							aspectWidth={1444}
+							aspectHeight={1920}
+							artObjectFit="cover"
+							enableTilt={false}
+							descriptionText={youCard?.description ?? ''}
+							magicValue={youCard?.magic ?? 0}
+							mightValue={youCard?.might ?? 0}
+							fireValue={youCard?.fire ?? 0}
+							cornerNumberValue={youCard?.number ?? 0}
+						/>
+					</div>
+				{/if}
 			</div>
 		</div>
 
