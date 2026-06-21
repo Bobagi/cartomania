@@ -1043,13 +1043,6 @@
 							data-cycle={centerRevealCycle}
 							decoding="async"
 						/>
-						<img
-							class="lb__arena-frame"
-							src={frameOverlayImageUrl ?? '/frames/default.png'}
-							alt=""
-							aria-hidden="true"
-							decoding="async"
-						/>
 					</div>
 				{/if}
 			</div>
@@ -1069,13 +1062,6 @@
 							bind:this={arenaArtYouElement}
 							src={youArt}
 							alt={youName}
-							decoding="async"
-						/>
-						<img
-							class="lb__arena-frame"
-							src={frameOverlayImageUrl ?? '/frames/default.png'}
-							alt=""
-							aria-hidden="true"
 							decoding="async"
 						/>
 					</div>
