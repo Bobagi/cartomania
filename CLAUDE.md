@@ -222,13 +222,17 @@ web/                         SvelteKit frontend
   to the circle's **vertical RADIUS** (`.lb__arena-art { height:100%; width:auto; aspect-ratio:1 }`, the
   half flex-centres it) so it's a centred square and the **left/right sides stay empty by design**
   (reserved — the user will fill them later). The **power selector lives INSIDE the disc** (lower-inner):
-  `.lb__picker` → three `.lb__pick` buttons (icon + the card's value per attribute, `.is-best` highlights
-  the strongest); clicking one calls `chooseAttr()` (the arena is `pointer-events:none`, the picker opts
-  back in). The old bottom `.notice.chooser` and the whole-card overlay (`.lb__center`) were removed; the
+  `.lb__picker` → `.lb__pick` buttons whose `.lb__orb` renders each power LIKE the cards (the attribute
+  icon as a background image with its value centred on it, reusing `.card-attribute-value` for the EXACT
+  card font + outline; size via `--orb-size`) with a green AURA on hover; clicking calls `chooseAttr()`
+  (the arena is `pointer-events:none`, the picker opts back in). The old bottom `.notice.chooser` and the
+  whole-card overlay (`.lb__center`) were removed; the
   `.lb__arena-half--you` is clickable to return your card to hand. Rotating arcane rings (`.lb__arena-rings`
   → `.lb__arena-ring--{1,2,3}`, `@keyframes arenaSpin`, behind the disc) add motion. `.lb__arena-seam` +
-  `.lb__arena-vs` ride the equator; on REVEAL the winner's half glows (`is-win`) + the loser's desaturates
-  (`is-lose`). **Round-loss `CardDestroyer` FX (burn/dissolve/crush) plays ON the loser's creature ART:**
+  `.lb__arena-vs` ride the equator. **At REVEAL the clash shows as two `.lb__orb`s** (`.lb__reveal-power`):
+  YOUR chosen power low with a green aura + the OPPONENT's power high (`.lb__reveal-power--opp`, top) with a
+  red aura — icon + value (`chosenAttr` + `aVal`/`bVal`), same card style. The winner's half glows
+  (`is-win`) + the loser's desaturates (`is-lose`). **Round-loss `CardDestroyer` FX (burn/dissolve/crush) plays ON the loser's creature ART:**
   each `.lb__arena-art` is wrapped in a tight square `.lb__arena-art-wrap` (so the FX canvas/burn-map size
   right) and bound to `arenaArt{You,Opp}Element`; `findLoserCenterElement()` returns the card result-wrap if
   rendered, ELSE the arena-art img — so the SAME engine works on BOTH the cards and the art (the half no
@@ -236,9 +240,8 @@ web/                         SvelteKit frontend
   (`top:39%`); the old `.lb__column`/`.lb__felt-ring` were removed. The `.lb__notices` (now
   only the "waiting for opponent's attribute" warn, `z-index:1600`) sits just above the hand. The opponent hand is a small offset
   stack of card backs (`.lb__oparc-card`, no fan rotation) shown next to the score orbs, not a deck
-  pile. The round-result banner is `.lb__round-banner` under `.lb__table` (absolute `top:39%` = the
-  arena seam/VS) so it overlays the VS medallion — note `.round-banner` is
-  `position:fixed`, which is why it must NOT live under a `transform`ed ancestor like `.lb__notices`.
+  pile. The per-round "X wins the round" banner is **intentionally hidden** now (the clash orbs convey the
+  outcome) — the `roundBanner` markup + computed were removed; the end-of-MATCH `.endscreen-overlay` still shows.
   Score orbs show an icon (`.orb-ic` trophy / card-stack SVG) + number with a `title` tooltip (no text
   label). The old `.zone`/`.fixed-top-bar` CSS is unused; cards/flip/chooser/endscreen and
   `.hand.my-hand.fan` are unchanged. A **layout toggle** (`.lb__layout-toggle` by the player HUD)
@@ -433,14 +436,15 @@ web/                         SvelteKit frontend
   (2026-06-20/21, on branch `feat/duel-circle-art`, DEPLOYED live for review — `main` is the stable
   fallback):** `.lb__arena` is a felt disc that masks the played card's creature ART into two halves
   (top = opponent on reveal, bottom = you), with **rotating arcane rings** (`.lb__arena-rings`). Iterated
-  per 2026-06-21 feedback to the current **art-only** look: the whole-card overlay was removed; the art is
-  sized to the circle's vertical RADIUS (centred square, sides intentionally empty); and the attribute
-  selector now lives **inside the disc** (`.lb__picker` → `.lb__pick`, icon + value per power). See the
-  "Duel board layout" gotcha for the full structure. **Open follow-ups before merge:** (a) the user plans to
-  fill the empty left/right side spaces of the disc with something — TBD; (b) the opponent half is empty
-  while its card is hidden (no indicator) — add one if wanted; (c) tune the picker position / the square's
-  pole-clipping if needed. To revert the whole thing: `git checkout main` + rebuild + `pm2 restart
-  cartomania-web`.
+  per 2026-06-21 feedback to: **art-only** (whole-card overlay removed); art sized to the circle's vertical
+  RADIUS (centred square, sides intentionally empty); the round-loss `CardDestroyer` FX now plays on the
+  loser's creature ART; and the power selector + clash live **inside the disc** as card-style `.lb__orb`s
+  (icon + value, reusing `.card-attribute-value`) — green aura on hover / your chosen power, the opponent's
+  power shows high with a red aura at REVEAL. The per-round win/lose banner is hidden. See the "Duel board
+  layout" gotcha. **Open follow-ups before merge:** (a) the user plans to fill the empty left/right side
+  spaces of the disc — TBD; (b) the opponent half is empty while its card is hidden (no indicator); (c) the
+  loser's `is-lose` dark tint still overlays the destruction (could drop it). To revert the whole thing:
+  `git checkout main` + rebuild + `pm2 restart cartomania-web`.
 
 1. **[SECURITY — do first] Rotate the live `admin`/`alice` passwords.** The live `.env` does NOT set
    `ADMIN_PASSWORD`/`ALICE_PASSWORD`, so the seed fell back to `admin123`/`alice123` — a publicly-known

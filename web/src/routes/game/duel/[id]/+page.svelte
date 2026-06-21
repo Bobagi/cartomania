@@ -62,6 +62,18 @@
 	const titleOverlayImageUrl = '/frames/title.png';
 	const cardBackImageUrl = '/frames/card-back.png';
 
+	// Power (attribute) icons + options for the in-circle selector / reveal orbs.
+	const ATTR_ICON: Record<'magic' | 'might' | 'fire', string> = {
+		magic: '/icons/magic_icon.png',
+		might: '/icons/strength_icon.png',
+		fire: '/icons/fire_icon.png'
+	};
+	const POWER_OPTIONS = [
+		{ attr: 'magic', tkey: 'duel.chooseMagic' },
+		{ attr: 'might', tkey: 'duel.chooseMight' },
+		{ attr: 'fire', tkey: 'duel.chooseFire' }
+	] as const;
+
 	let errorMessageText: string | null = null;
 	let finalGameResult: { winner: string | null; log: string[] } | null = null;
 
@@ -187,17 +199,6 @@
 		const details = cardDetailsCacheByCode.get(code);
 		if (!details) return null;
 		return { name: details.name, imageUrl: details.imageUrl };
-	}
-
-	function isHighlightedAttribute(attr: 'magic' | 'might' | 'fire'): boolean {
-		if (!chooserCardDetails) return false;
-		const stats = {
-			magic: chooserCardDetails.magic ?? 0,
-			might: chooserCardDetails.might ?? 0,
-			fire: chooserCardDetails.fire ?? 0
-		};
-		const highest = Math.max(stats.magic, stats.might, stats.fire);
-		return stats[attr] === highest && highest > 0;
 	}
 
 	function resolveStrongestAttributeFromDetails(
@@ -705,6 +706,12 @@
 	$: youName = youCard?.name ?? youCardCode;
 	$: oppName = oppCard?.name ?? oppCardCode;
 	$: oppRevealed = currentDuelStage === 'REVEAL';
+	// The dueled power + each side's value (for the in-circle clash orbs at REVEAL).
+	$: chosenAttr = (currentDuelCenter?.chosenAttribute ?? null) as 'magic' | 'might' | 'fire' | null;
+	$: playerPowerValue = chosenAttr
+		? (youCard?.[chosenAttr] ?? currentDuelCenter?.aVal ?? null)
+		: null;
+	$: oppPowerValue = chosenAttr ? (oppCard?.[chosenAttr] ?? currentDuelCenter?.bVal ?? null) : null;
 	$: youOutcome =
 		currentDuelStage === 'REVEAL' && currentDuelRoundWinner
 			? currentDuelRoundWinner === playerA
@@ -947,26 +954,6 @@
 	$: chooserUsername =
 		chooserId === playerA ? playerAUsername : chooserId === playerB ? playerBUsername : chooserId;
 
-	const ROUND_BANNER_ICON: Record<'win' | 'lose' | 'draw', string> = {
-		win: '🏆',
-		lose: '💥',
-		draw: '🤝'
-	};
-	$: roundBanner = (() => {
-		if (currentDuelStage !== 'REVEAL') return null;
-		if (!currentDuelRoundWinner) {
-			return { tone: 'draw' as const, icon: ROUND_BANNER_ICON.draw, text: $t('duel.roundTied') };
-		}
-		if (currentDuelRoundWinner === playerA) {
-			return { tone: 'win' as const, icon: ROUND_BANNER_ICON.win, text: $t('duel.roundYouWin') };
-		}
-		return {
-			tone: 'lose' as const,
-			icon: ROUND_BANNER_ICON.lose,
-			text: $t('duel.roundOpponentWins', { name: playerBUsername })
-		};
-	})();
-
 	$: endOutcome =
 		resolvedWinner === null
 			? null
@@ -1074,52 +1061,54 @@
 				<span class="vs__disc">VS</span>
 			</div>
 
-			<!-- In-circle power selector: icon + value per attribute, lower-inner of the disc. -->
+			<!-- In-circle power selector (PICK): each power rendered like on the cards — the icon
+			     with its value centred on it (same font/outline); hover shows a green aura. -->
 			{#if duelStage === 'PICK_ATTRIBUTE' && chooserId === playerA}
 				<div class="lb__picker">
-					<button
-						class="lb__pick"
-						class:is-best={isHighlightedAttribute('magic')}
-						disabled={isGameOver()}
-						on:click={() => chooseAttr('magic')}
-						title={$t('duel.chooseMagic', { value: chooserCardDetails?.magic ?? '–' })}
-						aria-label={$t('duel.chooseMagic', { value: chooserCardDetails?.magic ?? '–' })}
+					{#each POWER_OPTIONS as opt (opt.attr)}
+						<button
+							class="lb__pick"
+							disabled={isGameOver()}
+							on:click={() => chooseAttr(opt.attr)}
+							title={$t(opt.tkey, { value: chooserCardDetails?.[opt.attr] ?? '–' })}
+							aria-label={$t(opt.tkey, { value: chooserCardDetails?.[opt.attr] ?? '–' })}
+						>
+							<span
+								class="lb__orb lb__orb--hover"
+								style={`background-image:url(${ATTR_ICON[opt.attr]})`}
+								aria-hidden="true"
+							>
+								<span class="card-attribute-value lb__orb-val"
+									>{chooserCardDetails?.[opt.attr] ?? '–'}</span
+								>
+							</span>
+						</button>
+					{/each}
+				</div>
+			{/if}
+
+			<!-- Clash (REVEAL): your chosen power (green aura, low) vs the opponent's (red aura, high). -->
+			{#if duelStage === 'REVEAL' && chosenAttr}
+				<div class="lb__reveal-power lb__reveal-power--opp" aria-hidden="true">
+					<span
+						class="lb__orb lb__orb--red"
+						style={`background-image:url(${ATTR_ICON[chosenAttr]})`}
 					>
-						<img src="/icons/magic_icon.png" alt="Magic icon" loading="lazy" decoding="async" />
-						<span class="lb__pick-val">{chooserCardDetails?.magic ?? '–'}</span>
-					</button>
-					<button
-						class="lb__pick"
-						class:is-best={isHighlightedAttribute('might')}
-						disabled={isGameOver()}
-						on:click={() => chooseAttr('might')}
-						title={$t('duel.chooseMight', { value: chooserCardDetails?.might ?? '–' })}
-						aria-label={$t('duel.chooseMight', { value: chooserCardDetails?.might ?? '–' })}
+						<span class="card-attribute-value lb__orb-val">{oppPowerValue ?? '–'}</span>
+					</span>
+				</div>
+				<div class="lb__reveal-power lb__reveal-power--you" aria-hidden="true">
+					<span
+						class="lb__orb lb__orb--green"
+						style={`background-image:url(${ATTR_ICON[chosenAttr]})`}
 					>
-						<img src="/icons/strength_icon.png" alt="Might icon" loading="lazy" decoding="async" />
-						<span class="lb__pick-val">{chooserCardDetails?.might ?? '–'}</span>
-					</button>
-					<button
-						class="lb__pick"
-						class:is-best={isHighlightedAttribute('fire')}
-						disabled={isGameOver()}
-						on:click={() => chooseAttr('fire')}
-						title={$t('duel.chooseFire', { value: chooserCardDetails?.fire ?? '–' })}
-						aria-label={$t('duel.chooseFire', { value: chooserCardDetails?.fire ?? '–' })}
-					>
-						<img src="/icons/fire_icon.png" alt="Fire icon" loading="lazy" decoding="async" />
-						<span class="lb__pick-val">{chooserCardDetails?.fire ?? '–'}</span>
-					</button>
+						<span class="card-attribute-value lb__orb-val">{playerPowerValue ?? '–'}</span>
+					</span>
 				</div>
 			{/if}
 		</div>
 
-		{#if roundBanner}
-			<div class={`round-banner lb__round-banner ${roundBanner.tone}`}>
-				<span class="round-banner-icon">{roundBanner.icon}</span>
-				<span class="round-banner-text">{roundBanner.text}</span>
-			</div>
-		{/if}
+		<!-- Round-result banner intentionally hidden — the clash orbs now convey the outcome. -->
 
 		<div class="lb__notices">
 			{#if duelStage === 'PICK_ATTRIBUTE' && chooserId !== playerA}

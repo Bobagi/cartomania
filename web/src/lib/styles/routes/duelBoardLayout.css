@@ -594,64 +594,97 @@
 	z-index: 4;
 }
 
-/* In-circle power selector (lower-inner of the disc): an icon + value per attribute;
-   clicking one chooses that power. The arena is pointer-events:none, so this opts back in. */
-.lb__picker {
+/* In-circle power orbs: each power is rendered like the card attributes — the icon
+   with its value centred on it (it reuses `.card-attribute-value` for the EXACT card
+   font + outline), just bigger to use the disc space. A radial AURA glows around it:
+   green on the selector (hover) and on your chosen power at REVEAL, red on the
+   opponent's revealed power. The selector (`.lb__picker`) is at the lower-inner of the
+   disc; at REVEAL your power stays low (green) and the opponent's shows high (red). */
+.lb__picker,
+.lb__reveal-power {
 	position: absolute;
 	left: 50%;
-	bottom: 13%;
 	transform: translateX(-50%);
-	z-index: 5;
+	z-index: 7;
 	display: flex;
-	gap: clamp(8px, 1.6vh, 18px);
+	gap: clamp(14px, 3vh, 42px);
+}
+.lb__picker {
+	bottom: 11%;
 	pointer-events: auto;
 }
+.lb__reveal-power {
+	pointer-events: none;
+}
+.lb__reveal-power--you {
+	bottom: 11%;
+}
+.lb__reveal-power--opp {
+	top: 11%;
+}
 .lb__pick {
-	display: inline-flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 3px;
-	width: clamp(46px, 7vh, 74px);
-	padding: 7px 4px 5px;
-	border-radius: 13px;
-	border: 1px solid rgba(231, 178, 74, 0.4);
-	background: rgba(10, 12, 18, 0.62);
-	backdrop-filter: blur(4px);
-	color: #f3f7fb;
+	background: none;
+	border: 0;
+	padding: 4px;
 	cursor: pointer;
-	transition:
-		transform 0.1s ease,
-		background 0.18s ease,
-		border-color 0.18s ease,
-		box-shadow 0.18s ease;
-}
-.lb__pick img {
-	width: clamp(24px, 3.6vh, 40px);
-	height: auto;
-	filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6));
-}
-.lb__pick-val {
-	font-weight: 800;
-	font-size: clamp(13px, 1.8vh, 17px);
-	line-height: 1;
-	font-variant-numeric: tabular-nums;
-}
-.lb__pick:hover:not(:disabled) {
-	background: rgba(20, 24, 34, 0.8);
-	border-color: rgba(231, 178, 74, 0.7);
-	transform: translateY(-2px);
-}
-.lb__pick:active:not(:disabled) {
-	transform: translateY(0);
+	line-height: 0;
 }
 .lb__pick:disabled {
-	opacity: 0.55;
 	cursor: not-allowed;
+	opacity: 0.5;
 }
-.lb__pick.is-best {
-	background: linear-gradient(160deg, rgba(46, 129, 78, 0.92), rgba(25, 78, 46, 0.9));
-	border-color: rgba(120, 255, 170, 0.6);
-	box-shadow: 0 0 16px rgba(102, 255, 168, 0.4);
+
+.lb__orb {
+	--orb-size: clamp(56px, 11vh, 104px);
+	--aura: transparent;
+	position: relative;
+	display: grid;
+	place-items: center;
+	width: var(--orb-size);
+	height: var(--orb-size);
+	background-size: contain;
+	background-repeat: no-repeat;
+	background-position: center;
+	filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.6));
+	transition: transform 0.12s ease;
+}
+.lb__orb::before {
+	content: '';
+	position: absolute;
+	inset: -24%;
+	border-radius: 50%;
+	background: radial-gradient(circle, var(--aura), transparent 68%);
+	opacity: 0;
+	transition: opacity 0.18s ease;
+	z-index: -1;
+	pointer-events: none;
+}
+.lb__orb-val {
+	--cc-val-size: calc(var(--orb-size) * 0.46);
+	letter-spacing: -0.1em;
+	transform: scaleX(0.92);
+	line-height: 1;
+}
+/* green aura — your power (and the selector hover) */
+.lb__orb--green,
+.lb__orb--hover {
+	--aura: rgba(74, 222, 128, 0.62);
+}
+.lb__orb--green::before {
+	opacity: 1;
+}
+.lb__pick:hover:not(:disabled) .lb__orb--hover::before {
+	opacity: 1;
+}
+.lb__pick:hover:not(:disabled) .lb__orb {
+	transform: translateY(-3px) scale(1.05);
+}
+/* red aura — the opponent's revealed power */
+.lb__orb--red {
+	--aura: rgba(248, 84, 84, 0.66);
+}
+.lb__orb--red::before {
+	opacity: 1;
 }
 
 /* round outcome: the winner's half glows, the loser's desaturates + darkens */
