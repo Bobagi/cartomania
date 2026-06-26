@@ -8,6 +8,16 @@ const es: typeof en = {
 	common: {
 		back: 'Volver'
 	},
+	consent: {
+		ariaLabel: 'Consentimiento de cookies',
+		title: 'Cookies y analítica',
+		message:
+			'Usamos cookies esenciales para que el juego funcione y mantener tu sesión. Solo con tu consentimiento, también cargamos analítica respetuosa con la privacidad y sin cookies para entender cómo se usa Cartomania. Sin anuncios, sin rastreo entre sitios y nunca vendemos tus datos.',
+		acceptAll: 'Aceptar todo',
+		essentialOnly: 'Solo esenciales',
+		privacyLink: 'Política de Privacidad',
+		manage: 'Preferencias de cookies'
+	},
 	nav: {
 		logout: 'Cerrar sesión'
 	},
@@ -246,7 +256,7 @@ const es: typeof en = {
 						},
 						{
 							strong: 'Datos técnicos',
-							text: 'una cookie de sesión que te mantiene conectado y una cookie que recuerda tu idioma. No usamos cookies de publicidad ni de seguimiento entre sitios.'
+							text: 'una cookie de sesión que te mantiene conectado, una cookie que recuerda tu idioma y una cookie que guarda tu elección de consentimiento. Solo si aceptas la analítica, también recopilamos estadísticas de uso anónimas y agregadas (consulta “Analítica” más abajo). No usamos cookies de publicidad ni de seguimiento entre sitios.'
 						}
 					]
 				},
@@ -265,7 +275,14 @@ const es: typeof en = {
 				{
 					heading: 'Cookies',
 					paragraphs: [
-						'Cartomania usa solo cookies esenciales y propias: una para recordar que has iniciado sesión y otra para recordar tu idioma. El juego no establece cookies de analítica ni de publicidad de terceros.'
+						'Cartomania usa solo cookies propias: una para recordar que has iniciado sesión, una para recordar tu idioma y una para guardar tu elección de consentimiento. Son esenciales y siempre se establecen. No establecemos ninguna cookie de publicidad ni de seguimiento entre sitios.'
+					],
+					items: []
+				},
+				{
+					heading: 'Analítica',
+					paragraphs: [
+						'Con tu consentimiento, Cartomania carga un script de analítica propio y respetuoso con la privacidad (Umami, servido desde analytics.bobagi.space) para medir el uso agregado, como vistas de página y visitas. No usa cookies, no recopila información personal y nunca te rastrea por otros sitios web. El script solo se carga después de que aceptas la analítica en el banner de consentimiento; si eliges “Solo esenciales”, nunca se carga. Puedes cambiar tu decisión en cualquier momento mediante el enlace “Preferencias de cookies” del pie de página.'
 					],
 					items: []
 				},

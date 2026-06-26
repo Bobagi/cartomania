@@ -15,7 +15,7 @@
 		sections: LegalSection[];
 	};
 
-	const lastUpdatedDate = new Date(2026, 5, 7); // 7 June 2026 (month is 0-indexed)
+	const lastUpdatedDate = new Date(2026, 5, 26); // 26 June 2026 (month is 0-indexed)
 	const githubUrl =
 		SOCIAL_LINKS.find((link) => link.label === 'GitHub')?.url ??
 		'https://github.com/bobagi/cartomania';

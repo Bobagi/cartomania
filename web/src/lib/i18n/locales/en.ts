@@ -7,6 +7,16 @@ const en = {
 	common: {
 		back: 'Back'
 	},
+	consent: {
+		ariaLabel: 'Cookie consent',
+		title: 'Cookies & analytics',
+		message:
+			'We use essential cookies to run the game and keep you signed in. Only with your consent, we also load privacy-friendly, cookieless analytics to see how Cartomania is used. No ads, no cross-site tracking, and we never sell your data.',
+		acceptAll: 'Accept all',
+		essentialOnly: 'Essential only',
+		privacyLink: 'Privacy Policy',
+		manage: 'Cookie preferences'
+	},
 	nav: {
 		logout: 'Log out'
 	},
@@ -245,7 +255,7 @@ const en = {
 						},
 						{
 							strong: 'Technical data',
-							text: 'a session cookie that keeps you signed in and a cookie that remembers your language. We do not use advertising or cross-site tracking cookies.'
+							text: 'a session cookie that keeps you signed in, a cookie that remembers your language, and a cookie that stores your consent choice. Only if you accept analytics, we additionally collect anonymous, aggregate usage statistics (see “Analytics” below). We do not use advertising or cross-site tracking cookies.'
 						}
 					]
 				},
@@ -264,7 +274,14 @@ const en = {
 				{
 					heading: 'Cookies',
 					paragraphs: [
-						'Cartomania uses essential, first-party cookies only: one to remember that you are logged in, and one to remember your chosen language. No third-party analytics or advertising cookies are set by the game itself.'
+						'Cartomania uses first-party cookies only: one to remember that you are logged in, one to remember your chosen language, and one to remember your cookie-consent choice. These are essential and always set. We do not set any advertising or cross-site tracking cookies.'
+					],
+					items: []
+				},
+				{
+					heading: 'Analytics',
+					paragraphs: [
+						'With your consent, Cartomania loads a self-hosted, privacy-friendly analytics script (Umami, served from analytics.bobagi.space) to measure aggregate usage such as page views and visits. It is cookieless, does not collect personal information, and never tracks you across other websites. The script loads only after you accept analytics in the consent banner — if you choose “Essential only”, it is never loaded. You can change your decision at any time through the “Cookie preferences” link in the footer.'
 					],
 					items: []
 				},
