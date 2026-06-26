@@ -442,21 +442,34 @@ web/                         SvelteKit frontend
 
 > Ordered roughly by priority. Update/trim as items land.
 
-- **[ON BRANCH — review] Duel battlefield — masked card art (2-step).** **Step 1 DONE (2026-06-20, on
-  `main`):** removed the "your card here" / "waiting" slot placeholders + framed outline. **Step 2 DONE
-  (2026-06-20/21, on branch `feat/duel-circle-art`, DEPLOYED live for review — `main` is the stable
-  fallback):** `.lb__arena` is a felt disc that masks the played card's creature ART into two halves
-  (top = opponent on reveal, bottom = you), with **rotating arcane rings** (`.lb__arena-rings`). Iterated
-  per 2026-06-21 feedback to: **art-only** (whole-card overlay removed); art sized to the circle's vertical
-  RADIUS (centred square, sides intentionally empty); the round-loss `CardDestroyer` FX now plays on the
-  loser's creature ART; and the power selector + clash live **inside the disc** as card-style `.lb__orb`s
-  (icon + value, reusing `.card-attribute-value`) — green aura on hover / your chosen power, the opponent's
-  power shows high with a red aura at REVEAL. The per-round win/lose banner is hidden. See the "Duel board
-  layout" gotcha. **Open follow-ups before merge:** (a) the empty side spaces are filled by the `VoidFlames`
-  canvas (dark, art-coloured flames) — tune intensity/length/darkness in `voidFlames.ts` per taste (the user
-  wants a Hearthstone-style "black flame"); (b) the opponent half is empty while its card is hidden (no
-  indicator); (c) the loser's `is-lose` dark tint still overlays the destruction (could drop it). To revert
-  the whole thing: `git checkout main` + rebuild + `pm2 restart cartomania-web`.
+- **[ON BRANCH `feat/duel-circle-art` — NOT merged; DEPLOYED live for review; `main` is the fallback]
+  Duel battlefield rework.** Long iterative session (2026-06-20 → 26). **Current state — commit `f3694e7`:**
+  - **Step 1 (merged to `main`):** removed the "your card here" / "waiting" centre placeholders + the slot's
+    framed outline (the felt is empty until a card is played); fixed the opponent's face-down card clipping
+    (the card-back PNG is narrower than the slot → `object-fit: contain`, not `cover`).
+  - **Step 2 (branch):** the centre is `.lb__arena`, a **CIRCULAR** gold-rimmed felt disc split into two
+    halves (top = opponent, bottom = you). The played card's **creature ART** (a centred SQUARE,
+    `.lb__arena-art`) fills the matching half — yours on pick, the opponent's on REVEAL. The empty space
+    around it is filled by **`VoidFlames`** (`web/src/lib/cards/voidFlames.ts`): a `<canvas>` particle effect
+    (same family as the destruction FX) — dark "flame tongues" emanate OUTWARD from each card; **each flame's
+    colour is sampled from the art's EDGE** (CORS on `bobagi.space/images/` enabled + a `?fx` cache-buster —
+    see /opt/CLAUDE.md 2026-06-21); the opponent's flames drift toward you; honours `prefers-reduced-motion`.
+    The round-loss `CardDestroyer` FX plays ON the loser's creature art. The power selector + the REVEAL
+    clash are in-disc card-style `.lb__orb`s on the **lower circumference** (icon + value reusing
+    `.card-attribute-value`; green aura on hover / your chosen power, red for the opponent at REVEAL). The
+    per-round win/lose banner is hidden. Decorative rotating rings around the disc. See the **"Duel board
+    layout" gotcha** for the full structure + class names.
+  - **REJECTED — do NOT re-try (the user disliked each, after seeing them live):** (1) a blurred-art "fog" /
+    a darker dissolving "void" for the empty sides; (2) an **edge-feather / radial `mask` on the art** — it
+    rounded the corners → "circular art", which the user HATED ("nunca") — keep the field art a CLEAN SQUARE;
+    (3) framing the field card with the `/frames/default.png` border + reshaping the arena to a rounded
+    SQUARE with square rings ("não ficou bom" — reverted to the circle in `f3694e7`).
+  - **Open / next:** keep tuning the flames per taste (intensity / length / darkness / density — the user
+    referenced a Hearthstone "black flame"; constant emission from every border point would look best but was
+    kept moderate for performance/accessibility); the `is-lose` dark tint still overlays the destruction
+    (could drop); the opponent half has no "hidden card" indicator before REVEAL. **To merge:** review the
+    branch, then `git checkout main && git merge feat/duel-circle-art` (+ rebuild + restart). **To abandon:**
+    `git checkout main` + rebuild + `pm2 restart cartomania-web`.
 
 1. **[SECURITY — do first] Rotate the live `admin`/`alice` passwords.** The live `.env` does NOT set
    `ADMIN_PASSWORD`/`ALICE_PASSWORD`, so the seed fell back to `admin123`/`alice123` — a publicly-known
