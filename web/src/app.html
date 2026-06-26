@@ -11,8 +11,9 @@
 			name="description"
 			content="Cartomania — a fan-made digital card-battle game built around the Dracomania card collection. Not affiliated with the original creators."
 		/>
-		<!-- Umami analytics -->
-		<script defer src="https://analytics.bobagi.space/script.js" data-website-id="eb0266c7-e0cd-4ba4-9ce8-ad4f0c3b6af5"></script>
+		<!-- Analytics (Umami) is NOT loaded here: it is injected client-side only
+			after the visitor accepts analytics in the cookie banner. See
+			src/lib/consent/consent.ts + CookieBanner.svelte. -->
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { SOCIAL_LINKS } from '$lib/config/siteMetadata';
+	import { reopenConsent } from '$lib/consent/consent';
 	import { t } from '$lib/i18n';
 	const currentYear = new Date().getFullYear();
 </script>
@@ -28,6 +29,34 @@
 		<ul class="legal-links">
 			<li><a href="/privacy">{$t('footer.privacy')}</a></li>
 			<li><a href="/terms">{$t('footer.terms')}</a></li>
+			<li>
+				<button type="button" class="legal-linklike" on:click={reopenConsent}>
+					{$t('consent.manage')}
+				</button>
+			</li>
 		</ul>
 	</div>
 </footer>
+
+<style>
+	/* Make the "Cookie preferences" trigger look exactly like the footer links. */
+	.legal-linklike {
+		background: none;
+		border: none;
+		padding: 0;
+		font: inherit;
+		font-weight: 600;
+		color: var(--muted);
+		cursor: pointer;
+		transition: color 0.15s ease;
+	}
+	.legal-linklike:hover {
+		color: var(--gold-1);
+	}
+	.legal-linklike:focus-visible {
+		outline: none;
+		color: var(--gold-1);
+		box-shadow: var(--ring);
+		border-radius: 4px;
+	}
+</style>

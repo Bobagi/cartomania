@@ -409,6 +409,13 @@ body {
 	pointer-events: none;
 }
 
+/* Visible keyboard focus for all shared buttons (was missing site-wide — only
+   inputs had a focus style). Uses the gold focus-ring token. */
+.button:focus-visible {
+	outline: none;
+	box-shadow: var(--ring);
+}
+
 /* ===================== Shared inputs ===================== */
 .input-wrap {
 	display: grid;

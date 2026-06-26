@@ -130,6 +130,9 @@ web/                         SvelteKit frontend
   src/routes/terms/+page.svelte      Terms of Service — thin wrapper: <LegalDocument docKey="terms" />
   src/lib/components/LegalDocument.svelte  renders a structured legal doc from the i18n dictionaries
   src/lib/styles/routes/legalPage.css      shared styling for /privacy and /terms
+  src/lib/consent/consent.ts               COOKIE/ANALYTICS CONSENT: cookie parse + `consent` store +
+                                           acceptAll/acceptEssential/reopenConsent + lazy loadAnalytics()
+  src/lib/components/CookieBanner.svelte    the bottom consent banner (Accept all / Essential only)
   src/lib/services/featuredHeroCards.ts    picks the 3 cards the landing hero renders
   src/lib/i18n/                            multilanguage system (en / pt / es):
       config.ts            supported locales, cookie name, Accept-Language resolution
@@ -287,6 +290,21 @@ web/                         SvelteKit frontend
   paths the duel uses) stay **canonical** on purpose — the duel + server battle-log lines need English
   names so the log's name→code parsing keeps working. The logged-out hero (SSR, direct to backend, no
   proxy header) also stays canonical.
+- **Cookie/analytics consent gating (privacy).** The ONLY non-essential script is self-hosted, cookieless
+  **Umami** analytics (`analytics.bobagi.space/script.js`). It is **NOT** in `app.html` — it is injected
+  **client-side only after the visitor accepts** analytics. State lives in `web/src/lib/consent/consent.ts`:
+  a `consent` store `{decided, analytics}` seeded from the `cartomania_consent` cookie (`'all'` |
+  `'essential'`), `acceptAll()`/`acceptEssential()` persist the cookie + update the store, and
+  `loadAnalytics()` injects the `<script>` exactly once (guarded). `+layout.server.ts` passes the raw cookie
+  as `data.consentCookie`; `+layout.svelte` calls `initConsent(data.consentCookie)` (SSR + return visits)
+  then `$: if (browser && $consent.analytics) loadAnalytics()`. `CookieBanner.svelte` (a `role="region"`
+  bottom bar, rendered globally — **even on chromeless `/game/*`** so nothing loads without consent) shows
+  while `!decided`; the footer's "Cookie preferences" button calls `reopenConsent()` to change the choice.
+  **If you add ANY third-party script, gate it the same way — never hardcode it in `app.html`.** The
+  `/privacy` policy's "Cookies" + new "Analytics" sections (all 3 locales) describe this; keep them honest
+  if the behaviour changes. **PITFALL:** the privacy policy used to claim "no third-party analytics" while
+  Umami loaded unconditionally — a real contradiction; that's why this exists. Consent strings: `consent.*`
+  in `locales/{en,pt,es}.ts`.
 - **Google sign-in is scaffolded, not live.** Frontend only so far: a `GoogleAuthButton` on the login
   card + register page, plus SvelteKit endpoints `web/src/routes/auth/google/+server.ts` (consent
   redirect) and `.../callback/+server.ts` (stub). It comes to life once these are set:
@@ -378,6 +396,14 @@ web/                         SvelteKit frontend
 - Multilanguage (en / pt / es) with a flag language selector in the top bar; persisted via cookie and
   SSR-resolved. The whole UI is translated, and **card name/description are localized in the gallery**
   via the `CardTranslation` table (the duel keeps canonical English by design — see the gotcha).
+- **Cookie/analytics consent + privacy accuracy (2026-06-26).** Added a consent banner
+  (`CookieBanner.svelte` + `lib/consent/consent.ts`): essential cookies always work; **Umami analytics
+  loads only after the visitor accepts** (was hardcoded in `app.html`, loading unconditionally — and the
+  privacy policy falsely claimed "no third-party analytics"). The policy's Cookies/Analytics sections were
+  corrected in all 3 locales + a footer "Cookie preferences" link re-opens the banner. Verified with
+  Playwright (no script pre-consent / injected on Accept-all / never on Essential-only / persists for
+  return visitors). a11y: added the site-wide **`.button:focus-visible`** ring (was missing everywhere) +
+  focus styles on the new link-buttons. See the **consent-gating gotcha** above.
 - **Friends panel z-index fixed**: backdrop z-index raised to 200 (was 40, behind top-bar at 50); dock
   → 210, toast → 220 so they all float above the top bar correctly on desktop and mobile.
 - **Card outline**: 8-direction text-shadow using `--cc-outline-size` (em-fraction, default 0.09) and

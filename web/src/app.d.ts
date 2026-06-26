@@ -15,6 +15,7 @@ declare global {
 			authUser: AuthenticatedCartomaniaUser | null;
 			dashboard?: CartomaniaDashboardData;
 			locale?: Locale;
+			consentCookie?: string | null;
 		}
 		// interface PageState {}
 		// interface Platform {}
