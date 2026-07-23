@@ -15,6 +15,8 @@ export interface FeaturedHeroCard {
 /** Hand-picked card numbers shown in the hero fan: [left, center, right]. */
 const DEFAULT_FEATURED_CARD_NUMBERS = [3, 1, 8];
 const FEATURED_HERO_CARD_COUNT = 3;
+/** How many cards the landing's collection strip previews. */
+const SHOWCASE_CARD_COUNT = 8;
 
 function toFeaturedHeroCard(card: CartomaniaCardCatalogItem): FeaturedHeroCard {
 	return {
@@ -58,5 +60,35 @@ export function selectFeaturedHeroCards(
 		take(card);
 	}
 
+	return chosen;
+}
+
+/** Total number of cards in the catalog — the landing quotes it as real proof. */
+export function countCatalogCards(collections: CartomaniaCardCollection[]): number {
+	return collections.reduce((total, collection) => total + (collection.cards?.length ?? 0), 0);
+}
+
+/**
+ * Picks the cards previewed in the landing's collection strip. It deliberately
+ * skips the ones already standing in the hero (no duplicates on one screen) and
+ * walks the catalog with an even stride so the strip samples the whole
+ * collection instead of showing the first N cards.
+ */
+export function selectShowcaseCards(
+	collections: CartomaniaCardCollection[],
+	excludeCodes: string[] = [],
+	count: number = SHOWCASE_CARD_COUNT
+): FeaturedHeroCard[] {
+	const excluded = new Set(excludeCodes);
+	const available = collections
+		.flatMap((collection) => collection.cards ?? [])
+		.filter((card) => !excluded.has(card.code));
+	if (available.length === 0) return [];
+
+	const stride = Math.max(1, Math.floor(available.length / count));
+	const chosen: FeaturedHeroCard[] = [];
+	for (let index = 0; index < available.length && chosen.length < count; index += stride) {
+		chosen.push(toFeaturedHeroCard(available[index]));
+	}
 	return chosen;
 }

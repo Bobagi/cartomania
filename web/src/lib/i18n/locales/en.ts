@@ -31,12 +31,53 @@ const en = {
 	},
 	home: {
 		kicker: 'Digital Collectible Card Duel',
-		tagline:
-			'Command the Dracomania collection and duel by fire, magic and might. Each round both duelists reveal a card and clash on one attribute — capture more cards than your rival to claim the match.',
 		serverLabel: 'Server',
+		promise:
+			'Two dragons hit the table. You call the attribute you think wins — magic, might or fire. Call it right and both cards are yours.',
+		playCta: 'Play your first duel',
+		playNote: 'Free to play, straight in the browser.',
+		galleryCta: 'See the cards',
+		attributes: {
+			title: 'Three ways to win a round',
+			subtitle: 'Every dragon carries all three. Only the attribute you call is counted.',
+			magic: {
+				name: 'Magic',
+				text: 'Arcane power. The card that would lose a brawl often wins the spell.'
+			},
+			might: {
+				name: 'Might',
+				text: 'Raw strength. The steady call — and why the heavy dragons stay dangerous.'
+			},
+			fire: {
+				name: 'Fire',
+				text: 'Dragon breath. The widest spread on the board, so the boldest call to make.'
+			}
+		},
+		how: {
+			title: 'How a round works',
+			subtitle: 'One round, three beats. A match is over in a couple of minutes.',
+			revealTitle: 'Reveal',
+			revealText: 'Both duelists commit one card from their hand. The arena flips them together.',
+			clashTitle: 'Clash',
+			clashText: 'One duelist calls the attribute. Both dragons are read on that value alone.',
+			captureTitle: 'Capture',
+			captureText:
+				'The higher value takes both cards. When a hand runs out, the bigger pile wins the match.'
+		},
+		collection: {
+			title: 'The Dracomania collection',
+			subtitle:
+				'{count} hand-painted dragons, each with its own magic, might and fire. Learn the spreads and you will know which attribute to call.',
+			cta: 'Browse every card'
+		},
+		finalCta: {
+			title: 'The arena is open',
+			text: 'Make an account and you are duelling in seconds — against the house bot, or a friend you challenge.',
+			button: 'Play your first duel'
+		},
 		auth: {
 			title: 'Enter the arena',
-			subtitle: 'Log in to play, or browse the collection first.',
+			subtitle: 'Log in to pick up your duels.',
 			username: 'Username',
 			usernamePlaceholder: 'Your nickname',
 			password: 'Password',
@@ -44,6 +85,7 @@ const en = {
 			or: 'or',
 			browseGallery: 'Browse the gallery',
 			createAccount: 'Create an account',
+			newHere: 'New here?',
 			invalidCredentials: 'Invalid username or password.'
 		},
 		dashboard: {

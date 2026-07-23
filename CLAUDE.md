@@ -120,7 +120,8 @@ prisma/seed.ts               idempotent seed: Dracomania (32 cards) + their pt/e
 web/                         SvelteKit frontend
   src/lib/styles/appShell.css        GLOBAL design system: tokens, atmospheric bg, Draco font,
                                      themed top bar/footer, shared .button/.input. Loaded by +layout.
-  src/routes/mainpage.css            home (landing/login hero + player dashboard) layout
+  src/routes/mainpage.css            home layout: the logged-out LANDING (hero + sections) and the
+                                     player dashboard. Landing classes are `.lp-*` / `.hero-*`.
   src/routes/+layout.svelte          renders TopBar/SiteFooter — HIDDEN on /game routes (chromeless)
   src/routes/+page.svelte            home: logged-out hero+login / logged-in dashboard
                                      (hero shows real CardComposite cards, SSR'd via +page.server.ts)
@@ -283,6 +284,28 @@ web/                         SvelteKit frontend
   reject}`, `DELETE /friends/:id`, `POST /game/start-with-friend`. A past bug had wrong defaults
   (`/friends/respond`, `/friends/remove`, `/friends/start`) that the browser client used → "Cannot POST
   /friends/respond" when accepting a request. Both clients now rely on the (correct) defaults.
+- **The logged-out landing is a GAME landing page, not a login screen** (redesigned 2026-07-23,
+  `mainpage.css` "Landing (logged out)"). Order: hero (`.lp-hero` — kicker, brand title, the one-line
+  promise, primary CTA **Play your first duel → `/register`**, secondary **See the cards → `/gallery`**,
+  then the 3-card fan spanning the full width) → `.lp-attrs` (the three attribute icons, names set in
+  'Draco'/Exocet like the cards) → `.lp-how` (3 numbered steps — a round IS a sequence) → `.lp-collection`
+  (real `CardComposite` cards in a scrollable rail + the live card count) → `.lp-final` (closing CTA).
+  The `.auth-card` is deliberately QUIET (neutral submit, no gold) — it serves returning players;
+  the hero owns the primary action. `+page.server.ts` does ONE catalog fetch and derives
+  `featuredCards` / `showcaseCards` / `collectionCardCount` (see `featuredHeroCards.ts`).
+  **PITFALLS learned building it (all three cost a debugging round):**
+  (1) `.landing` and `.lp-section` MUST keep `grid-template-columns: minmax(0, 1fr)` — an implicit
+  `auto` track grows to the collection rail's full content width and gives the whole document a
+  horizontal scrollbar; `overflow-x:auto` on the rail does NOT stop that propagating through its
+  `overflow:visible` parent. (2) `.hero-art` keeps `overflow-x: clip` and `.hero-art-ring` keeps
+  `max-width:100%` — the ring's `min(430px, 92%)` resolved to 424px inside a 350px box on phones.
+  (3) The rail uses `justify-content: safe center`, never plain `center` — plain `center` on an
+  overflowing flex row pushes the first card where scrolling can never reach it.
+  Embers + the arcane ring are decorative and gated behind `prefers-reduced-motion`.
+- **The consent bar reserves its own space.** `CookieBanner.svelte` renders a `.cookie-spacer` in page
+  flow sized by `bind:clientHeight` (responsive CSS heights cover SSR/first paint). Without it the
+  fixed bar covered the whole login card on phones. If you restyle the bar, re-check that at max
+  scroll the footer clears it at 390/768/1440.
 - **Responsive landing title.** The brand hero title is sized with container-query units
   (`.hero-title { font-size: clamp(34px, 10.5cqw, 82px) }`, with `.landing-hero { container-type:
   inline-size }`) so the long word "CARTOMANIA" always fits one line; the auth column is a fixed
@@ -407,6 +430,16 @@ web/                         SvelteKit frontend
   `main` (current convention) or `feat/*`; confirm before destructive git/DB actions.
 
 ## Status (update as you go)
+
+- **Landing page redesign (2026-07-23) — merged to `main`, deployed.** The logged-out home was a
+  login screen with a game-themed header: the loudest object was the password field, the duel board
+  was never shown, the page ended at the fold, and the consent bar covered the whole login card on
+  phones. It is now a real game landing page (see the landing gotcha above) with the CTA hierarchy
+  flipped for first-time visitors. Also fixed: hero card names cropped by a fixed overlap, the violet
+  off-palette `Create account` button on `/register`, and a 24px tap target. Full `frontend-review`
+  run — 2 P1 / 5 P2 / 2 P3 found and fixed, plus 3 layout bugs caught by measurement during the build
+  (document-wide horizontal scroll, a 424px ring in a 350px box, the flex `center` overflow trap).
+  Report + before/after screenshots: `.claude/frontend-review/2026-07-23-landing/report.md`.
 
 - **Production-readiness / auth+security pass (2026-07-23) — on branch `feat/duel-circle-art`.** Made the
   app safe to expose to clients: **fixed 2 live-exploitable P0s** — a forgeable admin JWT (`dev-secret`

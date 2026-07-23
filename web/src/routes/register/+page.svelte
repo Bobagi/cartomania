@@ -117,7 +117,7 @@
 			</label>
 
 			<div class="auth-actions stacked">
-				<button class="button button-accent" type="submit" disabled={submitting}>
+				<button class="button button-primary" type="submit" disabled={submitting}>
 					{$t('register.submit')}
 				</button>
 				<BackButton href="/" label={$t('register.back')} />
