@@ -32,12 +32,53 @@ const pt: typeof en = {
 	},
 	home: {
 		kicker: 'Duelo de Cartas Colecionáveis',
-		tagline:
-			'Comande a coleção Dracomania e duele por fogo, magia e força. A cada rodada os dois duelistas revelam uma carta e se enfrentam em um atributo — capture mais cartas que seu rival para vencer a partida.',
 		serverLabel: 'Servidor',
+		promise:
+			'Dois dragões vão à mesa. Você escolhe o atributo que acha que vence — magia, força ou fogo. Acertou, as duas cartas são suas.',
+		playCta: 'Jogue seu primeiro duelo',
+		playNote: 'De graça, direto no navegador.',
+		galleryCta: 'Ver as cartas',
+		attributes: {
+			title: 'Três formas de vencer a rodada',
+			subtitle: 'Todo dragão tem os três. Só vale o atributo que você escolher.',
+			magic: {
+				name: 'Magia',
+				text: 'Poder arcano. A carta que perderia na porrada muitas vezes vence no feitiço.'
+			},
+			might: {
+				name: 'Força',
+				text: 'Força bruta. A escolha segura — e o motivo de os dragões pesados seguirem perigosos.'
+			},
+			fire: {
+				name: 'Fogo',
+				text: 'Sopro de dragão. A maior variação do tabuleiro, e por isso a aposta mais ousada.'
+			}
+		},
+		how: {
+			title: 'Como funciona uma rodada',
+			subtitle: 'Uma rodada, três tempos. Uma partida termina em poucos minutos.',
+			revealTitle: 'Revelar',
+			revealText: 'Os dois duelistas jogam uma carta da mão. A arena vira as duas juntas.',
+			clashTitle: 'Confrontar',
+			clashText: 'Um dos duelistas escolhe o atributo. Os dois dragões valem só aquele número.',
+			captureTitle: 'Capturar',
+			captureText:
+				'O maior valor leva as duas cartas. Quando uma mão acaba, quem tem a pilha maior vence a partida.'
+		},
+		collection: {
+			title: 'A coleção Dracomania',
+			subtitle:
+				'{count} dragões pintados à mão, cada um com sua magia, força e fogo. Aprenda os números e você saberá qual atributo escolher.',
+			cta: 'Ver todas as cartas'
+		},
+		finalCta: {
+			title: 'A arena está aberta',
+			text: 'Crie uma conta e em segundos você está duelando — contra o bot da casa, ou contra um amigo que você desafiar.',
+			button: 'Jogue seu primeiro duelo'
+		},
 		auth: {
 			title: 'Entre na arena',
-			subtitle: 'Faça login para jogar, ou veja a coleção primeiro.',
+			subtitle: 'Faça login para continuar seus duelos.',
 			username: 'Usuário',
 			usernamePlaceholder: 'Seu apelido',
 			password: 'Senha',
@@ -45,6 +86,7 @@ const pt: typeof en = {
 			or: 'ou',
 			browseGallery: 'Ver a galeria',
 			createAccount: 'Criar uma conta',
+			newHere: 'É novo por aqui?',
 			invalidCredentials: 'Usuário ou senha inválidos.'
 		},
 		dashboard: {

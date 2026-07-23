@@ -71,19 +71,38 @@
 	width: 100%;
 }
 
-/* ===================== Landing / login hero ===================== */
+/* ===================== Landing (logged out) =====================
+ * A game landing page, not a login screen: a hero that states the one decision
+ * a round asks of you, then the three attributes, how a round plays, the real
+ * collection, and a closing call. The three attribute icons are the page's
+ * structural spine — the same art the cards and the duel board use.
+ */
 .landing {
 	width: min(1120px, 100%);
-	align-self: center;
 	display: grid;
-	/* The auth column is a fixed, comfortable width; the hero takes the rest so the
-	   big brand title fits on one line. minmax(0,…) lets the hero shrink safely. */
-	grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
-	gap: clamp(24px, 4vw, 56px);
-	align-items: center;
+	/* minmax(0,…) is load-bearing: without it the implicit `auto` track grows to the
+	   collection rail's full content width and every section renders wider than the
+	   page, giving the whole document a horizontal scrollbar. */
+	grid-template-columns: minmax(0, 1fr);
+	gap: clamp(56px, 8vw, 104px);
+}
+
+.lp-hero {
+	position: relative;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(290px, 340px);
+	/* Copy and login share the top row; the cards get the full width underneath so
+	   the collection is the hero's closing statement, not a footnote in a column. */
+	grid-template-areas:
+		'copy auth'
+		'art  art';
+	gap: clamp(20px, 3vw, 34px) clamp(24px, 4vw, 56px);
+	align-items: start;
+	padding-top: clamp(8px, 3vw, 34px);
 }
 
 .landing-hero {
+	grid-area: copy;
 	display: flex;
 	flex-direction: column;
 	gap: 14px;
@@ -92,8 +111,134 @@
 	container-type: inline-size;
 }
 
+/* Ambient embers drifting up behind the hero. Decorative only, and the whole
+   layer is skipped under prefers-reduced-motion. */
+.hero-embers {
+	position: absolute;
+	inset: -20px 0 0;
+	overflow: hidden;
+	pointer-events: none;
+	z-index: 0;
+	border-radius: var(--radius);
+}
+
+.ember {
+	position: absolute;
+	bottom: -12px;
+	width: 3px;
+	height: 3px;
+	border-radius: 50%;
+	background: var(--gold-1);
+	box-shadow: 0 0 8px 2px rgba(231, 178, 74, 0.55);
+	opacity: 0;
+	animation: emberRise linear infinite;
+}
+
+@keyframes emberRise {
+	0% {
+		transform: translate3d(0, 0, 0) scale(0.7);
+		opacity: 0;
+	}
+	14% {
+		opacity: 0.85;
+	}
+	76% {
+		opacity: 0.5;
+	}
+	100% {
+		transform: translate3d(var(--ember-drift, 24px), -100%, 0) scale(1.05);
+		opacity: 0;
+	}
+}
+
+/* Spread/stagger the embers from CSS so the markup stays free of inline styles. */
+.ember:nth-child(1) {
+	left: 4%;
+	animation-duration: 15s;
+	animation-delay: -1s;
+	--ember-drift: 26px;
+}
+.ember:nth-child(2) {
+	left: 12%;
+	animation-duration: 19s;
+	animation-delay: -7s;
+	--ember-drift: -18px;
+	width: 2px;
+	height: 2px;
+}
+.ember:nth-child(3) {
+	left: 21%;
+	animation-duration: 13s;
+	animation-delay: -3s;
+	--ember-drift: 34px;
+}
+.ember:nth-child(4) {
+	left: 29%;
+	animation-duration: 22s;
+	animation-delay: -12s;
+	--ember-drift: -28px;
+	width: 4px;
+	height: 4px;
+}
+.ember:nth-child(5) {
+	left: 37%;
+	animation-duration: 16s;
+	animation-delay: -5s;
+	--ember-drift: 20px;
+}
+.ember:nth-child(6) {
+	left: 45%;
+	animation-duration: 20s;
+	animation-delay: -15s;
+	--ember-drift: -34px;
+	width: 2px;
+	height: 2px;
+}
+.ember:nth-child(7) {
+	left: 54%;
+	animation-duration: 14s;
+	animation-delay: -9s;
+	--ember-drift: 30px;
+}
+.ember:nth-child(8) {
+	left: 62%;
+	animation-duration: 24s;
+	animation-delay: -2s;
+	--ember-drift: -22px;
+	width: 4px;
+	height: 4px;
+}
+.ember:nth-child(9) {
+	left: 71%;
+	animation-duration: 17s;
+	animation-delay: -13s;
+	--ember-drift: 16px;
+}
+.ember:nth-child(10) {
+	left: 79%;
+	animation-duration: 21s;
+	animation-delay: -6s;
+	--ember-drift: -30px;
+	width: 2px;
+	height: 2px;
+}
+.ember:nth-child(11) {
+	left: 88%;
+	animation-duration: 15s;
+	animation-delay: -18s;
+	--ember-drift: 28px;
+}
+.ember:nth-child(12) {
+	left: 95%;
+	animation-duration: 23s;
+	animation-delay: -10s;
+	--ember-drift: -24px;
+}
+
 .hero-kicker {
 	margin: 0;
+	position: relative;
+	z-index: 1;
 	font-size: 0.78rem;
 	font-weight: 700;
 	letter-spacing: 0.22em;
@@ -103,6 +248,8 @@
 
 .hero-title {
 	margin: 0;
+	position: relative;
+	z-index: 1;
 	font-family: 'Morpheus', system-ui, sans-serif;
 	text-transform: uppercase;
 	/* Sized against the hero column width (cqw) so the long brand word fits one
@@ -120,61 +267,136 @@
 
 .hero-tagline {
 	margin: 0;
-	max-width: 46ch;
+	position: relative;
+	z-index: 1;
+	max-width: 44ch;
 	color: var(--text);
-	opacity: 0.86;
-	font-size: clamp(15px, 1.6vw, 18px);
+	opacity: 0.9;
+	font-size: clamp(16px, 1.7vw, 19px);
 	line-height: 1.6;
 }
 
-.hero-art {
+/* Hero call to action: a first-time visitor's job is to play, so that is the
+   primary button; logging in lives in the card beside it. */
+.hero-cta {
+	position: relative;
+	z-index: 1;
 	display: flex;
-	justify-content: flex-start;
-	align-items: flex-end;
-	gap: 0;
-	margin-top: 10px;
-	min-height: 230px;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin-top: 6px;
 }
 
-.hero-card {
-	width: clamp(120px, 13vw, 168px);
-	aspect-ratio: 1444 / 1920;
-	border-radius: 8px;
-	box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
-	transition:
-		transform 0.25s ease,
-		box-shadow 0.25s ease;
-}
-.hero-card:not(:first-child) {
-	margin-left: -52px;
-}
-.hero-card.tilt-left {
-	transform: rotate(-9deg) translateY(10px);
-}
-.hero-card.tilt-right {
-	transform: rotate(9deg) translateY(10px);
-}
-.hero-card.tilt-center {
-	transform: translateY(-12px) scale(1.06);
-	box-shadow:
-		0 26px 60px rgba(0, 0, 0, 0.6),
-		0 0 40px rgba(231, 178, 74, 0.3);
-	z-index: 2;
-}
-.hero-art:hover .hero-card.tilt-left {
-	transform: rotate(-15deg) translateX(-14px) translateY(6px);
-}
-.hero-art:hover .hero-card.tilt-right {
-	transform: rotate(15deg) translateX(14px) translateY(6px);
+.hero-cta-main {
+	font-size: 16px;
+	padding: 14px 26px;
 }
 
-.hero-status {
-	margin: 8px 0 0;
-	display: inline-flex;
+.hero-note {
+	position: relative;
+	z-index: 1;
+	margin: 2px 0 0;
+	display: flex;
+	flex-wrap: wrap;
 	align-items: center;
 	gap: 8px;
 	font-size: 13px;
 	color: var(--muted);
+}
+
+.hero-note-server {
+	opacity: 0.8;
+}
+
+/* The card fan stands on a lit arena disc — the same shape the duel board uses. */
+.hero-art {
+	grid-area: art;
+	position: relative;
+	z-index: 1;
+	display: grid;
+	place-items: center;
+	min-height: 260px;
+	padding-block: clamp(10px, 2vw, 24px);
+	/* `clip` (not `hidden`) keeps the ring and the fan's rotated corners from
+	   widening the page on phones without creating a scroll container or cutting
+	   the cards' vertical glow. */
+	overflow-x: clip;
+}
+
+.hero-art-ring {
+	position: absolute;
+	top: 52%;
+	left: 50%;
+	width: min(430px, 92%);
+	max-width: 100%;
+	aspect-ratio: 1;
+	transform: translate(-50%, -50%);
+	border-radius: 50%;
+	border: 1px solid rgba(214, 178, 92, 0.28);
+	background: radial-gradient(
+		circle at 50% 55%,
+		rgba(231, 178, 74, 0.16),
+		rgba(231, 178, 74, 0.05) 46%,
+		transparent 68%
+	);
+	box-shadow: 0 0 70px rgba(231, 178, 74, 0.14);
+	animation: heroRingSpin 46s linear infinite;
+	pointer-events: none;
+}
+.hero-art-ring::after {
+	content: '';
+	position: absolute;
+	inset: 13%;
+	border-radius: 50%;
+	border: 1px dashed rgba(214, 178, 92, 0.16);
+}
+
+@keyframes heroRingSpin {
+	to {
+		transform: translate(-50%, -50%) rotate(360deg);
+	}
+}
+
+.hero-fan {
+	position: relative;
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+	/* Card width drives the overlap, so the fan keeps every name readable at any
+	   size — a fixed negative margin used to swallow the outer two titles. */
+	--hero-card-w: clamp(126px, 17vw, 236px);
+}
+
+.hero-card {
+	width: var(--hero-card-w);
+	aspect-ratio: 1444 / 1920;
+	border-radius: 8px;
+	box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+	transition:
+		transform 0.28s ease,
+		box-shadow 0.28s ease;
+}
+.hero-card:not(:first-child) {
+	margin-left: calc(var(--hero-card-w) * -0.17);
+}
+.hero-card.tilt-left {
+	transform: rotate(-8deg) translateY(12px);
+}
+.hero-card.tilt-right {
+	transform: rotate(8deg) translateY(12px);
+}
+.hero-card.tilt-center {
+	transform: translateY(-14px) scale(1.07);
+	box-shadow:
+		0 26px 60px rgba(0, 0, 0, 0.6),
+		0 0 44px rgba(231, 178, 74, 0.32);
+	z-index: 2;
+}
+.hero-art:hover .hero-card.tilt-left {
+	transform: rotate(-14deg) translateX(-18px) translateY(6px);
+}
+.hero-art:hover .hero-card.tilt-right {
+	transform: rotate(14deg) translateX(18px) translateY(6px);
 }
 .status-dot {
 	width: 9px;
@@ -192,8 +414,13 @@
 	color: var(--danger);
 }
 
-/* Auth card on the landing */
+/* Auth card on the landing — for players who already have an account, so it sits
+   quieter than the hero's play button (neutral submit, no gold). */
 .auth-card {
+	grid-area: auth;
+	position: relative;
+	z-index: 1;
+	align-self: start;
 	background: var(--surface);
 	border: 1px solid var(--border);
 	border-radius: var(--radius);
@@ -234,6 +461,281 @@
 	flex: 1;
 	height: 1px;
 	background: var(--border);
+}
+
+.auth-error {
+	color: #ffbdbd;
+}
+
+.auth-newhere {
+	margin: 16px 0 0;
+	font-size: 13px;
+	color: var(--muted);
+	text-align: center;
+}
+.auth-newhere a {
+	/* inline-block + min-height keeps the link at the 24px tap-target floor */
+	display: inline-block;
+	min-height: 24px;
+	padding-top: 3px;
+	color: var(--gold-1);
+	font-weight: 700;
+	text-decoration: none;
+	border-bottom: 1px solid rgba(255, 231, 166, 0.35);
+}
+.auth-newhere a:hover {
+	border-bottom-color: var(--gold-1);
+}
+.auth-newhere a:focus-visible {
+	outline: none;
+	box-shadow: var(--ring);
+	border-radius: 4px;
+}
+
+/* ===================== Landing sections ===================== */
+.lp-section {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	justify-items: center;
+	gap: 10px;
+	text-align: center;
+	min-width: 0;
+}
+
+.lp-title {
+	margin: 0;
+	font-family: 'Morpheus', system-ui, sans-serif;
+	font-size: clamp(26px, 3.4vw, 40px);
+	letter-spacing: 0.02em;
+	line-height: 1.1;
+	background: var(--gold-grad);
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+}
+
+.lp-sub {
+	margin: 0 0 clamp(18px, 3vw, 30px);
+	max-width: 60ch;
+	color: var(--muted);
+	font-size: clamp(14px, 1.5vw, 16px);
+	line-height: 1.6;
+}
+
+.lp-section-cta {
+	margin-top: clamp(18px, 3vw, 28px);
+}
+
+/* ---- Three attributes ---- */
+.attr-grid {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	width: 100%;
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: clamp(12px, 2vw, 20px);
+}
+
+.attr-card {
+	display: grid;
+	justify-items: center;
+	gap: 10px;
+	padding: clamp(20px, 2.6vw, 30px) clamp(14px, 2vw, 24px);
+	border-radius: var(--radius);
+	border: 1px solid var(--border-soft);
+	background:
+		radial-gradient(150% 90% at 50% 0%, var(--attr-tint, transparent), transparent 62%),
+		var(--surface-2);
+	box-shadow: var(--shadow-soft);
+	transition:
+		border-color 0.2s ease,
+		transform 0.2s ease;
+}
+.attr-card:hover {
+	border-color: var(--attr-accent, var(--border-strong));
+	transform: translateY(-3px);
+}
+
+.attr-card--magic {
+	--attr-accent: var(--arcane);
+	--attr-tint: rgba(122, 162, 255, 0.14);
+}
+.attr-card--might {
+	--attr-accent: var(--bronze);
+	--attr-tint: rgba(214, 165, 90, 0.14);
+}
+.attr-card--fire {
+	--attr-accent: var(--ember);
+	--attr-tint: rgba(255, 122, 60, 0.14);
+}
+
+.attr-icon {
+	width: clamp(48px, 5vw, 64px);
+	height: auto;
+	filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.55));
+}
+
+.attr-name {
+	margin: 0;
+	/* Exocet — the same face the cards print MAGIC / MIGHT / FIRE in, so the page
+	   and the cards speak one language. */
+	font-family: 'Draco', 'Morpheus', system-ui, sans-serif;
+	font-size: clamp(19px, 2.2vw, 25px);
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--attr-accent, var(--heading));
+}
+
+.attr-text {
+	margin: 0;
+	max-width: 30ch;
+	color: var(--muted);
+	font-size: 14px;
+	line-height: 1.55;
+}
+
+/* ---- How a round works (a real sequence, hence the numbers) ---- */
+.step-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	counter-reset: step;
+	width: 100%;
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: clamp(14px, 2.4vw, 26px);
+}
+
+.step {
+	position: relative;
+	display: grid;
+	justify-items: center;
+	gap: 8px;
+	padding: clamp(18px, 2.4vw, 26px) clamp(14px, 2vw, 22px);
+	border-radius: var(--radius);
+	border: 1px solid var(--border-soft);
+	background: var(--surface-2);
+}
+
+.step-num {
+	display: grid;
+	place-items: center;
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	border: 1px solid var(--border-strong);
+	background: rgba(231, 178, 74, 0.1);
+	font-family: 'Morpheus', system-ui, sans-serif;
+	font-size: 20px;
+	line-height: 1;
+	color: var(--gold-1);
+}
+
+.step-title {
+	margin: 0;
+	font-family: var(--font-display);
+	font-size: 1.15rem;
+	letter-spacing: 0.03em;
+	color: var(--heading);
+}
+
+.step-text {
+	margin: 0;
+	max-width: 32ch;
+	color: var(--muted);
+	font-size: 14px;
+	line-height: 1.55;
+}
+
+/* ---- Collection strip ---- */
+.collection-strip {
+	position: relative;
+	width: 100%;
+	min-width: 0;
+	/* Fades the rail's edges so a cut-off card reads as "there are more". */
+	-webkit-mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+	mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+}
+
+.collection-rail {
+	list-style: none;
+	margin: 0;
+	padding: 8px 4px 18px;
+	display: flex;
+	gap: clamp(10px, 1.6vw, 18px);
+	justify-content: flex-start;
+	overflow-x: auto;
+	scroll-snap-type: x proximity;
+}
+
+.collection-card {
+	flex: 0 0 auto;
+	width: clamp(104px, 12vw, 148px);
+	aspect-ratio: 1444 / 1920;
+	border-radius: 7px;
+	scroll-snap-align: center;
+	box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
+	transition:
+		transform 0.2s ease,
+		box-shadow 0.2s ease;
+}
+.collection-card:hover {
+	transform: translateY(-6px);
+	box-shadow:
+		0 18px 36px rgba(0, 0, 0, 0.6),
+		0 0 30px rgba(231, 178, 74, 0.25);
+}
+
+/* `safe` centres the rail when the whole set fits and falls back to flex-start
+   when it doesn't — plain `center` on an overflowing flex row pushes the first
+   card past the left edge where it can never be scrolled back into view. */
+@media (min-width: 1180px) {
+	.collection-rail {
+		justify-content: safe center;
+	}
+}
+
+/* ---- Closing call ---- */
+.lp-final {
+	display: grid;
+	justify-items: center;
+	gap: 12px;
+	text-align: center;
+	padding: clamp(34px, 5vw, 56px) clamp(20px, 4vw, 48px);
+	border-radius: var(--radius);
+	border: 1px solid var(--border-strong);
+	background:
+		radial-gradient(700px 260px at 50% 0%, rgba(231, 178, 74, 0.18), transparent 62%),
+		linear-gradient(180deg, rgba(28, 24, 16, 0.85), rgba(14, 12, 9, 0.9));
+	box-shadow: var(--shadow);
+}
+
+.lp-final-title {
+	margin: 0;
+	font-family: 'Morpheus', system-ui, sans-serif;
+	font-size: clamp(26px, 3.6vw, 42px);
+	line-height: 1.1;
+	letter-spacing: 0.02em;
+	background: var(--gold-grad);
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+}
+
+.lp-final-text {
+	margin: 0;
+	max-width: 52ch;
+	color: var(--text);
+	opacity: 0.85;
+	font-size: clamp(14px, 1.5vw, 16px);
+	line-height: 1.6;
+}
+
+.lp-final-cta {
+	margin-top: 10px;
+	font-size: 16px;
+	padding: 14px 30px;
 }
 
 /* ===================== Player dashboard ===================== */
@@ -513,22 +1015,71 @@
 	max-width: 340px;
 }
 
-@media (max-width: 880px) {
+@media (max-width: 980px) {
+	/* One column: promise → cards → login, so the game is seen before the form. */
+	.lp-hero {
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-areas:
+			'copy'
+			'art'
+			'auth';
+		gap: 26px;
+	}
 	.landing {
-		grid-template-columns: 1fr;
-		gap: 28px;
+		gap: clamp(44px, 9vw, 72px);
 	}
 	.hero-art {
-		justify-content: center;
-		min-height: 200px;
-	}
-	.hero-title {
-		text-align: center;
+		min-height: 220px;
 	}
 	.landing-hero {
 		align-items: center;
 		text-align: center;
 	}
+	.hero-cta {
+		justify-content: center;
+	}
+	.hero-note {
+		justify-content: center;
+	}
+	.auth-card {
+		width: min(420px, 100%);
+		justify-self: center;
+	}
+	.attr-grid,
+	.step-list {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 620px) {
+	.attr-grid,
+	.step-list {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.hero-cta .button {
+		width: 100%;
+	}
+	.hero-fan {
+		--hero-card-w: clamp(112px, 30vw, 150px);
+	}
+}
+
+/* Decorative motion only — no information is carried by the embers or the ring. */
+@media (prefers-reduced-motion: reduce) {
+	.hero-embers {
+		display: none;
+	}
+	.hero-art-ring {
+		animation: none;
+	}
+	.hero-card,
+	.collection-card,
+	.attr-card {
+		transition: none;
+	}
+}
+
+@media (max-width: 880px) {
 	.profile-card {
 		grid-template-columns: 1fr;
 		justify-items: center;
@@ -607,6 +1158,12 @@
 	border-color: rgba(241, 115, 107, 0.4);
 }
 @keyframes ctSlideUp {
-	from { opacity: 0; transform: translateX(-50%) translateY(20px); }
-	to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+	from {
+		opacity: 0;
+		transform: translateX(-50%) translateY(20px);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(-50%) translateY(0);
+	}
 }
