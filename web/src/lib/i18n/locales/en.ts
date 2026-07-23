@@ -102,16 +102,38 @@ const en = {
 		confirmPassword: 'Confirm password',
 		submit: 'Create account',
 		back: 'Back',
+		terms: {
+			prefix: 'I have read and accept the',
+			terms: 'Terms of Use',
+			and: 'and the',
+			privacy: 'Privacy Policy'
+		},
 		errors: {
 			usernameRequired: 'Username is required.',
 			passwordRequired: 'Password is required.',
+			passwordTooShort: 'Password must be at least 8 characters.',
 			passwordMismatch: 'Passwords do not match.',
+			termsRequired: 'You must accept the Terms of Use and Privacy Policy.',
 			generic: 'Could not create account.'
 		}
 	},
 	auth: {
 		googleContinue: 'Continue with Google',
-		googleComingSoon: 'Google sign-in is coming soon.'
+		googleComingSoon: 'Google sign-in is coming soon.',
+		googleError: 'Google sign-in did not complete. Please try again.'
+	},
+	agreement: {
+		title: 'Before you play',
+		body: {
+			prefix: 'To keep using Cartomania, please review and accept our',
+			terms: 'Terms of Use',
+			and: 'and',
+			privacy: 'Privacy Policy',
+			suffix: '.'
+		},
+		accept: 'I accept',
+		accepting: 'Saving…',
+		error: 'Could not save your acceptance. Please try again.'
 	},
 	attributes: {
 		magic: 'Magic',

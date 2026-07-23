@@ -4,7 +4,7 @@ services:
   db:
     image: postgres:15
     container_name: cartomania-db
-    restart: on-failure
+    restart: unless-stopped
     env_file:
       - .env
     environment:

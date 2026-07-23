@@ -35,6 +35,16 @@ async function main() {
   const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'admin123';
   const ALICE_PASSWORD = process.env.ALICE_PASSWORD ?? 'alice123';
 
+  // Refuse the weak demo defaults on a production deploy — the repo is public, so
+  // shipping with admin123/alice123 would hand out a known ADMIN login.
+  if (process.env.NODE_ENV === 'production') {
+    if (!process.env.ADMIN_PASSWORD || !process.env.ALICE_PASSWORD) {
+      throw new Error(
+        'Refusing to seed with default demo passwords in production. Set ADMIN_PASSWORD and ALICE_PASSWORD in the environment.',
+      );
+    }
+  }
+
   const [adminHash, aliceHash] = await Promise.all([
     bcrypt.hash(ADMIN_PASSWORD, 10),
     bcrypt.hash(ALICE_PASSWORD, 10),

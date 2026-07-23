@@ -28,9 +28,19 @@ model Player {
   id           String    @id @default(uuid()) @db.Uuid
   username     String    @unique @db.VarChar(50)
 
-  passwordHash String    @db.VarChar(60)
+  // Password is optional: Google-only accounts have no local password. The DB
+  // enforces that an account always has AT LEAST one credential (see the
+  // migration's CHECK constraint) so a passwordless, Google-less ghost can't exist.
+  passwordHash String?   @db.VarChar(60)
   role         UserRole  @default(USER)
   avatarUrl    String?   @db.VarChar(255)
+
+  // Google / OpenID identity. `googleId` is the stable OIDC `sub`; `email` is the
+  // (verified) address. Both are unique-when-present (Postgres treats NULLs as
+  // distinct, so many password-only accounts with NULLs never collide).
+  email         String?  @unique @db.VarChar(255)
+  googleId      String?  @unique @db.VarChar(255)
+  emailVerified Boolean  @default(false)
 
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -42,6 +52,24 @@ model Player {
   blockedFriendships  Friendship[]        @relation("FriendshipBlocker")
   sentMessages        FriendChatMessage[] @relation("ChatSender")
   receivedMessages    FriendChatMessage[] @relation("ChatRecipient")
+  agreementAcceptances AgreementAcceptance[]
+}
+
+/// Append-only proof that a player accepted the Terms of Use + Privacy Policy.
+/// One row per acceptance (who / which document version / when / from where). The
+/// version in force is CURRENT_AGREEMENT_VERSION; bumping it makes every prior row
+/// stop matching, so the gate forces everyone to re-accept. IP + user agent are
+/// PII, erased by the cascade when the account is hard-deleted.
+model AgreementAcceptance {
+  id              String   @id @default(uuid()) @db.Uuid
+  playerId        String   @db.Uuid
+  player          Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  documentVersion String   @db.VarChar(40)
+  ipAddress       String?  @db.VarChar(64)
+  userAgent       String?  @db.VarChar(512)
+  acceptedAt      DateTime @default(now())
+
+  @@index([playerId, documentVersion])
 }
 
 model Game {

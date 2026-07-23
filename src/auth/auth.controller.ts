@@ -5,29 +5,62 @@ import {
   Get,
   Patch,
   Post,
+  Req,
+  ServiceUnavailableException,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { AuthService } from './auth.service';
 import { CurrentUser } from './current-user.decorator';
+import { GoogleOAuthService } from './google-oauth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
+
+/** Read the real client IP behind nginx/Cloudflare (never the spoofable XFF head). */
+function clientContext(request: Request): {
+  ipAddress?: string;
+  userAgent?: string;
+} {
+  const header = (name: string): string | undefined => {
+    const value = request.headers[name];
+    return Array.isArray(value) ? value[0] : value;
+  };
+  const ipAddress =
+    header('cf-connecting-ip') ||
+    header('x-real-ip') ||
+    request.socket?.remoteAddress ||
+    undefined;
+  return { ipAddress, userAgent: header('user-agent') };
+}
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly googleOAuth: GoogleOAuthService,
+  ) {}
+
+  /** Which sign-in providers are available (config-driven; the UI mirrors this). */
+  @Get('providers')
+  providers() {
+    return { google: this.googleOAuth.isConfigured() };
+  }
 
   @Post('register')
   register(
+    @Req() request: Request,
     @Body()
     body: {
       username: string;
       password: string;
-      role?: 'USER' | 'ADMIN';
+      acceptTerms?: boolean;
     },
   ) {
     return this.authService.register(
       body.username,
       body.password,
-      body.role ?? 'USER',
+      body.acceptTerms === true,
+      clientContext(request),
     );
   }
 
@@ -36,10 +69,45 @@ export class AuthController {
     return this.authService.login(body.username, body.password);
   }
 
+  /**
+   * Google sign-in. The web tier performs the browser redirect + CSRF `state`
+   * check, then hands us the single-use `code`; WE do the exchange (secret stays
+   * server-side) so a forged request can't inject an arbitrary identity.
+   */
+  @Post('google')
+  async google(@Body() body: { code?: string; redirectUri?: string }) {
+    if (!this.googleOAuth.isConfigured())
+      throw new ServiceUnavailableException('Google sign-in is not configured');
+    const code = (body?.code ?? '').trim();
+    if (!code) throw new UnauthorizedException('Missing authorization code');
+    const profile = await this.googleOAuth.exchangeCodeForUserInfo(
+      code,
+      body?.redirectUri,
+    );
+    if (!profile)
+      throw new UnauthorizedException('Google authentication failed');
+    return this.authService.authenticateWithGoogle(profile);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get('me')
   me(@CurrentUser() user: { sub: string }) {
     return this.authService.me(user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('agreement')
+  agreement(@CurrentUser() user: { sub: string }) {
+    return this.authService.getAgreementStatus(user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('accept-terms')
+  acceptTerms(@Req() request: Request, @CurrentUser() user: { sub: string }) {
+    return this.authService.acceptCurrentAgreement(
+      user.sub,
+      clientContext(request),
+    );
   }
 
   @UseGuards(JwtAuthGuard)

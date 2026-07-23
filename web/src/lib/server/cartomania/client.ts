@@ -24,7 +24,10 @@ const DEFAULT_CARTOMANIA_BASE_URL = 'http://localhost:3053';
 
 function resolveCartomaniaBaseUrl(): string {
 	const configuredCartomaniaBaseUrl = runtimeEnvironmentVariables.VITE_API_BASE_URL;
-	if (typeof configuredCartomaniaBaseUrl === 'string' && configuredCartomaniaBaseUrl.trim().length > 0) {
+	if (
+		typeof configuredCartomaniaBaseUrl === 'string' &&
+		configuredCartomaniaBaseUrl.trim().length > 0
+	) {
 		return configuredCartomaniaBaseUrl.trim().replace(/\/+$/, '');
 	}
 	return DEFAULT_CARTOMANIA_BASE_URL;
@@ -164,17 +167,85 @@ export {
 	fetchCartomaniaCardCatalog
 };
 
+interface CartomaniaAuthResult {
+	accessToken: string;
+	user: {
+		id: string;
+		username: string;
+		role: 'USER' | 'ADMIN';
+		avatarUrl?: string | null;
+		email?: string | null;
+		emailVerified?: boolean;
+		hasPassword?: boolean;
+	};
+}
+
 export async function loginCartomaniaUserAccount(
 	username: string,
 	password: string
-): Promise<{
-	accessToken: string;
-	user: { id: string; username: string; role: 'USER' | 'ADMIN' };
-}> {
+): Promise<CartomaniaAuthResult> {
 	return performCartomaniaApiRequestReturningJson('/auth/login', {
 		method: 'POST',
 		body: JSON.stringify({ username, password })
 	});
+}
+
+/** Create an account. `acceptTerms` is required server-side and recorded (with IP/UA). */
+export async function registerCartomaniaUserAccountWithConsent(
+	username: string,
+	password: string,
+	acceptTerms: boolean,
+	forwardHeaders?: Record<string, string>
+): Promise<CartomaniaAuthResult> {
+	return performCartomaniaApiRequestReturningJson('/auth/register', {
+		method: 'POST',
+		headers: forwardHeaders,
+		body: JSON.stringify({ username, password, acceptTerms })
+	});
+}
+
+/**
+ * Complete Google sign-in. The backend performs the OAuth code exchange (secret
+ * stays server-side), so a forged request without a valid single-use code fails.
+ */
+export async function authenticateCartomaniaWithGoogleCode(
+	code: string,
+	redirectUri: string,
+	forwardHeaders?: Record<string, string>
+): Promise<CartomaniaAuthResult> {
+	return performCartomaniaApiRequestReturningJson('/auth/google', {
+		method: 'POST',
+		headers: forwardHeaders,
+		body: JSON.stringify({ code, redirectUri })
+	});
+}
+
+/** Which sign-in providers the backend has configured (config-driven UI). */
+export async function fetchCartomaniaAuthProviders(): Promise<{ google: boolean }> {
+	try {
+		return await performCartomaniaApiRequestReturningJson('/auth/providers');
+	} catch {
+		return { google: false };
+	}
+}
+
+/** Whether the signed-in user has accepted the Terms/Privacy version in force. */
+export async function fetchCartomaniaAgreementStatus(
+	token: string
+): Promise<{ currentVersion: string; accepted: boolean }> {
+	return performCartomaniaApiRequestReturningJson('/auth/agreement', { method: 'GET' }, token);
+}
+
+/** Record the signed-in user's acceptance of the current Terms/Privacy version. */
+export async function acceptCartomaniaAgreement(
+	token: string,
+	forwardHeaders?: Record<string, string>
+): Promise<{ ok: boolean; currentVersion: string }> {
+	return performCartomaniaApiRequestReturningJson(
+		'/auth/accept-terms',
+		{ method: 'POST', headers: forwardHeaders },
+		token
+	);
 }
 
 export function fetchAuthenticatedCartomaniaUserProfile(
@@ -195,7 +266,9 @@ export function surrenderCartomaniaGame(gameIdentifier: string, token: string): 
 	return baseSurrenderCartomaniaGame(gameIdentifier, token);
 }
 
-export function listAuthenticatedCartomaniaPlayerActiveGames(token: string): Promise<GameSummary[]> {
+export function listAuthenticatedCartomaniaPlayerActiveGames(
+	token: string
+): Promise<GameSummary[]> {
 	return baseListAuthenticatedCartomaniaPlayerActiveGames(token);
 }
 
@@ -216,7 +289,9 @@ export function listCartomaniaFriends(token: string): Promise<CartomaniaFriendSu
 	return baseListCartomaniaFriends(token);
 }
 
-export function listCartomaniaFriendRequests(token: string): Promise<CartomaniaIncomingFriendRequest[]> {
+export function listCartomaniaFriendRequests(
+	token: string
+): Promise<CartomaniaIncomingFriendRequest[]> {
 	return baseListCartomaniaFriendRequests(token);
 }
 

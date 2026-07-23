@@ -330,15 +330,43 @@ web/                         SvelteKit frontend
   if the behaviour changes. **PITFALL:** the privacy policy used to claim "no third-party analytics" while
   Umami loaded unconditionally — a real contradiction; that's why this exists. Consent strings: `consent.*`
   in `locales/{en,pt,es}.ts`.
-- **Google sign-in is scaffolded, not live.** Frontend only so far: a `GoogleAuthButton` on the login
-  card + register page, plus SvelteKit endpoints `web/src/routes/auth/google/+server.ts` (consent
-  redirect) and `.../callback/+server.ts` (stub). It comes to life once these are set:
-    - `PUBLIC_GOOGLE_AUTH_ENABLED=true` (web — shows/enables the button; otherwise it shows "coming soon")
-    - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` (web server — the OAuth client;
-      redirect URI e.g. `https://cartomania.bobagi.space/auth/google/callback`)
-  Still TODO (documented inline in the callback): the token exchange, `id_token` verification, a backend
-  find-or-create-Player-by-Google-identity endpoint (needs a `googleId`/`email` column on Player via a
-  Prisma migration), then `setCartomaniaSessionCookie`.
+- **Google sign-in is FULLY IMPLEMENTED, config-driven OFF (2026-07-23).** The flow is real end-to-end;
+  it's just gated behind env that the operator hasn't filled yet. Design (secure by construction): the
+  **web tier** owns the browser dance — `web/src/routes/auth/google/+server.ts` sets a random `state` in a
+  short-lived HttpOnly cookie (path `/auth/google`) and redirects to Google's consent; `.../callback/+server.ts`
+  verifies `state`, then hands the single-use `code` to the **backend** (`POST /auth/google`), which does the
+  code→token→userinfo exchange (`src/auth/google-oauth.service.ts`) so the **client secret never leaves the
+  backend** and a forged/absent code fails the exchange (the public web proxy can reach `/auth/google`, but
+  can't inject an identity without a valid code). `authenticateWithGoogle` (in `auth.service.ts`) requires
+  `email_verified`, matches by stable `googleId` first, links to an existing account by verified `email`, else
+  creates a passwordless USER (schema: `Player.email`/`googleId` unique-nullable + `emailVerified`,
+  `passwordHash` now nullable, `Player_has_credential` CHECK; migration `20260723000000_add_google_auth_and_agreements`).
+  Shared web helpers in `web/src/lib/server/auth/googleOAuth.ts` (route files can't export non-handlers).
+  **To turn ON:** operator creates the OAuth client in Google Cloud Console (redirect URI
+  `https://cartomania.bobagi.space/auth/google/callback`, scopes `openid email profile` — no brand
+  verification needed) then sets **backend `.env`** `GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET/GOOGLE_REDIRECT_URI`
+  + recreate the container, and **web `.env`** `PUBLIC_GOOGLE_AUTH_ENABLED=true` + `GOOGLE_CLIENT_ID` +
+  `GOOGLE_REDIRECT_URI` + rebuild web. Until then `/auth/providers`→`{google:false}`, `POST /auth/google`→503,
+  and the button shows "coming soon".
+- **Auth hardening (2026-07-23) — READ before touching auth/JWT.** (1) **`JWT_SECRET` is now required,
+  fail-closed** (`src/auth/jwt.config.ts` `resolveJwtSecret()`): the old `process.env.JWT_SECRET || 'dev-secret'`
+  in a PUBLIC repo let anyone forge an `role:ADMIN` token — in production the app refuses to boot without a
+  strong (≥32-char) secret; `dev-secret`/`changeme`/short are rejected. A strong `JWT_SECRET` + `NODE_ENV=production`
+  are set in the live `.env`. (2) **register never takes `role`** — always USER (was self-ADMIN escalation).
+  (3) bcrypt cost **12**; server-side username(3–50)/password(8–72) validation; login **timing-safe** (real
+  bcrypt decoy on the no-user branch) + **per-username lockout** (10 fails/15 min → 429). (4) `src/main.ts`:
+  security headers, same-origin **CSRF guard** on mutating methods (exact-origin match, no prefix bypass),
+  256 kB body cap, **Swagger `/api` disabled in production**. Session cookie is `HttpOnly; Secure; SameSite=Lax`.
+- **Terms/Privacy = versioned server-side acceptance (2026-07-23).** `AgreementAcceptance` (append-only:
+  playerId, documentVersion, ip, ua) + `CURRENT_AGREEMENT_VERSION` in `src/auth/agreement.constants.ts`
+  (**date `2026-07-23`; KEEP IN SYNC with `LegalDocument.svelte`'s "last updated" date** — they must match or
+  the gate contradicts the page). Register requires + records acceptance (checkbox on `/register`). `/auth/me`
+  returns `termsAccepted`; `+layout.server.ts` fetches it and `+layout.svelte` shows the blocking
+  **`AgreementGate.svelte`** to a signed-in user who hasn't accepted the version in force (legacy accounts,
+  Google sign-ins, or after a version bump). Endpoints: `GET /auth/agreement`, `POST /auth/accept-terms`.
+- **Prettier:** the repo's `prettier-plugin-svelte` crashes on Prettier **3.8** (`getVisitorKeys`).
+  Format with a compatible version: `npx --yes prettier@3.6.2 --write .` (run inside `web/` and at the
+  repo root). `web/pnpm-lock.yaml` is untracked by design — don't commit it.
 - **Prettier:** the repo's `prettier-plugin-svelte` crashes on Prettier **3.8** (`getVisitorKeys`).
   Format with a compatible version: `npx --yes prettier@3.6.2 --write .` (run inside `web/` and at the
   repo root). `web/pnpm-lock.yaml` is untracked by design — don't commit it.
@@ -380,6 +408,19 @@ web/                         SvelteKit frontend
 
 ## Status (update as you go)
 
+- **Production-readiness / auth+security pass (2026-07-23) — on branch `feat/duel-circle-art`.** Made the
+  app safe to expose to clients: **fixed 2 live-exploitable P0s** — a forgeable admin JWT (`dev-secret`
+  fallback in the public repo; proven by forging an admin token live) and self-register-as-ADMIN — plus a
+  login timing oracle (P1) and missing login lockout (P2). **Implemented Google OAuth** (config-driven off,
+  backend owns the code exchange) and **versioned Terms/Privacy server-side acceptance** (append-only table +
+  register checkbox + blocking `AgreementGate`). Hardening: security headers, same-origin CSRF guard, 256 kB
+  body cap, Swagger off in prod, bcrypt 12, server-side register validation. Full loop run: **security-sweep**
+  (2 P0/1 P1/1 P2 found→fixed→re-tested; `.claude/security-sweep/2026-07-23-auth/report.md`), **test-forge**
+  (22 mutation-checked auth tests, `npx jest src/auth`; `.claude/test-forge/2026-07-23-auth.md`),
+  **frontend-review** (0 P0/P1, fixed the legal "last updated" date mismatch;
+  `.claude/frontend-review/2026-07-23-auth/`). See the **Auth hardening**, **Google sign-in**, and
+  **Terms/Privacy** gotchas above. Operator TODO to turn Google ON: create the OAuth client + fill the
+  `GOOGLE_*` env. (Also committed the pending `docker-compose.yml` db `on-failure`→`unless-stopped` fix.)
 - **Full `chronos`→`cartomania` rename (2026-06-18).** The old internal codename was removed
   everywhere: code identifiers/types/files (`Cartomania*`, `cartomaniaClientFactory.ts`,
   `$lib/server/cartomania`, `$lib/types/cartomania`, …), the SvelteKit proxy path
@@ -497,20 +538,24 @@ web/                         SvelteKit frontend
     branch, then `git checkout main && git merge feat/duel-circle-art` (+ rebuild + restart). **To abandon:**
     `git checkout main` + rebuild + `pm2 restart cartomania-web`.
 
-1. **[SECURITY — do first] Rotate the live `admin`/`alice` passwords.** The live `.env` does NOT set
-   `ADMIN_PASSWORD`/`ALICE_PASSWORD`, so the seed fell back to `admin123`/`alice123` — a publicly-known
-   ADMIN login on `cartomania.bobagi.space` (the weak default is visible in the now-public
-   `prisma/seed.ts`). The user opted to do this manually. Fix: add strong values to `/opt/cartomania/.env`
-   then `docker compose up -d cartomania` (the seed `upsert` uses `update:`, so it rotates on restart).
-   Consider also hardening `seed.ts` to refuse the weak default when `NODE_ENV=production`.
+1. **[DONE 2026-07-23] `admin`/`alice` passwords + weak-seed hardening.** The live `.env` DOES now set
+   `ADMIN_PASSWORD`/`ALICE_PASSWORD` (verified), and `seed.ts` now **refuses to seed with the demo defaults
+   when `NODE_ENV=production`**. `NODE_ENV=production` is set in the live `.env`. (The old admin123/alice123
+   default is dead on this deploy.) If the operator wants to rotate again: change the values → `docker compose
+   up -d cartomania`.
 2. **Unauthenticated duel endpoints.** `GET /game/state/:id` and the duel actions are unauthenticated —
    anyone with a `gameId` can read/act on a match. Acceptable for a portfolio; harden (auth guard +
-   "is this player in this game" check) if it ever matters.
-3. **Finish Google sign-in** (currently scaffolded, frontend-only — see the gotcha). Needs: the OAuth
-   token exchange + `id_token` verification in `web/src/routes/auth/google/callback/+server.ts`, a
-   backend find-or-create-Player-by-Google-identity endpoint (Prisma migration adding `googleId`/`email`
-   to `Player`), then `setCartomaniaSessionCookie`. Flip on with `PUBLIC_GOOGLE_AUTH_ENABLED=true` +
-   `GOOGLE_CLIENT_ID/SECRET/REDIRECT_URI`.
+   "is this player in this game" check) if it ever matters. (Deliberately left: the Playwright/CI verify
+   flows and the pure-renderer client rely on this.)
+3. **[DONE 2026-07-23 — operator step remains] Google sign-in fully implemented, config-driven OFF.** See
+   the **Google sign-in** gotcha. Only remaining work is the OPERATOR creating the OAuth client in Google
+   Cloud Console and filling `GOOGLE_*` in `.env` (backend) + `web/.env` (`PUBLIC_GOOGLE_AUTH_ENABLED=true`).
+   No code left to write.
+7. **[operator, optional] Password reset + email verification + login-history/new-device alerts** need an
+   SMTP sender the operator hasn't provisioned. Wire `SMTP_*` (config-driven, no-op without it) when wanted.
+8. **[optional privacy] Self-host the Google Fonts** (Cinzel/Manrope/Teko) so CSP can drop
+   `fonts.googleapis.com`/`fonts.gstatic.com` and visitor IPs stop reaching Google (the card fonts
+   Morpheus/Exocet are already self-hosted).
 4. **Duel realtime: swap polling for WebSockets** (optional polish). The client polls `GET state` every
    1 s; the `game` WS gateway already emits `state` to room `game:<id>`. Would need an nginx
    `location /socket.io/` → `:3056` and a socket.io-client. Lower priority — polling works fine.

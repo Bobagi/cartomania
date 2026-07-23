@@ -2,6 +2,7 @@
 	import { browser } from '$app/environment';
 	import { invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
+	import AgreementGate from '$lib/components/AgreementGate.svelte';
 	import CookieBanner from '$lib/components/CookieBanner.svelte';
 	import SiteFooter from '$lib/components/SiteFooter.svelte';
 	import TopBar from '$lib/components/TopBar.svelte';
@@ -22,9 +23,13 @@
 
 	export let data: {
 		authUser: AuthenticatedCartomaniaUser | null;
+		termsAccepted: boolean;
 		locale: Locale;
 		consentCookie: string | null;
 	};
+
+	// Block the app for a signed-in user who hasn't accepted the current legal terms.
+	$: mustAcceptTerms = data?.authUser !== null && data?.termsAccepted === false;
 
 	// Keep the i18n store in sync with the locale the server resolved (cookie or
 	// Accept-Language). Runs during SSR and on every client navigation.
@@ -97,5 +102,10 @@
 <!-- Global: shows until the visitor decides, on every route (incl. chromeless game
 	board) so no script ever loads without consent. -->
 <CookieBanner />
+
+<!-- Signed-in but hasn't accepted the current Terms/Privacy — blocking consent gate. -->
+{#if mustAcceptTerms}
+	<AgreementGate />
+{/if}
 
 <style src="../app.postcss"></style>

@@ -103,16 +103,38 @@ const pt: typeof en = {
 		confirmPassword: 'Confirmar senha',
 		submit: 'Criar conta',
 		back: 'Voltar',
+		terms: {
+			prefix: 'Li e aceito os',
+			terms: 'Termos de Uso',
+			and: 'e a',
+			privacy: 'Política de Privacidade'
+		},
 		errors: {
 			usernameRequired: 'O usuário é obrigatório.',
 			passwordRequired: 'A senha é obrigatória.',
+			passwordTooShort: 'A senha deve ter pelo menos 8 caracteres.',
 			passwordMismatch: 'As senhas não coincidem.',
+			termsRequired: 'Você precisa aceitar os Termos de Uso e a Política de Privacidade.',
 			generic: 'Não foi possível criar a conta.'
 		}
 	},
 	auth: {
 		googleContinue: 'Continuar com o Google',
-		googleComingSoon: 'Login com Google em breve.'
+		googleComingSoon: 'Login com Google em breve.',
+		googleError: 'O login com Google não foi concluído. Tente novamente.'
+	},
+	agreement: {
+		title: 'Antes de jogar',
+		body: {
+			prefix: 'Para continuar usando o Cartomania, leia e aceite nossos',
+			terms: 'Termos de Uso',
+			and: 'e a',
+			privacy: 'Política de Privacidade',
+			suffix: '.'
+		},
+		accept: 'Eu aceito',
+		accepting: 'Salvando…',
+		error: 'Não foi possível salvar sua aceitação. Tente novamente.'
 	},
 	attributes: {
 		magic: 'Magia',

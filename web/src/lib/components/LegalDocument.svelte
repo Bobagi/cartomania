@@ -15,7 +15,10 @@
 		sections: LegalSection[];
 	};
 
-	const lastUpdatedDate = new Date(2026, 5, 26); // 26 June 2026 (month is 0-indexed)
+	// KEEP IN SYNC with the backend CURRENT_AGREEMENT_VERSION (src/auth/agreement.constants.ts):
+	// the version users must accept in the gate is a date, and this displayed "last updated"
+	// date must match it, or the page contradicts the re-acceptance prompt. (month is 0-indexed)
+	const lastUpdatedDate = new Date(2026, 6, 23); // 23 July 2026 = agreement version 2026-07-23
 	const githubUrl =
 		SOCIAL_LINKS.find((link) => link.label === 'GitHub')?.url ??
 		'https://github.com/bobagi/cartomania';

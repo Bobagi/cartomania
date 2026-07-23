@@ -12,7 +12,15 @@ export const handle: Handle = async ({ event, resolve }) => {
 	);
 	event.locals.locale = locale;
 
-	return resolve(event, {
+	const response = await resolve(event, {
 		transformPageChunk: ({ html }) => html.replace('%lang%', locale)
 	});
+
+	// Deny powerful browser features the game never uses (defense in depth; CSP is
+	// declared in svelte.config.js and applied by SvelteKit).
+	response.headers.set(
+		'Permissions-Policy',
+		'geolocation=(), microphone=(), camera=(), payment=(), usb=(), interest-cohort=()'
+	);
+	return response;
 };
