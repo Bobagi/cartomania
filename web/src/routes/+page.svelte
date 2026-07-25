@@ -319,26 +319,6 @@
 					<p class="hero-kicker">{$t('home.kicker')}</p>
 					<h1 class="hero-title">Cartomania</h1>
 					<p class="hero-tagline">{$t('home.promise')}</p>
-
-					<div class="hero-cta">
-						<button class="button button-primary hero-cta-main" on:click={() => goto('/register')}>
-							<UiIcon name="play" />
-							{$t('home.playCta')}
-						</button>
-						<button class="button button-ghost" type="button" on:click={() => goto('/gallery')}>
-							<UiIcon name="gallery" />
-							{$t('home.galleryCta')}
-						</button>
-					</div>
-					<p class="hero-note">
-						{$t('home.playNote')}
-						<span
-							class="status-dot"
-							class:online={backendStatusIcon === '🟢'}
-							class:offline={backendStatusIcon === '🔴'}
-						></span>
-						<span class="hero-note-server">{$t('home.serverLabel')} · {backendHealthMessage}</span>
-					</p>
 				</div>
 
 				{#if featuredCards.length}
@@ -365,43 +345,26 @@
 					</div>
 				{/if}
 
-				<div class="auth-card">
-					<h2 class="auth-card-title">{$t('home.auth.title')}</h2>
-					<p class="auth-card-sub">{$t('home.auth.subtitle')}</p>
-					<form class="controls-col" on:submit|preventDefault={handleCartomaniaLoginSubmission}>
-						<div class="auth-fields">
-							<label class="input-wrap">
-								<span class="input-label">{$t('home.auth.username')}</span>
-								<input
-									class="input-field"
-									bind:value={usernameInputValue}
-									placeholder={$t('home.auth.usernamePlaceholder')}
-									autocomplete="username"
-								/>
-							</label>
-							<label class="input-wrap">
-								<span class="input-label">{$t('home.auth.password')}</span>
-								<input
-									class="input-field"
-									type="password"
-									bind:value={passwordInputValue}
-									placeholder="••••••••"
-									autocomplete="current-password"
-								/>
-							</label>
-						</div>
-						{#if loginErrorKey}
-							<p class="empty-text auth-error">{$t(loginErrorKey)}</p>
-						{/if}
-						<button class="button button-neutral" type="submit">{$t('home.auth.login')}</button>
-					</form>
-					<div class="auth-divider">{$t('home.auth.or')}</div>
-					<GoogleAuthButton />
-					<p class="auth-newhere">
-						{$t('home.auth.newHere')}
-						<a href="/register">{$t('home.auth.createAccount')}</a>
-					</p>
+				<div class="hero-cta">
+					<button class="button button-primary hero-cta-main" on:click={() => goto('/register')}>
+						<UiIcon name="play" />
+						{$t('home.playCta')}
+					</button>
+					<button class="button button-ghost" type="button" on:click={() => goto('/gallery')}>
+						<UiIcon name="gallery" />
+						{$t('home.galleryCta')}
+					</button>
 				</div>
+				<p class="hero-note">
+					{$t('home.playNote')}
+					<span
+						class="status-dot"
+						class:online={backendStatusIcon === '🟢'}
+						class:offline={backendStatusIcon === '🔴'}
+					></span>
+					<span class="hero-note-server">{$t('home.serverLabel')} · {backendHealthMessage}</span>
+					<a class="hero-login-link" href="#login">{$t('home.auth.haveAccount')}</a>
+				</p>
 			</section>
 
 			<section class="lp-section lp-attrs">
@@ -472,6 +435,47 @@
 					<UiIcon name="play" />
 					{$t('home.finalCta.button')}
 				</a>
+			</section>
+
+			<section class="lp-login" id="login">
+				<div class="auth-card">
+					<p class="auth-card-eyebrow">{$t('home.auth.returning')}</p>
+					<h2 class="auth-card-title">{$t('home.auth.title')}</h2>
+					<p class="auth-card-sub">{$t('home.auth.subtitle')}</p>
+					<form class="controls-col" on:submit|preventDefault={handleCartomaniaLoginSubmission}>
+						<div class="auth-fields">
+							<label class="input-wrap">
+								<span class="input-label">{$t('home.auth.username')}</span>
+								<input
+									class="input-field"
+									bind:value={usernameInputValue}
+									placeholder={$t('home.auth.usernamePlaceholder')}
+									autocomplete="username"
+								/>
+							</label>
+							<label class="input-wrap">
+								<span class="input-label">{$t('home.auth.password')}</span>
+								<input
+									class="input-field"
+									type="password"
+									bind:value={passwordInputValue}
+									placeholder="••••••••"
+									autocomplete="current-password"
+								/>
+							</label>
+						</div>
+						{#if loginErrorKey}
+							<p class="empty-text auth-error">{$t(loginErrorKey)}</p>
+						{/if}
+						<button class="button button-neutral" type="submit">{$t('home.auth.login')}</button>
+					</form>
+					<div class="auth-divider">{$t('home.auth.or')}</div>
+					<GoogleAuthButton />
+					<p class="auth-newhere">
+						{$t('home.auth.newHere')}
+						<a href="/register">{$t('home.auth.createAccount')}</a>
+					</p>
+				</div>
 			</section>
 		</div>
 	{:else}

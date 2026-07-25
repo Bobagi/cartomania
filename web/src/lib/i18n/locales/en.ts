@@ -18,6 +18,7 @@ const en = {
 		manage: 'Cookie preferences'
 	},
 	nav: {
+		login: 'Log in',
 		logout: 'Log out'
 	},
 	footer: {
@@ -86,6 +87,8 @@ const en = {
 			browseGallery: 'Browse the gallery',
 			createAccount: 'Create an account',
 			newHere: 'New here?',
+			haveAccount: 'Already have an account?',
+			returning: 'Already playing?',
 			invalidCredentials: 'Invalid username or password.'
 		},
 		dashboard: {
