@@ -285,14 +285,22 @@ web/                         SvelteKit frontend
   (`/friends/respond`, `/friends/remove`, `/friends/start`) that the browser client used → "Cannot POST
   /friends/respond" when accepting a request. Both clients now rely on the (correct) defaults.
 - **The logged-out landing is a GAME landing page, not a login screen** (redesigned 2026-07-23,
-  `mainpage.css` "Landing (logged out)"). Order: hero (`.lp-hero` — kicker, brand title, the one-line
-  promise, primary CTA **Play your first duel → `/register`**, secondary **See the cards → `/gallery`**,
-  then the 3-card fan spanning the full width) → `.lp-attrs` (the three attribute icons, names set in
-  'Draco'/Exocet like the cards) → `.lp-how` (3 numbered steps — a round IS a sequence) → `.lp-collection`
-  (real `CardComposite` cards in a scrollable rail + the live card count) → `.lp-final` (closing CTA).
-  The `.auth-card` is deliberately QUIET (neutral submit, no gold) — it serves returning players;
-  the hero owns the primary action. `+page.server.ts` does ONE catalog fetch and derives
-  `featuredCards` / `showcaseCards` / `collectionCardCount` (see `featuredHeroCards.ts`).
+  hero reworked 2026-07-25, `mainpage.css` "Landing (logged out)"). Order: hero (`.lp-hero`) →
+  `.lp-attrs` (the three attribute icons, names set in 'Draco'/Exocet like the cards) → `.lp-how`
+  (3 numbered steps — a round IS a sequence) → `.lp-collection` (real `CardComposite` cards in a
+  scrollable rail + the live card count) → `.lp-final` (closing CTA) → `.lp-login` (the login panel).
+  **The hero is a single CENTRED STAGE built around the cards** (the owner disliked the earlier
+  two-column "copy left / login right" brochure look, and wanted the cards — the product — front and
+  centre): kicker + brand title + one-line promise, then the **big card fan as the centrepiece**
+  (`--hero-card-w` tuned so the fan + the Play call sit above the fold on a laptop), then the CTAs
+  (**Play your first duel → `/register`**, **See the cards → `/gallery`**) + a status line with a quiet
+  **Already have an account? → `#login`** link. **Login is NOT in the hero** — it lives in the quiet
+  `.lp-login` panel (`id="login"`, neutral submit, no gold) at the very bottom for returning players;
+  they reach it instantly via a ghost **Log in** in the top bar (logged-out only,
+  `href="/#login"` so it works from any page) that smooth-scrolls there (disabled under
+  `prefers-reduced-motion`; the panel has `scroll-margin-top` so the sticky bar doesn't cover it).
+  `+page.server.ts` does ONE catalog fetch and derives `featuredCards` / `showcaseCards` /
+  `collectionCardCount` (see `featuredHeroCards.ts`).
   **PITFALLS learned building it (all three cost a debugging round):**
   (1) `.landing` and `.lp-section` MUST keep `grid-template-columns: minmax(0, 1fr)` — an implicit
   `auto` track grows to the collection rail's full content width and gives the whole document a
@@ -441,6 +449,14 @@ web/                         SvelteKit frontend
 
 ## Status (update as you go)
 
+- **Landing hero reworked (2026-07-25) — merged into `feat/duel-circle-art`, deployed.** The owner
+  found the two-column "text left / login right" hero unattractive and wanted the cards (the biggest
+  selling point) front and centre. The hero is now a single centred stage: title + promise → big card
+  fan as the centrepiece → Play call, all above the fold on a laptop. Login moved out of the hero into
+  a quiet bottom `.lp-login` panel (`#login`), reachable via a new ghost **Log in** in the top bar
+  (logged-out) and an "Already have an account?" hero link (smooth-scroll, reduced-motion aware).
+  See the updated landing gotcha. Verified: no overflow at 390/1440 in en/pt/es, i18n parity, top-bar
+  Log in scrolls #login into view, 0 console errors, no new svelte-check errors.
 - **Google sign-in turned LIVE (2026-07-25).** Operator created the OAuth Web client in Google Cloud
   Console (project `bobagi-apps-automation`); wired the creds into backend/web `.env`. Fixed the
   runtime-env gap (`web/ecosystem.config.cjs` now loads `web/.env` into the PM2 process — adapter-node
