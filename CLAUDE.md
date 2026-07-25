@@ -353,8 +353,18 @@ web/                         SvelteKit frontend
   if the behaviour changes. **PITFALL:** the privacy policy used to claim "no third-party analytics" while
   Umami loaded unconditionally — a real contradiction; that's why this exists. Consent strings: `consent.*`
   in `locales/{en,pt,es}.ts`.
-- **Google sign-in is FULLY IMPLEMENTED, config-driven OFF (2026-07-23).** The flow is real end-to-end;
-  it's just gated behind env that the operator hasn't filled yet. Design (secure by construction): the
+- **Google sign-in is LIVE (2026-07-25).** The OAuth client was created by the operator in Google Cloud
+  Console (project `bobagi-apps-automation`, redirect URI `https://cartomania.bobagi.space/auth/google/callback`)
+  and the creds are set: backend `.env` has `GOOGLE_CLIENT_ID/SECRET/REDIRECT_URI`, web `.env` has
+  `PUBLIC_GOOGLE_AUTH_ENABLED=true`+`GOOGLE_CLIENT_ID`+`GOOGLE_REDIRECT_URI`. `/auth/providers`→`{google:true}`,
+  `/auth/google`→302 to Google's consent, a bogus code →401 (real exchange reached). **Runtime-env gotcha
+  (cost a debugging round):** adapter-node does NOT load `.env` at runtime and SvelteKit reads
+  `GOOGLE_CLIENT_ID` via `$env/dynamic/private` (= `process.env`), and PM2 doesn't read `.env` either — so
+  `web/ecosystem.config.cjs` now **loads `web/.env` and injects it into the PM2 env** (the CLIENT SECRET is
+  NOT in `web/.env`, only the backend needs it). After editing `web/.env`, reload with
+  `pm2 start web/ecosystem.config.cjs && pm2 save` (a plain `pm2 restart --update-env` won't re-read the file).
+  Only remaining: a real human login to confirm the happy path (Google blocks headless automation of its
+  consent — the operator does that one click). The design (secure by construction): the
   **web tier** owns the browser dance — `web/src/routes/auth/google/+server.ts` sets a random `state` in a
   short-lived HttpOnly cookie (path `/auth/google`) and redirects to Google's consent; `.../callback/+server.ts`
   verifies `state`, then hands the single-use `code` to the **backend** (`POST /auth/google`), which does the
@@ -369,8 +379,8 @@ web/                         SvelteKit frontend
   `https://cartomania.bobagi.space/auth/google/callback`, scopes `openid email profile` — no brand
   verification needed) then sets **backend `.env`** `GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET/GOOGLE_REDIRECT_URI`
   + recreate the container, and **web `.env`** `PUBLIC_GOOGLE_AUTH_ENABLED=true` + `GOOGLE_CLIENT_ID` +
-  `GOOGLE_REDIRECT_URI` + rebuild web. Until then `/auth/providers`→`{google:false}`, `POST /auth/google`→503,
-  and the button shows "coming soon".
+  `GOOGLE_REDIRECT_URI` + reload web via the ecosystem file. (Historical: when unset, `/auth/providers`→
+  `{google:false}`, `POST /auth/google`→503, and the button shows "coming soon".)
 - **Auth hardening (2026-07-23) — READ before touching auth/JWT.** (1) **`JWT_SECRET` is now required,
   fail-closed** (`src/auth/jwt.config.ts` `resolveJwtSecret()`): the old `process.env.JWT_SECRET || 'dev-secret'`
   in a PUBLIC repo let anyone forge an `role:ADMIN` token — in production the app refuses to boot without a
@@ -431,6 +441,13 @@ web/                         SvelteKit frontend
 
 ## Status (update as you go)
 
+- **Google sign-in turned LIVE (2026-07-25).** Operator created the OAuth Web client in Google Cloud
+  Console (project `bobagi-apps-automation`); wired the creds into backend/web `.env`. Fixed the
+  runtime-env gap (`web/ecosystem.config.cjs` now loads `web/.env` into the PM2 process — adapter-node
+  doesn't read `.env`, PM2 doesn't either). Live-verified: `/auth/providers`→`{google:true}`,
+  `/auth/google`→302 consent with our client_id + state cookie, backend does the real code exchange
+  (bogus code→401), callback rejects forged `state`. Only the human happy-path login remains. See the
+  **Google sign-in** gotcha.
 - **Landing page redesign (2026-07-23) — merged to `main`, deployed.** The logged-out home was a
   login screen with a game-themed header: the loudest object was the password field, the duel board
   was never shown, the page ended at the fold, and the consent bar covered the whole login card on
@@ -580,10 +597,9 @@ web/                         SvelteKit frontend
    anyone with a `gameId` can read/act on a match. Acceptable for a portfolio; harden (auth guard +
    "is this player in this game" check) if it ever matters. (Deliberately left: the Playwright/CI verify
    flows and the pure-renderer client rely on this.)
-3. **[DONE 2026-07-23 — operator step remains] Google sign-in fully implemented, config-driven OFF.** See
-   the **Google sign-in** gotcha. Only remaining work is the OPERATOR creating the OAuth client in Google
-   Cloud Console and filling `GOOGLE_*` in `.env` (backend) + `web/.env` (`PUBLIC_GOOGLE_AUTH_ENABLED=true`).
-   No code left to write.
+3. **[DONE 2026-07-25] Google sign-in is LIVE.** OAuth client created, creds wired, `/auth/providers`→
+   `{google:true}`, live-tested (302 to consent, real code exchange, state CSRF enforced). See the **Google
+   sign-in** gotcha (incl. the PM2/ecosystem runtime-env fix). Last check: a human happy-path login.
 7. **[operator, optional] Password reset + email verification + login-history/new-device alerts** need an
    SMTP sender the operator hasn't provisioned. Wire `SMTP_*` (config-driven, no-op without it) when wanted.
 8. **[optional privacy] Self-host the Google Fonts** (Cinzel/Manrope/Teko) so CSP can drop
