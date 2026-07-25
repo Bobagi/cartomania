@@ -24,6 +24,11 @@
 				<button type="button" class="button button-primary" on:click={requestLogout}>
 					{$t('nav.logout')}
 				</button>
+			{:else}
+				<!-- Quick access to the login panel at the bottom of the landing (works from
+					any page via the /#login anchor); stays a quiet ghost so it doesn't compete
+					with the hero's "Play" call to action. -->
+				<a class="button button-ghost topbar-login" href="/#login">{$t('nav.login')}</a>
 			{/if}
 		</nav>
 	</div>

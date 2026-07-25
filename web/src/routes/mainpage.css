@@ -89,23 +89,24 @@
 
 .lp-hero {
 	position: relative;
-	display: grid;
-	grid-template-columns: minmax(0, 1fr) minmax(290px, 340px);
-	/* Copy and login share the top row; the cards get the full width underneath so
-	   the collection is the hero's closing statement, not a footnote in a column. */
-	grid-template-areas:
-		'copy auth'
-		'art  art';
-	gap: clamp(20px, 3vw, 34px) clamp(24px, 4vw, 56px);
-	align-items: start;
-	padding-top: clamp(8px, 3vw, 34px);
+	/* The cards ARE the pitch, so the hero is a single centred stage: title and
+	   promise, then the card fan front-and-centre, then the play call. Login is not
+	   here — it lives in a quiet panel at the bottom (#login) for returning players. */
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	gap: clamp(12px, 1.6vw, 18px);
+	padding-top: clamp(4px, 1.5vw, 16px);
 }
 
 .landing-hero {
-	grid-area: copy;
 	display: flex;
 	flex-direction: column;
-	gap: 14px;
+	align-items: center;
+	gap: 12px;
+	width: 100%;
+	max-width: 760px;
 	min-width: 0;
 	/* so the hero title can be sized against this column's width (cqw) */
 	container-type: inline-size;
@@ -269,11 +270,11 @@
 	margin: 0;
 	position: relative;
 	z-index: 1;
-	max-width: 44ch;
+	max-width: 54ch;
 	color: var(--text);
 	opacity: 0.9;
 	font-size: clamp(16px, 1.7vw, 19px);
-	line-height: 1.6;
+	line-height: 1.55;
 }
 
 /* Hero call to action: a first-time visitor's job is to play, so that is the
@@ -283,21 +284,22 @@
 	z-index: 1;
 	display: flex;
 	flex-wrap: wrap;
+	justify-content: center;
 	gap: 12px;
-	margin-top: 6px;
 }
 
 .hero-cta-main {
-	font-size: 16px;
-	padding: 14px 26px;
+	font-size: 17px;
+	padding: 15px 30px;
 }
 
 .hero-note {
 	position: relative;
 	z-index: 1;
-	margin: 2px 0 0;
+	margin: 0;
 	display: flex;
 	flex-wrap: wrap;
+	justify-content: center;
 	align-items: center;
 	gap: 8px;
 	font-size: 13px;
@@ -308,15 +310,41 @@
 	opacity: 0.8;
 }
 
-/* The card fan stands on a lit arena disc — the same shape the duel board uses. */
+/* Quiet "already have an account?" shortcut to the #login panel — a returning
+   player's escape hatch that never competes with the Play button. */
+.hero-login-link {
+	color: var(--gold-1);
+	font-weight: 600;
+	text-decoration: none;
+	border-bottom: 1px solid rgba(255, 231, 166, 0.35);
+	padding-bottom: 1px;
+}
+.hero-login-link::before {
+	content: '·';
+	margin-right: 8px;
+	border: 0;
+	color: var(--muted);
+	opacity: 0.6;
+}
+.hero-login-link:hover {
+	border-bottom-color: var(--gold-1);
+}
+.hero-login-link:focus-visible {
+	outline: none;
+	box-shadow: var(--ring);
+	border-radius: 4px;
+}
+
+/* The card fan is the hero's centrepiece, standing on a lit arena disc — the same
+   shape the duel board uses. */
 .hero-art {
-	grid-area: art;
 	position: relative;
 	z-index: 1;
 	display: grid;
 	place-items: center;
-	min-height: 260px;
-	padding-block: clamp(10px, 2vw, 24px);
+	width: 100%;
+	min-height: clamp(250px, 28vw, 360px);
+	padding-block: clamp(8px, 1.6vw, 18px);
 	/* `clip` (not `hidden`) keeps the ring and the fan's rotated corners from
 	   widening the page on phones without creating a scroll container or cutting
 	   the cards' vertical glow. */
@@ -325,9 +353,9 @@
 
 .hero-art-ring {
 	position: absolute;
-	top: 52%;
+	top: 50%;
 	left: 50%;
-	width: min(430px, 92%);
+	width: min(560px, 96%);
 	max-width: 100%;
 	aspect-ratio: 1;
 	transform: translate(-50%, -50%);
@@ -363,8 +391,9 @@
 	align-items: flex-end;
 	justify-content: center;
 	/* Card width drives the overlap, so the fan keeps every name readable at any
-	   size — a fixed negative margin used to swallow the outer two titles. */
-	--hero-card-w: clamp(126px, 17vw, 236px);
+	   size — a fixed negative margin used to swallow the outer two titles. Sized so
+	   the whole fan + the Play call fit above the fold on a laptop. */
+	--hero-card-w: clamp(140px, 17vw, 224px);
 }
 
 .hero-card {
@@ -414,13 +443,19 @@
 	color: var(--danger);
 }
 
-/* Auth card on the landing — for players who already have an account, so it sits
-   quieter than the hero's play button (neutral submit, no gold). */
+/* Login panel — the last section of the landing (#login), for players who already
+   have an account. Quiet by design (neutral submit, no gold) so it never competes
+   with the hero's Play call. Reached fast via the top-bar "Log in" link. */
+.lp-login {
+	display: grid;
+	justify-items: center;
+	scroll-margin-top: 84px;
+}
+
 .auth-card {
-	grid-area: auth;
 	position: relative;
 	z-index: 1;
-	align-self: start;
+	width: min(440px, 100%);
 	background: var(--surface);
 	border: 1px solid var(--border);
 	border-radius: var(--radius);
@@ -428,7 +463,16 @@
 		var(--shadow),
 		inset 0 1px 0 rgba(255, 255, 255, 0.06);
 	backdrop-filter: blur(12px) saturate(1.15);
-	padding: clamp(22px, 2.4vw, 30px);
+	padding: clamp(24px, 2.6vw, 32px);
+}
+
+.auth-card-eyebrow {
+	margin: 0 0 6px;
+	font-size: 0.72rem;
+	font-weight: 700;
+	letter-spacing: 0.18em;
+	text-transform: uppercase;
+	color: var(--gold-1);
 }
 
 .auth-card-title {
@@ -1016,34 +1060,8 @@
 }
 
 @media (max-width: 980px) {
-	/* One column: promise → cards → login, so the game is seen before the form. */
-	.lp-hero {
-		grid-template-columns: minmax(0, 1fr);
-		grid-template-areas:
-			'copy'
-			'art'
-			'auth';
-		gap: 26px;
-	}
 	.landing {
 		gap: clamp(44px, 9vw, 72px);
-	}
-	.hero-art {
-		min-height: 220px;
-	}
-	.landing-hero {
-		align-items: center;
-		text-align: center;
-	}
-	.hero-cta {
-		justify-content: center;
-	}
-	.hero-note {
-		justify-content: center;
-	}
-	.auth-card {
-		width: min(420px, 100%);
-		justify-self: center;
 	}
 	.attr-grid,
 	.step-list {
@@ -1056,11 +1074,15 @@
 	.step-list {
 		grid-template-columns: minmax(0, 1fr);
 	}
+	.hero-cta {
+		width: 100%;
+		max-width: 340px;
+	}
 	.hero-cta .button {
 		width: 100%;
 	}
 	.hero-fan {
-		--hero-card-w: clamp(112px, 30vw, 150px);
+		--hero-card-w: clamp(124px, 33vw, 168px);
 	}
 }
 

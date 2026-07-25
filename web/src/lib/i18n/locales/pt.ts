@@ -19,6 +19,7 @@ const pt: typeof en = {
 		manage: 'Preferências de cookies'
 	},
 	nav: {
+		login: 'Entrar',
 		logout: 'Sair'
 	},
 	footer: {
@@ -87,6 +88,8 @@ const pt: typeof en = {
 			browseGallery: 'Ver a galeria',
 			createAccount: 'Criar uma conta',
 			newHere: 'É novo por aqui?',
+			haveAccount: 'Já tem conta?',
+			returning: 'Já joga Cartomania?',
 			invalidCredentials: 'Usuário ou senha inválidos.'
 		},
 		dashboard: {

@@ -84,6 +84,14 @@ body {
 	margin: 0;
 }
 
+/* Smooth-scroll anchor jumps (e.g. the top-bar "Log in" → #login panel), disabled
+   for users who prefer reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+	html {
+		scroll-behavior: smooth;
+	}
+}
+
 html {
 	color-scheme: dark;
 	background:
@@ -192,6 +200,13 @@ body {
 	display: flex;
 	align-items: center;
 	gap: 12px;
+}
+
+/* Compact ghost "Log in" for logged-out visitors — present but never louder than
+   the hero's Play call. */
+.topbar-login {
+	padding: 8px 16px;
+	font-size: 13px;
 }
 
 /* The brand word (CARTOMANIA) + language selector + logout must fit narrow phones. */

@@ -19,6 +19,7 @@ const es: typeof en = {
 		manage: 'Preferencias de cookies'
 	},
 	nav: {
+		login: 'Iniciar sesión',
 		logout: 'Cerrar sesión'
 	},
 	footer: {
@@ -87,6 +88,8 @@ const es: typeof en = {
 			browseGallery: 'Explorar la galería',
 			createAccount: 'Crear una cuenta',
 			newHere: '¿Eres nuevo?',
+			haveAccount: '¿Ya tienes cuenta?',
+			returning: '¿Ya juegas?',
 			invalidCredentials: 'Usuario o contraseña inválidos.'
 		},
 		dashboard: {
