@@ -405,12 +405,39 @@ web/                         SvelteKit frontend
   returns `termsAccepted`; `+layout.server.ts` fetches it and `+layout.svelte` shows the blocking
   **`AgreementGate.svelte`** to a signed-in user who hasn't accepted the version in force (legacy accounts,
   Google sign-ins, or after a version bump). Endpoints: `GET /auth/agreement`, `POST /auth/accept-terms`.
-- **Prettier:** the repo's `prettier-plugin-svelte` crashes on Prettier **3.8** (`getVisitorKeys`).
-  Format with a compatible version: `npx --yes prettier@3.6.2 --write .` (run inside `web/` and at the
-  repo root). `web/pnpm-lock.yaml` is untracked by design — don't commit it.
-- **Prettier:** the repo's `prettier-plugin-svelte` crashes on Prettier **3.8** (`getVisitorKeys`).
-  Format with a compatible version: `npx --yes prettier@3.6.2 --write .` (run inside `web/` and at the
-  repo root). `web/pnpm-lock.yaml` is untracked by design — don't commit it.
+- **Full account/email suite (2026-07-26, CoinHub-modelled) — READ before touching auth.**
+  - **Registration now REQUIRES an email** (unique, validated) → sends a verification email. `register(username,
+    email, password, acceptTerms, ctx)`. Existing username-only accounts keep working (email NULL); they can
+    add an email on `/account`.
+  - **Transactional email** = `src/email/email.service.ts` (`nodemailer`, **config-driven**: no-op unless
+    `SMTP_*` set). Live SMTP is the owner's Gmail app password (same as CoinHub), `SMTP_*`+`PUBLIC_SITE_URL`
+    in the backend `.env`. `EmailModule` is `@Global`. Never logs the body (carries tokens). Proven live:
+    a real verification email delivered from `bobagi.contact@gmail.com`; the link is correctly QP-encoded
+    (`token=3D…`) — a real mail client decodes it fine (an MCP Gmail read shows a `` artifact, not a bug).
+  - **One-time tokens** = `AuthToken` table + `src/auth/auth-token.service.ts`: only the **SHA-256 hash** is
+    stored; single-use (`usedAt`, conditional updateMany) + expiry; issuing a new token of a purpose
+    invalidates prior ones. Purposes: `EMAIL_VERIFICATION` (24h), `PASSWORD_RESET` (1h).
+  - **Password reset:** `POST /auth/forgot-password` (**always 200/201**, never reveals if the email exists)
+    → emails a link to `/reset-password?token=…`; `POST /auth/reset-password` sets the password AND **bumps
+    `tokenVersion` (revokes ALL sessions)** + marks email verified. Pages `/forgot-password`, `/reset-password`.
+  - **Email verification:** `POST /auth/verify-email` (page `/verify-email?token=…`), `POST
+    /auth/resend-verification` (authed). NOT a hard gate on gameplay (it's a game) — status is surfaced on `/account`.
+  - **Session revocation = `Player.tokenVersion`.** The JWT carries `tv`; **`JwtStrategy.validate` now does a
+    DB lookup** and rejects a token whose `tv` is stale OR whose user was deleted (so password change/reset and
+    account deletion actually revoke sessions immediately, and a stolen 1-day JWT is killable). Password change
+    bumps `tv` and returns a FRESH token — the web `/api/auth/password` endpoint re-sets the cookie so the
+    current device stays in while others are kicked. Legacy tokens (no `tv`) default to 0 = no forced logout on deploy.
+  - **Account linking (Google):** `/account` has Connect (`/auth/google?mode=link` → callback links to the
+    SESSION user via `POST /auth/google/link`) and Disconnect (`POST /auth/google/unlink`, refused if the
+    account has no password — would lock out). Auto-link by verified email now works because accounts have emails.
+    New web endpoints: `/api/auth/{email,resend-verification,google/unlink}` (re-set the cookie when the user changes).
+  - **Tests:** `src/auth/auth.service.spec.ts` (24, mutation-checked): token single-use, reset revokes
+    sessions, Google-link no-hijack, unlink lockout guard, email uniqueness. Reports in `.claude/security-sweep/`,
+    `.claude/frontend-review/2026-07-26-auth-suite/`.
+- **Prettier gotcha:** the repo's `prettier-plugin-svelte` crashes on Prettier **3.8** (`getVisitorKeys`) —
+  format with `npx --yes prettier@3.6.2 --write <specific files>`. **Do NOT `--write "src/**"`** blindly: it
+  reformats unrelated files (friends.service, CardComposite, …) and pollutes the diff — pass the files you
+  actually changed. `web/pnpm-lock.yaml` is untracked by design — don't commit it.
 
 ## Verifying changes
 
@@ -449,6 +476,16 @@ web/                         SvelteKit frontend
 
 ## Status (update as you go)
 
+- **Account/email suite — password reset, email verification, Google linking, session revocation
+  (2026-07-26, CoinHub-modelled).** Registration now takes an **email** (unique, verified). Added
+  transactional email (`nodemailer`, config-driven; live via the owner's Gmail app password), one-time
+  `AuthToken`s (SHA-256-hashed, single-use), **password reset** (`/forgot-password` → `/reset-password`,
+  revokes all sessions), **email verification** (`/verify-email` + resend), **Google connect/disconnect**
+  on `/account`, and **`tokenVersion`** session revocation (JWT strategy now DB-checks it, killing
+  password-change/reset and deleted-user tokens). Ran the full loop: **test-forge** (24 mutation-checked
+  auth tests), **security-sweep** (live: session revocation, deleted-user token, email uniqueness, unlink
+  lockout, IDOR on link — all pass), **frontend-review** (0 P0/P1, 0 CSP violations). Real email delivery
+  proven end-to-end (read the actual verification email via Gmail). See the **Full account/email suite** gotcha.
 - **Landing hero reworked (2026-07-25) — merged into `feat/duel-circle-art`, deployed.** The owner
   found the two-column "text left / login right" hero unattractive and wanted the cards (the biggest
   selling point) front and centre. The hero is now a single centred stage: title + promise → big card
@@ -616,8 +653,9 @@ web/                         SvelteKit frontend
 3. **[DONE 2026-07-25] Google sign-in is LIVE.** OAuth client created, creds wired, `/auth/providers`→
    `{google:true}`, live-tested (302 to consent, real code exchange, state CSRF enforced). See the **Google
    sign-in** gotcha (incl. the PM2/ecosystem runtime-env fix). Last check: a human happy-path login.
-7. **[operator, optional] Password reset + email verification + login-history/new-device alerts** need an
-   SMTP sender the operator hasn't provisioned. Wire `SMTP_*` (config-driven, no-op without it) when wanted.
+7. **[DONE 2026-07-26] Password reset + email verification** are live (SMTP configured = owner's Gmail app
+   password). See the **Full account/email suite** gotcha. Still open (optional): **login-history /
+   new-device alerts** (needs the same email sender + an access-event table — CoinHub has the pattern).
 8. **[optional privacy] Self-host the Google Fonts** (Cinzel/Manrope/Teko) so CSP can drop
    `fonts.googleapis.com`/`fonts.gstatic.com` and visitor IPs stop reaching Google (the card fonts
    Morpheus/Exocet are already self-hosted).

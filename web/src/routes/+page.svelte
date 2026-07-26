@@ -468,6 +468,9 @@
 							<p class="empty-text auth-error">{$t(loginErrorKey)}</p>
 						{/if}
 						<button class="button button-neutral" type="submit">{$t('home.auth.login')}</button>
+						<p class="auth-forgot">
+							<a href="/forgot-password">{$t('home.auth.forgotPassword')}</a>
+						</p>
 					</form>
 					<div class="auth-divider">{$t('home.auth.or')}</div>
 					<GoogleAuthButton />

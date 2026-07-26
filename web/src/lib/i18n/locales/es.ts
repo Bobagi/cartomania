@@ -90,7 +90,8 @@ const es: typeof en = {
 			newHere: '¿Eres nuevo?',
 			haveAccount: '¿Ya tienes cuenta?',
 			returning: '¿Ya juegas?',
-			invalidCredentials: 'Usuario o contraseña inválidos.'
+			invalidCredentials: 'Usuario o contraseña inválidos.',
+			forgotPassword: '¿Olvidaste tu contraseña?'
 		},
 		dashboard: {
 			adminBadge: 'Admin',
@@ -144,6 +145,8 @@ const es: typeof en = {
 		subtitle: 'Es rápido y gratis.',
 		username: 'Usuario',
 		usernamePlaceholder: 'Apodo',
+		email: 'Correo',
+		emailPlaceholder: 'tu@ejemplo.com',
 		password: 'Contraseña',
 		confirmPassword: 'Confirmar contraseña',
 		submit: 'Crear cuenta',
@@ -158,6 +161,7 @@ const es: typeof en = {
 			usernameRequired: 'El usuario es obligatorio.',
 			passwordRequired: 'La contraseña es obligatoria.',
 			passwordTooShort: 'La contraseña debe tener al menos 8 caracteres.',
+			emailInvalid: 'Introduce un correo válido.',
 			passwordMismatch: 'Las contraseñas no coinciden.',
 			termsRequired: 'Debes aceptar los Términos de Uso y la Política de Privacidad.',
 			generic: 'No se pudo crear la cuenta.'
@@ -180,6 +184,39 @@ const es: typeof en = {
 		accept: 'Acepto',
 		accepting: 'Guardando…',
 		error: 'No se pudo guardar tu aceptación. Inténtalo de nuevo.'
+	},
+	forgot: {
+		title: '¿Olvidaste tu contraseña?',
+		subtitle: 'Escribe tu correo y te enviaremos un enlace para restablecerla.',
+		email: 'Correo',
+		emailPlaceholder: 'tu@ejemplo.com',
+		submit: 'Enviar enlace',
+		sent: 'Si existe una cuenta con ese correo, el enlace de restablecimiento va en camino. Revisa tu bandeja de entrada.',
+		backToLogin: 'Volver al inicio de sesión'
+	},
+	reset: {
+		title: 'Elige una nueva contraseña',
+		subtitle: 'Escribe una nueva contraseña para tu cuenta.',
+		newPassword: 'Nueva contraseña',
+		confirm: 'Confirmar contraseña',
+		submit: 'Restablecer contraseña',
+		done: 'Tu contraseña se restableció. Ya puedes iniciar sesión.',
+		goLogin: 'Ir al inicio de sesión',
+		requestNew: 'Solicitar un nuevo enlace',
+		errors: {
+			passwordTooShort: 'La contraseña debe tener al menos 8 caracteres.',
+			mismatch: 'Las contraseñas no coinciden.',
+			invalid: 'Este enlace de restablecimiento no es válido o expiró.',
+			noToken: 'No se encontró el token. Solicita un nuevo enlace.'
+		}
+	},
+	verify: {
+		title: 'Verificación de correo',
+		working: 'Verificando tu correo…',
+		ok: 'Tu correo fue verificado. ¡Gracias!',
+		error: 'Este enlace de verificación no es válido o expiró.',
+		goHome: 'Ir al inicio',
+		goAccount: 'Ir a la cuenta'
 	},
 	attributes: {
 		magic: 'Magia',
@@ -495,6 +532,21 @@ const es: typeof en = {
 		passwordUpdated: 'Contraseña cambiada.',
 		avatarUpdated: 'Avatar actualizado.',
 		passwordsDoNotMatch: 'Las nuevas contraseñas no coinciden.',
+		emailTitle: 'Correo',
+		emailNone: 'No hay correo configurado. Agrega uno para poder recuperar tu contraseña.',
+		emailVerified: 'Tu correo está verificado.',
+		emailUnverified: 'Tu correo aún no está verificado.',
+		emailLabel: 'Dirección de correo',
+		saveEmail: 'Guardar correo',
+		emailUpdated: 'Correo guardado. Revisa tu bandeja para verificarlo.',
+		resendVerification: 'Reenviar correo de verificación',
+		verificationResent: 'Correo de verificación enviado (si tu dirección lo necesita).',
+		googleTitle: 'Google',
+		googleConnected: 'Tu cuenta de Google está conectada.',
+		googleDisconnect: 'Desconectar Google',
+		googleSetPasswordFirst: 'Configura una contraseña antes de desconectar Google.',
+		googleNotConnected: 'Conecta Google para entrar con un clic.',
+		googleConnect: 'Conectar Google',
 		genericError: 'Algo salió mal. Inténtalo de nuevo.'
 	}
 };

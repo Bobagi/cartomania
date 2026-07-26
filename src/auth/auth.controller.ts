@@ -52,12 +52,14 @@ export class AuthController {
     @Body()
     body: {
       username: string;
+      email: string;
       password: string;
       acceptTerms?: boolean;
     },
   ) {
     return this.authService.register(
       body.username,
+      body.email,
       body.password,
       body.acceptTerms === true,
       clientContext(request),
@@ -67,6 +69,68 @@ export class AuthController {
   @Post('login')
   login(@Body() body: { username: string; password: string }) {
     return this.authService.login(body.username, body.password);
+  }
+
+  /** Start a password reset (always 200 — never reveals if the email exists). */
+  @Post('forgot-password')
+  forgotPassword(@Body() body: { email?: string }) {
+    return this.authService.requestPasswordReset(body?.email ?? '');
+  }
+
+  /** Complete a password reset with the emailed token (revokes all sessions). */
+  @Post('reset-password')
+  resetPassword(@Body() body: { token?: string; newPassword?: string }) {
+    return this.authService.resetPassword(
+      body?.token ?? '',
+      body?.newPassword ?? '',
+    );
+  }
+
+  /** Confirm an email address with the emailed token. */
+  @Post('verify-email')
+  verifyEmail(@Body() body: { token?: string }) {
+    return this.authService.verifyEmail(body?.token ?? '');
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('resend-verification')
+  resendVerification(@CurrentUser() user: { sub: string }) {
+    return this.authService.resendVerification(user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('email')
+  setEmail(
+    @CurrentUser() user: { sub: string },
+    @Body() body: { email: string },
+  ) {
+    return this.authService.setEmail(user.sub, body.email);
+  }
+
+  /** Link a Google identity to the SIGNED-IN account (from the account page). */
+  @UseGuards(JwtAuthGuard)
+  @Post('google/link')
+  async linkGoogle(
+    @CurrentUser() user: { sub: string },
+    @Body() body: { code?: string; redirectUri?: string },
+  ) {
+    if (!this.googleOAuth.isConfigured())
+      throw new ServiceUnavailableException('Google sign-in is not configured');
+    const code = (body?.code ?? '').trim();
+    if (!code) throw new UnauthorizedException('Missing authorization code');
+    const profile = await this.googleOAuth.exchangeCodeForUserInfo(
+      code,
+      body?.redirectUri,
+    );
+    if (!profile)
+      throw new UnauthorizedException('Google authentication failed');
+    return this.authService.linkGoogleToUser(user.sub, profile);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('google/unlink')
+  unlinkGoogle(@CurrentUser() user: { sub: string }) {
+    return this.authService.unlinkGoogle(user.sub);
   }
 
   /**

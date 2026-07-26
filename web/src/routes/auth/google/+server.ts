@@ -2,7 +2,11 @@ import { env } from '$env/dynamic/private';
 import { dev } from '$app/environment';
 import { error, redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { GOOGLE_OAUTH_STATE_COOKIE, resolveGoogleRedirectUri } from '$lib/server/auth/googleOAuth';
+import {
+	GOOGLE_OAUTH_MODE_COOKIE,
+	GOOGLE_OAUTH_STATE_COOKIE,
+	resolveGoogleRedirectUri
+} from '$lib/server/auth/googleOAuth';
 
 /**
  * Start of the Google OAuth 2.0 / OIDC authorization-code flow.
@@ -19,6 +23,17 @@ export const GET: RequestHandler = ({ url, cookies }) => {
 
 	const state = crypto.randomUUID();
 	cookies.set(GOOGLE_OAUTH_STATE_COOKIE, state, {
+		path: '/auth/google',
+		httpOnly: true,
+		sameSite: 'lax',
+		secure: !dev,
+		maxAge: 600
+	});
+
+	// 'link' connects Google to the already-signed-in account (from the account
+	// page); anything else is a normal login/signup.
+	const mode = url.searchParams.get('mode') === 'link' ? 'link' : 'login';
+	cookies.set(GOOGLE_OAUTH_MODE_COOKIE, mode, {
 		path: '/auth/google',
 		httpOnly: true,
 		sameSite: 'lax',

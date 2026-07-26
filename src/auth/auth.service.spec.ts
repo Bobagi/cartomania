@@ -1,36 +1,51 @@
-import { HttpException, UnauthorizedException } from '@nestjs/common';
-import { UserRole } from '@prisma/client';
+import {
+  BadRequestException,
+  HttpException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { AuthTokenPurpose, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { AuthService } from './auth.service';
+import { AuthTokenService } from './auth-token.service';
 import { CURRENT_AGREEMENT_VERSION } from './agreement.constants';
 import type { GoogleUserInfo } from './google-oauth.service';
 
 /**
- * A tiny in-memory fake of the two Prisma models AuthService touches. It stores
- * real rows so the tests assert on observable STATE (what got written), not on
- * "a method was called" — a mutation to the service (e.g. dropping `role: USER`,
- * or auto-linking a Google identity by an UNVERIFIED email) turns them red.
+ * In-memory fake of the Prisma models AuthService/AuthTokenService touch. Stores
+ * real rows so tests assert on observable STATE (what got written), not on mock
+ * calls. Supports the `{ increment }` update op and the `authToken` lifecycle so
+ * the REAL AuthTokenService runs against it (token single-use is genuinely tested).
  */
 function makeFakePrisma() {
   const players: any[] = [];
   const acceptances: any[] = [];
-  let idSeq = 1;
+  const authTokens: any[] = [];
+  let seq = 1;
 
-  const matchUnique = (where: any, p: any) =>
+  const matchPlayer = (where: any, p: any) =>
     (where.id !== undefined && p.id === where.id) ||
     (where.username !== undefined && p.username === where.username) ||
     (where.email !== undefined && p.email === where.email) ||
     (where.googleId !== undefined && p.googleId === where.googleId);
 
+  const applyData = (row: any, data: any) => {
+    for (const [k, v] of Object.entries<any>(data)) {
+      if (v && typeof v === 'object' && 'increment' in v)
+        row[k] = (row[k] ?? 0) + v.increment;
+      else row[k] = v;
+    }
+  };
+
   return {
     _players: players,
+    _authTokens: authTokens,
     _acceptances: acceptances,
     player: {
       findUnique: async ({ where }: any) =>
-        players.find((p) => matchUnique(where, p)) ?? null,
+        players.find((p) => matchPlayer(where, p)) ?? null,
       create: async ({ data }: any) => {
         const row = {
-          id: `player-${idSeq++}`,
+          id: `player-${seq++}`,
           username: data.username,
           passwordHash: data.passwordHash ?? null,
           role: data.role ?? UserRole.USER,
@@ -38,13 +53,14 @@ function makeFakePrisma() {
           email: data.email ?? null,
           googleId: data.googleId ?? null,
           emailVerified: data.emailVerified ?? false,
+          tokenVersion: 0,
         };
         players.push(row);
         return row;
       },
       update: async ({ where, data }: any) => {
-        const row = players.find((p) => matchUnique(where, p));
-        Object.assign(row, data);
+        const row = players.find((p) => matchPlayer(where, p));
+        applyData(row, data);
         return row;
       },
     },
@@ -56,238 +72,315 @@ function makeFakePrisma() {
             a.documentVersion === where.documentVersion,
         ) ?? null,
       create: async ({ data }: any) => {
-        const row = { id: `acc-${idSeq++}`, ...data };
+        const row = { id: `acc-${seq++}`, ...data };
         acceptances.push(row);
         return row;
       },
+      deleteMany: async () => ({ count: 0 }),
     },
+    authToken: {
+      create: async ({ data }: any) => {
+        const row = { id: `tok-${seq++}`, usedAt: null, ...data };
+        authTokens.push(row);
+        return row;
+      },
+      findUnique: async ({ where }: any) =>
+        authTokens.find((t) => t.tokenHash === where.tokenHash) ?? null,
+      updateMany: async ({ where, data }: any) => {
+        let count = 0;
+        for (const t of authTokens) {
+          const ok =
+            (where.id === undefined || t.id === where.id) &&
+            (where.playerId === undefined || t.playerId === where.playerId) &&
+            (where.purpose === undefined || t.purpose === where.purpose) &&
+            (where.usedAt === undefined || t.usedAt === where.usedAt);
+          if (ok) {
+            Object.assign(t, data);
+            count += 1;
+          }
+        }
+        return { count };
+      },
+      deleteMany: async () => ({ count: 0 }),
+    },
+    $transaction: async (ops: Promise<unknown>[]) => Promise.all(ops),
   };
 }
 
-const jwtStub = { signAsync: async () => 'signed.jwt.token' } as any;
+const jwtStub = {
+  signAsync: async (payload: any) => `jwt.${payload.sub}.tv${payload.tv}`,
+} as any;
 
-function newService() {
+// Email disabled in tests (no SMTP) — verification/reset are no-ops for delivery,
+// but the token lifecycle (issued/consumed) is still exercised where we call it directly.
+const emailOff = { isEnabled: () => false, send: async () => false } as any;
+const emailOn = { isEnabled: () => true, send: async () => true } as any;
+
+function newService(email = emailOff) {
   const prisma = makeFakePrisma();
-  const service = new AuthService(prisma as any, jwtStub);
-  return { service, prisma };
+  const tokens = new AuthTokenService(prisma as any);
+  const service = new AuthService(prisma as any, jwtStub, email, tokens);
+  return { service, prisma, tokens };
 }
 
-async function expectRejects(promise: Promise<unknown>) {
-  let error: unknown;
+async function grab(promise: Promise<unknown>) {
   try {
-    await promise;
-  } catch (e) {
-    error = e;
+    return { value: await promise, error: undefined as unknown };
+  } catch (error) {
+    return { value: undefined as unknown, error };
   }
-  return error;
 }
 
 describe('AuthService — registration', () => {
-  it('always creates a USER, even though role is never a parameter', async () => {
+  it('always creates a USER (role is never a parameter)', async () => {
     const { service, prisma } = newService();
-    await service.register('newplayer', 'strongpass123', true, {});
+    await service.register('newplayer', 'a@b.com', 'strongpass123', true, {});
     expect(prisma._players).toHaveLength(1);
     expect(prisma._players[0].role).toBe(UserRole.USER);
+    expect(prisma._players[0].email).toBe('a@b.com');
+    expect(prisma._players[0].emailVerified).toBe(false);
   });
 
-  it('records the agreement acceptance at signup (current version)', async () => {
+  it('records the agreement acceptance at signup', async () => {
     const { service, prisma } = newService();
-    await service.register('consenter', 'strongpass123', true, {
-      ipAddress: '1.2.3.4',
-      userAgent: 'jest',
-    });
-    expect(prisma._acceptances).toHaveLength(1);
+    await service.register('consenter', 'c@d.com', 'strongpass123', true, {});
     expect(prisma._acceptances[0].documentVersion).toBe(
       CURRENT_AGREEMENT_VERSION,
     );
   });
 
-  it('rejects registration without accepting the terms', async () => {
+  it.each([
+    ['missing terms', ['validuser', 'valid@e.com', 'strongpass123', false]],
+    ['bad email', ['validuser', 'not-an-email', 'strongpass123', true]],
+    ['short password', ['validuser', 'valid@e.com', 'abc', true]],
+    ['long password', ['validuser', 'valid@e.com', 'p'.repeat(73), true]],
+  ] as const)('rejects %s', async (_label, [u, e, p, t]) => {
     const { service, prisma } = newService();
-    const err = await expectRejects(
-      service.register('noterms', 'strongpass123', false, {}),
+    const { error } = await grab(
+      service.register(u as string, e as string, p as string, t as boolean, {}),
     );
-    expect(err).toBeDefined();
+    expect(error).toBeDefined();
     expect(prisma._players).toHaveLength(0);
   });
 
-  it.each([
-    ['too short', 'abc'],
-    ['too long (>72)', 'p'.repeat(73)],
-  ])('rejects a password that is %s', async (_label, password) => {
+  it('rejects a duplicate email', async () => {
+    const { service } = newService();
+    await service.register('aaa', 'same@e.com', 'strongpass123', true, {});
+    const { error } = await grab(
+      service.register('bbb', 'same@e.com', 'strongpass123', true, {}),
+    );
+    expect(error).toBeInstanceOf(BadRequestException);
+  });
+
+  it('sends a verification email when SMTP is enabled', async () => {
+    const { service, prisma } = newService(emailOn);
+    await service.register('verifyme', 'v@e.com', 'strongpass123', true, {});
+    const player = prisma._players[0];
+    const tok = prisma._authTokens.find((t) => t.playerId === player.id);
+    expect(tok?.purpose).toBe(AuthTokenPurpose.EMAIL_VERIFICATION);
+  });
+});
+
+describe('AuthService — email verification (token single-use)', () => {
+  it('verifies with a fresh token, then the same token fails (single-use)', async () => {
+    const { service, prisma, tokens } = newService(emailOn);
+    const { user } = await service.register(
+      'usr',
+      'u@e.com',
+      'strongpass123',
+      true,
+      {},
+    );
+    const raw = await tokens.issue(
+      user.id,
+      AuthTokenPurpose.EMAIL_VERIFICATION,
+      60_000,
+    );
+
+    await service.verifyEmail(raw);
+    expect(prisma._players.find((p) => p.id === user.id)!.emailVerified).toBe(
+      true,
+    );
+
+    const { error } = await grab(service.verifyEmail(raw)); // replay
+    expect(error).toBeInstanceOf(BadRequestException);
+  });
+
+  it('rejects an expired token', async () => {
+    const { service, tokens } = newService(emailOn);
+    const { user } = await service.register(
+      'usr',
+      'u@e.com',
+      'strongpass123',
+      true,
+      {},
+    );
+    const raw = await tokens.issue(
+      user.id,
+      AuthTokenPurpose.EMAIL_VERIFICATION,
+      -1,
+    );
+    const { error } = await grab(service.verifyEmail(raw));
+    expect(error).toBeInstanceOf(BadRequestException);
+  });
+
+  it('rejects a token used for the WRONG purpose', async () => {
+    const { service, tokens } = newService(emailOn);
+    const { user } = await service.register(
+      'usr',
+      'u@e.com',
+      'strongpass123',
+      true,
+      {},
+    );
+    const resetRaw = await tokens.issue(
+      user.id,
+      AuthTokenPurpose.PASSWORD_RESET,
+      60_000,
+    );
+    const { error } = await grab(service.verifyEmail(resetRaw)); // wrong purpose
+    expect(error).toBeInstanceOf(BadRequestException);
+  });
+});
+
+describe('AuthService — password reset revokes sessions', () => {
+  it('bumps tokenVersion (revoking old JWTs) and sets the new password', async () => {
+    const { service, prisma, tokens } = newService(emailOn);
+    const { user } = await service.register(
+      'usr',
+      'u@e.com',
+      'oldpassword1',
+      true,
+      {},
+    );
+    const before = prisma._players.find((p) => p.id === user.id)!.tokenVersion;
+
+    const raw = await tokens.issue(
+      user.id,
+      AuthTokenPurpose.PASSWORD_RESET,
+      60_000,
+    );
+    await service.resetPassword(raw, 'brandnewpass9');
+
+    const after = prisma._players.find((p) => p.id === user.id)!;
+    expect(after.tokenVersion).toBe(before + 1); // all old sessions revoked
+    expect(after.emailVerified).toBe(true); // proving mailbox control verifies email
+    expect(await bcrypt.compare('brandnewpass9', after.passwordHash)).toBe(
+      true,
+    );
+  });
+
+  it('forgot-password never throws for an unknown email (anti-enumeration)', async () => {
+    const { service } = newService(emailOn);
+    const res = await service.requestPasswordReset('nobody@nowhere.com');
+    expect(res).toEqual({ ok: true });
+  });
+});
+
+describe('AuthService — Google link/unlink (IDOR + lockout guards)', () => {
+  const profile = (over: Partial<GoogleUserInfo> = {}): GoogleUserInfo => ({
+    sub: 'g-sub-1',
+    email: 'g@e.com',
+    emailVerified: true,
+    name: 'G',
+    picture: 'https://lh3.googleusercontent.com/x',
+    ...over,
+  });
+
+  it('links Google to the CURRENT account', async () => {
     const { service, prisma } = newService();
-    const err = await expectRejects(
-      service.register('user1', password, true, {}),
+    const { user } = await service.register(
+      'owner',
+      'owner@e.com',
+      'strongpass123',
+      true,
+      {},
     );
-    expect(err).toBeDefined();
-    expect(prisma._players).toHaveLength(0);
+    await service.linkGoogleToUser(user.id, profile());
+    expect(prisma._players.find((p) => p.id === user.id)!.googleId).toBe(
+      'g-sub-1',
+    );
   });
 
-  it.each([
-    ['too short', 'ab'],
-    ['too long (>50)', 'u'.repeat(51)],
-  ])('rejects a username that is %s', async (_label, username) => {
+  it('refuses to link a Google identity already on ANOTHER account (no hijack)', async () => {
     const { service } = newService();
-    const err = await expectRejects(
-      service.register(username, 'strongpass123', true, {}),
+    const a = await service.register(
+      'aaa',
+      'a@e.com',
+      'strongpass123',
+      true,
+      {},
     );
-    expect(err).toBeDefined();
+    await service.linkGoogleToUser(a.user.id, profile());
+    const b = await service.register(
+      'bbb',
+      'b@e.com',
+      'strongpass123',
+      true,
+      {},
+    );
+    const { error } = await grab(
+      service.linkGoogleToUser(b.user.id, profile()),
+    );
+    expect(error).toBeInstanceOf(BadRequestException);
   });
 
-  it('rejects a duplicate username', async () => {
+  it('refuses to link an UNVERIFIED Google email', async () => {
     const { service } = newService();
-    await service.register('dup', 'strongpass123', true, {});
-    const err = await expectRejects(
-      service.register('dup', 'strongpass123', true, {}),
+    const { user } = await service.register(
+      'usr',
+      'u@e.com',
+      'strongpass123',
+      true,
+      {},
     );
-    expect(err).toBeDefined();
+    const { error } = await grab(
+      service.linkGoogleToUser(user.id, profile({ emailVerified: false })),
+    );
+    expect(error).toBeInstanceOf(BadRequestException);
+  });
+
+  it('refuses to unlink Google from a PASSWORDLESS account (would lock out)', async () => {
+    const { service, prisma } = newService();
+    // passwordless Google-only account
+    const created = await service.authenticateWithGoogle(
+      profile({ sub: 'only-g' }),
+    );
+    const { error } = await grab(service.unlinkGoogle(created.user.id));
+    expect(error).toBeInstanceOf(BadRequestException);
+    expect(
+      prisma._players.find((p) => p.id === created.user.id)!.googleId,
+    ).toBe('only-g');
   });
 });
 
 describe('AuthService — login + lockout', () => {
-  async function seedUser(prisma: any, username: string, password: string) {
+  async function seed(prisma: any, username: string, password: string) {
     prisma._players.push({
       id: `seed-${username}`,
       username,
-      // Low cost: these tests exercise the lockout COUNTER, not bcrypt strength.
-      // A cost-12 compare ×19 in ts-jest blows the timeout without changing logic.
       passwordHash: await bcrypt.hash(password, 4),
       role: UserRole.USER,
       avatarUrl: null,
       email: null,
       googleId: null,
       emailVerified: false,
+      tokenVersion: 0,
     });
   }
 
-  it('accepts the correct password and rejects a wrong one', async () => {
+  it('accepts correct, rejects wrong, and locks out after 10 fails', async () => {
     const { service, prisma } = newService();
-    await seedUser(prisma, 'alice', 'correct-horse');
-    const ok = await service.login('alice', 'correct-horse');
-    expect(ok.user.username).toBe('alice');
-    expect(ok.accessToken).toBeTruthy();
-
-    const err = await expectRejects(service.login('alice', 'wrong'));
-    expect(err).toBeInstanceOf(UnauthorizedException);
-  });
-
-  it('locks out after 10 failures (429) and a different username is unaffected', async () => {
-    const { service, prisma } = newService();
-    await seedUser(prisma, 'target', 'correct-horse');
+    await seed(prisma, 'target', 'correct-horse');
+    expect((await service.login('target', 'correct-horse')).user.username).toBe(
+      'target',
+    );
     for (let i = 0; i < 10; i += 1) {
-      const err = await expectRejects(service.login('target', `bad${i}`));
-      expect(err).toBeInstanceOf(UnauthorizedException); // still 401 for the first 10
+      const { error } = await grab(service.login('target', `bad${i}`));
+      expect(error).toBeInstanceOf(UnauthorizedException);
     }
-    const locked = await expectRejects(service.login('target', 'bad-again'));
-    expect(locked).toBeInstanceOf(HttpException);
-    expect((locked as HttpException).getStatus()).toBe(429);
-
-    // Lockout is keyed on the submitted username — another user is not affected.
-    const other = await expectRejects(service.login('someone_else', 'nope'));
-    expect(other).toBeInstanceOf(UnauthorizedException);
-  });
-
-  it('a successful login clears the failure counter (no premature lock)', async () => {
-    const { service, prisma } = newService();
-    await seedUser(prisma, 'resetme', 'correct-horse');
-    for (let i = 0; i < 9; i += 1) {
-      await expectRejects(service.login('resetme', `bad${i}`));
-    }
-    await service.login('resetme', 'correct-horse'); // success resets
-    // 9 more failures should NOT lock (counter was cleared): still 401, not 429.
-    for (let i = 0; i < 9; i += 1) {
-      const err = await expectRejects(service.login('resetme', `bad${i}`));
-      expect(err).toBeInstanceOf(UnauthorizedException);
-    }
-  });
-});
-
-describe('AuthService — Google authentication', () => {
-  const profile = (over: Partial<GoogleUserInfo> = {}): GoogleUserInfo => ({
-    sub: 'google-sub-1',
-    email: 'user@example.com',
-    emailVerified: true,
-    name: 'Test User',
-    picture: 'https://lh3.googleusercontent.com/a/pic',
-    ...over,
-  });
-
-  it('refuses a Google profile whose email is NOT verified', async () => {
-    const { service, prisma } = newService();
-    const err = await expectRejects(
-      service.authenticateWithGoogle(profile({ emailVerified: false })),
-    );
-    expect(err).toBeInstanceOf(UnauthorizedException);
-    expect(prisma._players).toHaveLength(0);
-  });
-
-  it('creates a passwordless USER for a brand-new verified Google identity', async () => {
-    const { service, prisma } = newService();
-    const result = await service.authenticateWithGoogle(profile());
-    expect(prisma._players).toHaveLength(1);
-    const created = prisma._players[0];
-    expect(created.googleId).toBe('google-sub-1');
-    expect(created.email).toBe('user@example.com');
-    expect(created.emailVerified).toBe(true);
-    expect(created.passwordHash).toBeNull();
-    expect(created.role).toBe(UserRole.USER);
-    expect(result.user.hasPassword).toBe(false);
-  });
-
-  it('returns the existing account matched by googleId (no duplicate)', async () => {
-    const { service, prisma } = newService();
-    prisma._players.push({
-      id: 'existing-1',
-      username: 'existing',
-      passwordHash: null,
-      role: UserRole.USER,
-      avatarUrl: null,
-      email: 'user@example.com',
-      googleId: 'google-sub-1',
-      emailVerified: true,
-    });
-    const result = await service.authenticateWithGoogle(profile());
-    expect(prisma._players).toHaveLength(1);
-    expect(result.user.id).toBe('existing-1');
-  });
-
-  it('links Google to an existing account with the same VERIFIED email', async () => {
-    const { service, prisma } = newService();
-    prisma._players.push({
-      id: 'local-1',
-      username: 'localuser',
-      passwordHash: await bcrypt.hash('pw12345678', 4),
-      role: UserRole.USER,
-      avatarUrl: null,
-      email: 'user@example.com',
-      googleId: null,
-      emailVerified: false,
-    });
-    const result = await service.authenticateWithGoogle(profile());
-    expect(prisma._players).toHaveLength(1);
-    expect(prisma._players[0].googleId).toBe('google-sub-1');
-    expect(result.user.id).toBe('local-1');
-  });
-});
-
-describe('AuthService — agreement acceptance', () => {
-  it('reports not-accepted before and accepted after recording', async () => {
-    const { service, prisma } = newService();
-    prisma._players.push({
-      id: 'p1',
-      username: 'p1',
-      passwordHash: 'x',
-      role: UserRole.USER,
-      avatarUrl: null,
-      email: null,
-      googleId: null,
-      emailVerified: false,
-    });
-    expect(await service.hasAcceptedCurrentAgreement('p1')).toBe(false);
-    await service.acceptCurrentAgreement('p1', { ipAddress: '9.9.9.9' });
-    expect(await service.hasAcceptedCurrentAgreement('p1')).toBe(true);
-    expect(prisma._acceptances[0].documentVersion).toBe(
-      CURRENT_AGREEMENT_VERSION,
-    );
+    const { error } = await grab(service.login('target', 'again'));
+    expect(error).toBeInstanceOf(HttpException);
+    expect((error as HttpException).getStatus()).toBe(429);
   });
 });

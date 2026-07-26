@@ -190,9 +190,10 @@ export async function loginCartomaniaUserAccount(
 	});
 }
 
-/** Create an account. `acceptTerms` is required server-side and recorded (with IP/UA). */
+/** Create an account. Email + `acceptTerms` are required server-side and recorded. */
 export async function registerCartomaniaUserAccountWithConsent(
 	username: string,
+	email: string,
 	password: string,
 	acceptTerms: boolean,
 	forwardHeaders?: Record<string, string>
@@ -200,7 +201,7 @@ export async function registerCartomaniaUserAccountWithConsent(
 	return performCartomaniaApiRequestReturningJson('/auth/register', {
 		method: 'POST',
 		headers: forwardHeaders,
-		body: JSON.stringify({ username, password, acceptTerms })
+		body: JSON.stringify({ username, email, password, acceptTerms })
 	});
 }
 
@@ -218,6 +219,19 @@ export async function authenticateCartomaniaWithGoogleCode(
 		headers: forwardHeaders,
 		body: JSON.stringify({ code, redirectUri })
 	});
+}
+
+/** Link a Google identity to the CURRENTLY signed-in account (needs the session token). */
+export async function linkCartomaniaGoogleCode(
+	token: string,
+	code: string,
+	redirectUri: string
+): Promise<{ id: string; username: string }> {
+	return performCartomaniaApiRequestReturningJson(
+		'/auth/google/link',
+		{ method: 'POST', body: JSON.stringify({ code, redirectUri }) },
+		token
+	);
 }
 
 /** Which sign-in providers the backend has configured (config-driven UI). */

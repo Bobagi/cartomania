@@ -20,11 +20,12 @@ function forwardedContextHeaders(request: Request): Record<string, string> {
 export const POST: RequestHandler = async ({ request, cookies }) => {
 	const body = await request.json().catch(() => null);
 	const username = typeof body?.username === 'string' ? body.username.trim() : '';
+	const email = typeof body?.email === 'string' ? body.email.trim() : '';
 	const password = typeof body?.password === 'string' ? body.password : '';
 	const acceptTerms = body?.acceptTerms === true;
 
-	if (!username || !password) {
-		return json({ message: 'Username and password are required.' }, { status: 400 });
+	if (!username || !email || !password) {
+		return json({ message: 'Username, email and password are required.' }, { status: 400 });
 	}
 	if (!acceptTerms) {
 		return json({ message: 'You must accept the Terms and Privacy Policy.' }, { status: 400 });
@@ -33,6 +34,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 	try {
 		const { accessToken, user } = await registerCartomaniaUserAccountWithConsent(
 			username,
+			email,
 			password,
 			acceptTerms,
 			forwardedContextHeaders(request)

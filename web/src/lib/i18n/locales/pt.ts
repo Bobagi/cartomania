@@ -35,24 +35,24 @@ const pt: typeof en = {
 		kicker: 'Duelo de Cartas Colecionáveis',
 		serverLabel: 'Servidor',
 		promise:
-			'Dois dragões vão à mesa. Você escolhe o atributo que acha que vence — magia, força ou fogo. Acertou, as duas cartas são suas.',
+			'Dragões, guerreiros e criaturas míticas se enfrentam na mesa. Você escolhe o atributo que acha que vence a rodada: magia, força ou fogo. Acertou, as duas cartas são suas.',
 		playCta: 'Jogue seu primeiro duelo',
 		playNote: 'De graça, direto no navegador.',
 		galleryCta: 'Ver as cartas',
 		attributes: {
 			title: 'Três formas de vencer a rodada',
-			subtitle: 'Todo dragão tem os três. Só vale o atributo que você escolher.',
+			subtitle: 'Toda carta tem os três. Só vale o atributo que você escolher.',
 			magic: {
 				name: 'Magia',
-				text: 'Poder arcano. A carta que perderia na porrada muitas vezes vence no feitiço.'
+				text: 'Poder arcano. A carta que perderia na força muitas vezes vence no feitiço.'
 			},
 			might: {
 				name: 'Força',
-				text: 'Força bruta. A escolha segura — e o motivo de os dragões pesados seguirem perigosos.'
+				text: 'Força bruta. A escolha segura, e o que mantém os pesados perigosos.'
 			},
 			fire: {
 				name: 'Fogo',
-				text: 'Sopro de dragão. A maior variação do tabuleiro, e por isso a aposta mais ousada.'
+				text: 'Chama ardente. A maior variação do tabuleiro, e por isso a aposta mais ousada.'
 			}
 		},
 		how: {
@@ -69,12 +69,12 @@ const pt: typeof en = {
 		collection: {
 			title: 'A coleção Dracomania',
 			subtitle:
-				'{count} dragões pintados à mão, cada um com sua magia, força e fogo. Aprenda os números e você saberá qual atributo escolher.',
+				'{count} dragões, guerreiros e criaturas míticas pintados à mão, cada um com sua magia, força e fogo. Aprenda os números e você saberá qual atributo escolher.',
 			cta: 'Ver todas as cartas'
 		},
 		finalCta: {
 			title: 'A arena está aberta',
-			text: 'Crie uma conta e em segundos você está duelando — contra o bot da casa, ou contra um amigo que você desafiar.',
+			text: 'Crie uma conta e em segundos você está duelando, contra o bot da casa ou contra um amigo que você desafiar.',
 			button: 'Jogue seu primeiro duelo'
 		},
 		auth: {
@@ -90,7 +90,8 @@ const pt: typeof en = {
 			newHere: 'É novo por aqui?',
 			haveAccount: 'Já tem conta?',
 			returning: 'Já joga Cartomania?',
-			invalidCredentials: 'Usuário ou senha inválidos.'
+			invalidCredentials: 'Usuário ou senha inválidos.',
+			forgotPassword: 'Esqueceu a senha?'
 		},
 		dashboard: {
 			adminBadge: 'Admin',
@@ -144,6 +145,8 @@ const pt: typeof en = {
 		subtitle: 'É rápido e gratuito.',
 		username: 'Usuário',
 		usernamePlaceholder: 'Apelido',
+		email: 'E-mail',
+		emailPlaceholder: 'voce@exemplo.com',
 		password: 'Senha',
 		confirmPassword: 'Confirmar senha',
 		submit: 'Criar conta',
@@ -158,6 +161,7 @@ const pt: typeof en = {
 			usernameRequired: 'O usuário é obrigatório.',
 			passwordRequired: 'A senha é obrigatória.',
 			passwordTooShort: 'A senha deve ter pelo menos 8 caracteres.',
+			emailInvalid: 'Digite um e-mail válido.',
 			passwordMismatch: 'As senhas não coincidem.',
 			termsRequired: 'Você precisa aceitar os Termos de Uso e a Política de Privacidade.',
 			generic: 'Não foi possível criar a conta.'
@@ -180,6 +184,39 @@ const pt: typeof en = {
 		accept: 'Eu aceito',
 		accepting: 'Salvando…',
 		error: 'Não foi possível salvar sua aceitação. Tente novamente.'
+	},
+	forgot: {
+		title: 'Esqueceu a senha?',
+		subtitle: 'Informe seu e-mail e enviaremos um link de redefinição.',
+		email: 'E-mail',
+		emailPlaceholder: 'voce@exemplo.com',
+		submit: 'Enviar link',
+		sent: 'Se existir uma conta com esse e-mail, o link de redefinição está a caminho. Confira sua caixa de entrada.',
+		backToLogin: 'Voltar ao login'
+	},
+	reset: {
+		title: 'Escolha uma nova senha',
+		subtitle: 'Digite uma nova senha para sua conta.',
+		newPassword: 'Nova senha',
+		confirm: 'Confirmar senha',
+		submit: 'Redefinir senha',
+		done: 'Sua senha foi redefinida. Agora você pode entrar.',
+		goLogin: 'Ir para o login',
+		requestNew: 'Solicitar novo link',
+		errors: {
+			passwordTooShort: 'A senha deve ter pelo menos 8 caracteres.',
+			mismatch: 'As senhas não coincidem.',
+			invalid: 'Este link de redefinição é inválido ou expirou.',
+			noToken: 'Nenhum token de redefinição encontrado. Solicite um novo link.'
+		}
+	},
+	verify: {
+		title: 'Verificação de e-mail',
+		working: 'Verificando seu e-mail…',
+		ok: 'Seu e-mail foi verificado. Obrigado!',
+		error: 'Este link de verificação é inválido ou expirou.',
+		goHome: 'Ir para o início',
+		goAccount: 'Ir para a conta'
 	},
 	attributes: {
 		magic: 'Magia',
@@ -495,6 +532,21 @@ const pt: typeof en = {
 		passwordUpdated: 'Senha alterada.',
 		avatarUpdated: 'Avatar atualizado.',
 		passwordsDoNotMatch: 'As novas senhas não coincidem.',
+		emailTitle: 'E-mail',
+		emailNone: 'Nenhum e-mail definido. Adicione um para permitir a recuperação de senha.',
+		emailVerified: 'Seu e-mail está verificado.',
+		emailUnverified: 'Seu e-mail ainda não foi verificado.',
+		emailLabel: 'Endereço de e-mail',
+		saveEmail: 'Salvar e-mail',
+		emailUpdated: 'E-mail salvo. Confira sua caixa de entrada para verificá-lo.',
+		resendVerification: 'Reenviar e-mail de verificação',
+		verificationResent: 'E-mail de verificação enviado (se o seu endereço precisar).',
+		googleTitle: 'Google',
+		googleConnected: 'Sua conta do Google está conectada.',
+		googleDisconnect: 'Desconectar Google',
+		googleSetPasswordFirst: 'Defina uma senha antes de desconectar o Google.',
+		googleNotConnected: 'Conecte o Google para entrar com um clique.',
+		googleConnect: 'Conectar Google',
 		genericError: 'Algo deu errado. Tente novamente.'
 	}
 };

@@ -6,16 +6,23 @@
 	import '../mainpage.css';
 
 	let usernameInputValue = '';
+	let emailInputValue = '';
 	let passwordInputValue = '';
 	let confirmPasswordInputValue = '';
 	let acceptTermsChecked = false;
 	let registrationErrorKey: string | null = null;
 	let submitting = false;
 
+	const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 	async function handleRegister() {
 		registrationErrorKey = null;
 		if (!usernameInputValue.trim()) {
 			registrationErrorKey = 'register.errors.usernameRequired';
+			return;
+		}
+		if (!EMAIL_RE.test(emailInputValue.trim())) {
+			registrationErrorKey = 'register.errors.emailInvalid';
 			return;
 		}
 		if (passwordInputValue.length < 8) {
@@ -38,6 +45,7 @@
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					username: usernameInputValue.trim(),
+					email: emailInputValue.trim(),
 					password: passwordInputValue,
 					acceptTerms: acceptTermsChecked
 				})
@@ -80,6 +88,17 @@
 						bind:value={usernameInputValue}
 						placeholder={$t('register.usernamePlaceholder')}
 						autocomplete="username"
+					/>
+				</label>
+
+				<label class="input-wrap">
+					<span class="input-label">{$t('register.email')}</span>
+					<input
+						class="input-field"
+						type="email"
+						bind:value={emailInputValue}
+						placeholder={$t('register.emailPlaceholder')}
+						autocomplete="email"
 					/>
 				</label>
 

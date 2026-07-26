@@ -7,10 +7,20 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Player, UserRole } from '@prisma/client';
+import { AuthTokenPurpose, Player, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import { EmailService } from '../email/email.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CURRENT_AGREEMENT_VERSION } from './agreement.constants';
+import {
+  buildPasswordResetEmail,
+  buildVerificationEmail,
+} from './auth-email.templates';
+import {
+  AuthTokenService,
+  EMAIL_VERIFY_TTL_MS,
+  PASSWORD_RESET_TTL_MS,
+} from './auth-token.service';
 import { GoogleUserInfo } from './google-oauth.service';
 
 /** bcrypt work factor. 12 is the current sane minimum for a public app. */
@@ -20,6 +30,9 @@ const PASSWORD_MIN = 8;
 const PASSWORD_MAX = 72;
 const USERNAME_MIN = 3;
 const USERNAME_MAX = 50;
+const EMAIL_MAX = 255;
+// Pragmatic email shape check (real validation is that the confirmation email arrives).
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * A REAL bcrypt hash (cost 12) of a throwaway string. Used as the decoy on the
@@ -44,6 +57,8 @@ interface LoginAttemptBucket {
   lockedUntil: number;
 }
 
+type SessionPlayer = Pick<Player, 'id' | 'username' | 'role' | 'tokenVersion'>;
+
 @Injectable()
 export class AuthService {
   private readonly loginAttempts = new Map<string, LoginAttemptBucket>();
@@ -51,6 +66,8 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwt: JwtService,
+    private email: EmailService,
+    private tokens: AuthTokenService,
   ) {}
 
   private loginKey(username: string): string {
@@ -95,6 +112,7 @@ export class AuthService {
       email: player.email ?? null,
       emailVerified: player.emailVerified,
       hasPassword: Boolean(player.passwordHash),
+      googleLinked: Boolean(player.googleId),
     };
   }
 
@@ -116,42 +134,60 @@ export class AuthService {
     return password;
   }
 
+  private normalizeEmail(raw: string): string {
+    const email = (raw ?? '').trim().toLowerCase();
+    if (email.length === 0 || email.length > EMAIL_MAX || !EMAIL_RE.test(email))
+      throw new BadRequestException('A valid email is required');
+    return email;
+  }
+
   /**
    * Register a new email/password account. The role is ALWAYS USER — it is never
    * taken from the request (a self-service caller must not be able to mint an
-   * ADMIN). Accepting the Terms of Use + Privacy Policy is required and recorded.
+   * ADMIN). Email is required (drives verification + password reset + Google
+   * auto-link). Accepting the Terms + Privacy is required and recorded.
    */
   async register(
     username: string,
+    email: string,
     password: string,
     acceptTerms: boolean,
     context: { ipAddress?: string; userAgent?: string } = {},
   ) {
     const cleanUsername = this.validateUsername(username);
+    const cleanEmail = this.normalizeEmail(email);
     const cleanPassword = this.validatePassword(password);
     if (acceptTerms !== true)
       throw new BadRequestException(
         'You must accept the Terms of Use and Privacy Policy',
       );
 
-    const existingPlayer = await this.prisma.player.findUnique({
-      where: { username: cleanUsername },
-    });
-    if (existingPlayer) throw new BadRequestException('Username already taken');
+    if (
+      await this.prisma.player.findUnique({
+        where: { username: cleanUsername },
+      })
+    )
+      throw new BadRequestException('Username already taken');
+    if (await this.prisma.player.findUnique({ where: { email: cleanEmail } }))
+      throw new BadRequestException('That email is already registered');
 
     const passwordHash = await bcrypt.hash(cleanPassword, BCRYPT_ROUNDS);
     const createdPlayer = await this.prisma.player.create({
-      data: { username: cleanUsername, passwordHash, role: UserRole.USER },
+      data: {
+        username: cleanUsername,
+        email: cleanEmail,
+        passwordHash,
+        role: UserRole.USER,
+      },
     });
 
     await this.recordAgreementAcceptance(createdPlayer.id, context);
+    await this.sendVerificationEmail(createdPlayer.id, cleanEmail);
 
-    const token = await this.sign(
-      createdPlayer.id,
-      createdPlayer.username,
-      createdPlayer.role,
-    );
-    return { accessToken: token, user: this.toUserDto(createdPlayer) };
+    return {
+      accessToken: await this.signForPlayer(createdPlayer),
+      user: this.toUserDto(createdPlayer),
+    };
   }
 
   async login(username: string, password: string) {
@@ -170,12 +206,15 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
     this.clearLoginFailures(username);
-    const token = await this.sign(user.id, user.username, user.role);
-    return { accessToken: token, user: this.toUserDto(user) };
+    return {
+      accessToken: await this.signForPlayer(user),
+      user: this.toUserDto(user),
+    };
   }
 
   /**
-   * Find-or-create-or-link a Player for a verified Google identity.
+   * Find-or-create-or-link a Player for a verified Google identity (login/signup
+   * with Google — no session required).
    *  - a previously linked account (by googleId) is returned directly;
    *  - an existing account with the same VERIFIED email gets Google linked;
    *  - otherwise a new passwordless account is provisioned.
@@ -192,12 +231,10 @@ export class AuthService {
     });
     if (bySubject) {
       const refreshed = await this.maybeRefreshAvatar(bySubject, profile);
-      const token = await this.sign(
-        refreshed.id,
-        refreshed.username,
-        refreshed.role,
-      );
-      return { accessToken: token, user: this.toUserDto(refreshed) };
+      return {
+        accessToken: await this.signForPlayer(refreshed),
+        user: this.toUserDto(refreshed),
+      };
     }
 
     const byEmail = await this.prisma.player.findUnique({ where: { email } });
@@ -210,8 +247,10 @@ export class AuthService {
           avatarUrl: byEmail.avatarUrl ?? this.safeAvatar(profile.picture),
         },
       });
-      const token = await this.sign(linked.id, linked.username, linked.role);
-      return { accessToken: token, user: this.toUserDto(linked) };
+      return {
+        accessToken: await this.signForPlayer(linked),
+        user: this.toUserDto(linked),
+      };
     }
 
     const username = await this.deriveUniqueUsername(profile);
@@ -225,8 +264,73 @@ export class AuthService {
         avatarUrl: this.safeAvatar(profile.picture),
       },
     });
-    const token = await this.sign(created.id, created.username, created.role);
-    return { accessToken: token, user: this.toUserDto(created) };
+    return {
+      accessToken: await this.signForPlayer(created),
+      user: this.toUserDto(created),
+    };
+  }
+
+  /**
+   * Link a Google identity to the CURRENTLY signed-in account (from the account
+   * page). Matches by the SESSION user, not by email — so it can't hijack another
+   * account. Refuses if the Google identity is already linked elsewhere.
+   */
+  async linkGoogleToUser(userId: string, profile: GoogleUserInfo) {
+    if (!profile.emailVerified)
+      throw new BadRequestException('Google email is not verified');
+
+    const owner = await this.prisma.player.findUnique({
+      where: { id: userId },
+    });
+    if (!owner) throw new UnauthorizedException();
+
+    const otherWithSubject = await this.prisma.player.findUnique({
+      where: { googleId: profile.sub },
+    });
+    if (otherWithSubject && otherWithSubject.id !== userId)
+      throw new BadRequestException(
+        'This Google account is already linked to another Cartomania account',
+      );
+
+    const email = profile.email.trim().toLowerCase();
+    // Adopt the Google email only if the account has none and it's free.
+    let adoptEmail: string | undefined;
+    if (!owner.email) {
+      const emailOwner = await this.prisma.player.findUnique({
+        where: { email },
+      });
+      if (!emailOwner || emailOwner.id === userId) adoptEmail = email;
+    }
+
+    const updated = await this.prisma.player.update({
+      where: { id: userId },
+      data: {
+        googleId: profile.sub,
+        ...(adoptEmail ? { email: adoptEmail, emailVerified: true } : {}),
+        avatarUrl: owner.avatarUrl ?? this.safeAvatar(profile.picture),
+      },
+    });
+    return this.toUserDto(updated);
+  }
+
+  /** Remove the Google link. Refused if it would leave the account with no way
+   *  to sign in (a passwordless Google-only account). */
+  async unlinkGoogle(userId: string) {
+    const owner = await this.prisma.player.findUnique({
+      where: { id: userId },
+    });
+    if (!owner) throw new UnauthorizedException();
+    if (!owner.googleId)
+      throw new BadRequestException('No Google account is linked');
+    if (!owner.passwordHash)
+      throw new BadRequestException(
+        'Set a password before disconnecting Google, or you would be locked out',
+      );
+    const updated = await this.prisma.player.update({
+      where: { id: userId },
+      data: { googleId: null },
+    });
+    return this.toUserDto(updated);
   }
 
   private safeAvatar(picture: string): string | undefined {
@@ -264,8 +368,14 @@ export class AuthService {
     return `player_${Date.now().toString(36)}`;
   }
 
-  private async sign(sub: string, username: string, role: UserRole) {
-    return this.jwt.signAsync({ sub, username, role });
+  /** JWT carries `tv` (tokenVersion); the guard rejects a token whose tv is stale. */
+  private async signForPlayer(player: SessionPlayer) {
+    return this.jwt.signAsync({
+      sub: player.id,
+      username: player.username,
+      role: player.role,
+      tv: player.tokenVersion,
+    });
   }
 
   async me(userId: string) {
@@ -291,6 +401,12 @@ export class AuthService {
     return this.toUserDto(updated);
   }
 
+  /**
+   * Change the password of the signed-in user. Requires the current password
+   * (unless the account is passwordless — a Google-only account SETS its first
+   * password here). Bumps tokenVersion to revoke OTHER sessions, and returns a
+   * fresh token so the CURRENT device stays signed in.
+   */
   async changePassword(
     userId: string,
     currentPassword: string,
@@ -300,18 +416,21 @@ export class AuthService {
 
     const user = await this.prisma.player.findUnique({ where: { id: userId } });
     if (!user) throw new UnauthorizedException();
-    // A Google-only account has no password to verify — it can't use this path.
-    if (!user.passwordHash)
-      throw new BadRequestException('This account has no password to change');
-    const ok = await bcrypt.compare(currentPassword ?? '', user.passwordHash);
-    if (!ok) throw new BadRequestException('Current password is incorrect');
+    if (user.passwordHash) {
+      const ok = await bcrypt.compare(currentPassword ?? '', user.passwordHash);
+      if (!ok) throw new BadRequestException('Current password is incorrect');
+    }
 
     const passwordHash = await bcrypt.hash(cleanNew, BCRYPT_ROUNDS);
-    await this.prisma.player.update({
+    const updated = await this.prisma.player.update({
       where: { id: userId },
-      data: { passwordHash },
+      data: { passwordHash, tokenVersion: { increment: 1 } },
     });
-    return { ok: true };
+    return {
+      ok: true,
+      accessToken: await this.signForPlayer(updated),
+      user: this.toUserDto(updated),
+    };
   }
 
   async changeUsername(userId: string, newUsername: string) {
@@ -330,9 +449,119 @@ export class AuthService {
     return this.toUserDto(updated);
   }
 
+  /** Set or change the account email (re-verification required). */
+  async setEmail(userId: string, rawEmail: string) {
+    const email = this.normalizeEmail(rawEmail);
+    const owner = await this.prisma.player.findUnique({
+      where: { id: userId },
+    });
+    if (!owner) throw new UnauthorizedException();
+    if (owner.email === email && owner.emailVerified)
+      return this.toUserDto(owner);
+
+    const emailOwner = await this.prisma.player.findUnique({
+      where: { email },
+    });
+    if (emailOwner && emailOwner.id !== userId)
+      throw new BadRequestException('That email is already registered');
+
+    const updated = await this.prisma.player.update({
+      where: { id: userId },
+      data: { email, emailVerified: false },
+    });
+    await this.sendVerificationEmail(updated.id, email);
+    return this.toUserDto(updated);
+  }
+
+  // ---------- Email verification ----------
+
+  private async sendVerificationEmail(userId: string, email: string) {
+    if (!this.email.isEnabled()) return; // no-op without SMTP
+    const rawToken = await this.tokens.issue(
+      userId,
+      AuthTokenPurpose.EMAIL_VERIFICATION,
+      EMAIL_VERIFY_TTL_MS,
+    );
+    await this.email.send(buildVerificationEmail(email, rawToken));
+  }
+
+  /** Resend the verification email to the signed-in user (always 200). */
+  async resendVerification(userId: string) {
+    const user = await this.prisma.player.findUnique({ where: { id: userId } });
+    if (user && user.email && !user.emailVerified) {
+      await this.sendVerificationEmail(user.id, user.email);
+    }
+    return { ok: true, emailEnabled: this.email.isEnabled() };
+  }
+
+  /** Consume an email-verification token and mark the account verified. */
+  async verifyEmail(rawToken: string) {
+    const playerId = await this.tokens.consume(
+      rawToken,
+      AuthTokenPurpose.EMAIL_VERIFICATION,
+    );
+    if (!playerId)
+      throw new BadRequestException(
+        'This verification link is invalid or expired',
+      );
+    await this.prisma.player.update({
+      where: { id: playerId },
+      data: { emailVerified: true },
+    });
+    return { ok: true };
+  }
+
+  // ---------- Password reset ----------
+
+  /**
+   * Start a password reset. ALWAYS returns ok:true (never reveals whether the
+   * email exists). If a matching account has a password, email a reset link.
+   */
+  async requestPasswordReset(rawEmail: string) {
+    const email = (rawEmail ?? '').trim().toLowerCase();
+    if (email && EMAIL_RE.test(email) && this.email.isEnabled()) {
+      const user = await this.prisma.player.findUnique({ where: { email } });
+      if (user && user.email) {
+        const rawToken = await this.tokens.issue(
+          user.id,
+          AuthTokenPurpose.PASSWORD_RESET,
+          PASSWORD_RESET_TTL_MS,
+        );
+        await this.email.send(buildPasswordResetEmail(user.email, rawToken));
+      }
+    }
+    return { ok: true };
+  }
+
+  /**
+   * Complete a password reset: set the new password and bump tokenVersion so ALL
+   * existing sessions (including an attacker's) are revoked. The user logs in fresh.
+   */
+  async resetPassword(rawToken: string, newPassword: string) {
+    const cleanNew = this.validatePassword(newPassword);
+    const playerId = await this.tokens.consume(
+      rawToken,
+      AuthTokenPurpose.PASSWORD_RESET,
+    );
+    if (!playerId)
+      throw new BadRequestException('This reset link is invalid or expired');
+
+    const passwordHash = await bcrypt.hash(cleanNew, BCRYPT_ROUNDS);
+    await this.prisma.player.update({
+      where: { id: playerId },
+      data: {
+        passwordHash,
+        emailVerified: true, // proving control of the mailbox verifies the email
+        tokenVersion: { increment: 1 },
+      },
+    });
+    return { ok: true };
+  }
+
   /** Permanently delete the account and everything that references it. */
   async deleteAccount(userId: string) {
     await this.prisma.$transaction([
+      this.prisma.authToken.deleteMany({ where: { playerId: userId } }),
       this.prisma.agreementAcceptance.deleteMany({
         where: { playerId: userId },
       }),

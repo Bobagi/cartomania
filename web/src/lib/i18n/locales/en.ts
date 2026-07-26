@@ -34,24 +34,24 @@ const en = {
 		kicker: 'Digital Collectible Card Duel',
 		serverLabel: 'Server',
 		promise:
-			'Two dragons hit the table. You call the attribute you think wins — magic, might or fire. Call it right and both cards are yours.',
+			'Dragons, warriors and mythic creatures clash on the table. You call the attribute you think wins the round: magic, might or fire. Call it right and both cards are yours.',
 		playCta: 'Play your first duel',
 		playNote: 'Free to play, straight in the browser.',
 		galleryCta: 'See the cards',
 		attributes: {
 			title: 'Three ways to win a round',
-			subtitle: 'Every dragon carries all three. Only the attribute you call is counted.',
+			subtitle: 'Every card carries all three. Only the attribute you call is counted.',
 			magic: {
 				name: 'Magic',
 				text: 'Arcane power. The card that would lose a brawl often wins the spell.'
 			},
 			might: {
 				name: 'Might',
-				text: 'Raw strength. The steady call — and why the heavy dragons stay dangerous.'
+				text: 'Raw strength. The steady call, and what keeps the heavy hitters dangerous.'
 			},
 			fire: {
 				name: 'Fire',
-				text: 'Dragon breath. The widest spread on the board, so the boldest call to make.'
+				text: 'Scorching flame. The widest spread on the board, so the boldest call to make.'
 			}
 		},
 		how: {
@@ -68,12 +68,12 @@ const en = {
 		collection: {
 			title: 'The Dracomania collection',
 			subtitle:
-				'{count} hand-painted dragons, each with its own magic, might and fire. Learn the spreads and you will know which attribute to call.',
+				'{count} hand-painted dragons, warriors and mythic creatures, each with its own magic, might and fire. Learn the spreads and you will know which attribute to call.',
 			cta: 'Browse every card'
 		},
 		finalCta: {
 			title: 'The arena is open',
-			text: 'Make an account and you are duelling in seconds — against the house bot, or a friend you challenge.',
+			text: 'Make an account and you are duelling in seconds, against the house bot or a friend you challenge.',
 			button: 'Play your first duel'
 		},
 		auth: {
@@ -89,7 +89,8 @@ const en = {
 			newHere: 'New here?',
 			haveAccount: 'Already have an account?',
 			returning: 'Already playing?',
-			invalidCredentials: 'Invalid username or password.'
+			invalidCredentials: 'Invalid username or password.',
+			forgotPassword: 'Forgot password?'
 		},
 		dashboard: {
 			adminBadge: 'Admin',
@@ -101,7 +102,7 @@ const en = {
 			readySub: 'Start an Attribute Duel against the bot and grow your collection of victories.',
 			startDuel: 'Start Duel',
 			yourGames: 'Your active games',
-			noGames: 'No active games yet — start a duel above.',
+			noGames: 'No active games yet. Start a duel above.',
 			mode: 'Mode',
 			updated: 'Updated',
 			resume: 'Resume',
@@ -143,6 +144,8 @@ const en = {
 		subtitle: 'It’s quick and free.',
 		username: 'Username',
 		usernamePlaceholder: 'Nickname',
+		email: 'Email',
+		emailPlaceholder: 'you@example.com',
 		password: 'Password',
 		confirmPassword: 'Confirm password',
 		submit: 'Create account',
@@ -157,6 +160,7 @@ const en = {
 			usernameRequired: 'Username is required.',
 			passwordRequired: 'Password is required.',
 			passwordTooShort: 'Password must be at least 8 characters.',
+			emailInvalid: 'Please enter a valid email.',
 			passwordMismatch: 'Passwords do not match.',
 			termsRequired: 'You must accept the Terms of Use and Privacy Policy.',
 			generic: 'Could not create account.'
@@ -179,6 +183,39 @@ const en = {
 		accept: 'I accept',
 		accepting: 'Saving…',
 		error: 'Could not save your acceptance. Please try again.'
+	},
+	forgot: {
+		title: 'Forgot your password?',
+		subtitle: 'Enter your email and we will send a reset link.',
+		email: 'Email',
+		emailPlaceholder: 'you@example.com',
+		submit: 'Send reset link',
+		sent: 'If an account exists for that email, a reset link is on its way. Check your inbox.',
+		backToLogin: 'Back to login'
+	},
+	reset: {
+		title: 'Choose a new password',
+		subtitle: 'Enter a new password for your account.',
+		newPassword: 'New password',
+		confirm: 'Confirm password',
+		submit: 'Reset password',
+		done: 'Your password has been reset. You can now log in.',
+		goLogin: 'Go to login',
+		requestNew: 'Request a new link',
+		errors: {
+			passwordTooShort: 'Password must be at least 8 characters.',
+			mismatch: 'Passwords do not match.',
+			invalid: 'This reset link is invalid or has expired.',
+			noToken: 'No reset token found. Request a new link.'
+		}
+	},
+	verify: {
+		title: 'Email verification',
+		working: 'Verifying your email…',
+		ok: 'Your email is verified. Thank you!',
+		error: 'This verification link is invalid or has expired.',
+		goHome: 'Go home',
+		goAccount: 'Go to account'
 	},
 	attributes: {
 		magic: 'Magic',
@@ -222,7 +259,7 @@ const en = {
 		errorSurrender: 'Unable to surrender match.',
 		playerSurrendered: 'A player surrendered.',
 		historyTitle: 'Battle Log',
-		historyEmpty: 'No rounds yet — pick a card to begin the duel.',
+		historyEmpty: 'No rounds yet. Pick a card to begin the duel.',
 		historyRound: 'Round {n}',
 		historyLive: 'LIVE',
 		historyTie: 'Tie',
@@ -300,7 +337,7 @@ const en = {
 		privacy: {
 			title: 'Privacy Policy',
 			intro:
-				'Cartomania is a free, non-commercial portfolio project — a digital collectible card game built to showcase the Dracomania collection. This page explains, in plain language, what information the game handles and why. We collect as little as possible and never sell your data.',
+				'Cartomania is a free, non-commercial portfolio project: a digital collectible card game built to showcase the Dracomania collection. This page explains, in plain language, what information the game handles and why. We collect as little as possible and never sell your data.',
 			contactHeading: 'Contact',
 			contactText: 'Questions about privacy? Reach out through the project’s',
 			sections: [
@@ -348,7 +385,7 @@ const en = {
 				{
 					heading: 'Analytics',
 					paragraphs: [
-						'With your consent, Cartomania loads a self-hosted, privacy-friendly analytics script (Umami, served from analytics.bobagi.space) to measure aggregate usage such as page views and visits. It is cookieless, does not collect personal information, and never tracks you across other websites. The script loads only after you accept analytics in the consent banner — if you choose “Essential only”, it is never loaded. You can change your decision at any time through the “Cookie preferences” link in the footer.'
+						'With your consent, Cartomania loads a self-hosted, privacy-friendly analytics script (Umami, served from analytics.bobagi.space) to measure aggregate usage such as page views and visits. It is cookieless, does not collect personal information, and never tracks you across other websites. The script loads only after you accept analytics in the consent banner. If you choose “Essential only”, it is never loaded. You can change your decision at any time through the “Cookie preferences” link in the footer.'
 					],
 					items: []
 				},
@@ -500,6 +537,21 @@ const en = {
 		passwordUpdated: 'Password changed.',
 		avatarUpdated: 'Avatar updated.',
 		passwordsDoNotMatch: 'The new passwords do not match.',
+		emailTitle: 'Email',
+		emailNone: 'No email set. Add one to enable password recovery.',
+		emailVerified: 'Your email is verified.',
+		emailUnverified: 'Your email is not verified yet.',
+		emailLabel: 'Email address',
+		saveEmail: 'Save email',
+		emailUpdated: 'Email saved. Check your inbox to verify it.',
+		resendVerification: 'Resend verification email',
+		verificationResent: 'Verification email sent (if your address needs it).',
+		googleTitle: 'Google',
+		googleConnected: 'Your Google account is connected.',
+		googleDisconnect: 'Disconnect Google',
+		googleSetPasswordFirst: 'Set a password before disconnecting Google.',
+		googleNotConnected: 'Connect Google to sign in with one click.',
+		googleConnect: 'Connect Google',
 		genericError: 'Something went wrong. Please try again.'
 	}
 };

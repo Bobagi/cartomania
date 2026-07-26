@@ -4,6 +4,7 @@ import { PassportModule } from '@nestjs/passport';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { AuthTokenService } from './auth-token.service';
 import { GoogleOAuthService } from './google-oauth.service';
 import { resolveJwtSecret } from './jwt.config';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -21,6 +22,7 @@ import { RolesGuard } from './roles.guard';
   ],
   providers: [
     AuthService,
+    AuthTokenService,
     GoogleOAuthService,
     JwtStrategy,
     JwtAuthGuard,

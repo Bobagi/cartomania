@@ -10,6 +10,7 @@
 	export let data: { user: AuthenticatedCartomaniaUser };
 
 	let newUsername = data.user.username;
+	let newEmail = data.user.email ?? '';
 	let currentPassword = '';
 	let newPassword = '';
 	let confirmPassword = '';
@@ -18,9 +19,73 @@
 
 	let usernameMsg = '';
 	let usernameErr = '';
+	let emailMsg = '';
+	let emailErr = '';
+	let resendMsg = '';
 	let passwordMsg = '';
 	let passwordErr = '';
+	let googleErr = '';
 	let deleteErr = '';
+
+	$: emailVerified = data.user.emailVerified === true;
+	$: googleLinked = data.user.googleLinked === true;
+	$: hasPassword = data.user.hasPassword !== false;
+
+	async function patchJson(path: string, body: unknown): Promise<Record<string, unknown>> {
+		const response = await fetch(path, {
+			method: 'PATCH',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(body ?? {})
+		});
+		if (!response.ok) {
+			const errorBody = (await response.json().catch(() => ({}))) as { message?: string };
+			throw new Error(errorBody?.message || $t('account.genericError'));
+		}
+		return (await response.json().catch(() => ({}))) as Record<string, unknown>;
+	}
+
+	async function submitEmail() {
+		emailMsg = '';
+		emailErr = '';
+		busy = true;
+		try {
+			const { user } = await patchJson('/api/auth/email', { email: newEmail.trim() });
+			setAuthState(user as AuthenticatedCartomaniaUser);
+			emailMsg = $t('account.emailUpdated');
+			await invalidateAll();
+		} catch (error) {
+			emailErr = (error as Error).message;
+		} finally {
+			busy = false;
+		}
+	}
+
+	async function resendVerification() {
+		resendMsg = '';
+		busy = true;
+		try {
+			await postJson('/api/auth/resend-verification', {});
+			resendMsg = $t('account.verificationResent');
+		} catch (error) {
+			resendMsg = (error as Error).message;
+		} finally {
+			busy = false;
+		}
+	}
+
+	async function disconnectGoogle() {
+		googleErr = '';
+		busy = true;
+		try {
+			const { user } = await postJson('/api/auth/google/unlink', {});
+			setAuthState(user as AuthenticatedCartomaniaUser);
+			await invalidateAll();
+		} catch (error) {
+			googleErr = (error as Error).message;
+		} finally {
+			busy = false;
+		}
+	}
 
 	async function postJson(path: string, body: unknown): Promise<Record<string, unknown>> {
 		const response = await fetch(path, {
@@ -111,6 +176,66 @@
 			</form>
 			{#if usernameMsg}<p class="account-ok">{usernameMsg}</p>{/if}
 			{#if usernameErr}<p class="account-err">{usernameErr}</p>{/if}
+		</div>
+
+		<div class="account-card">
+			<h2>{$t('account.emailTitle')}</h2>
+			<p class="account-hint">
+				{#if !data.user.email}
+					{$t('account.emailNone')}
+				{:else if emailVerified}
+					{$t('account.emailVerified')}
+				{:else}
+					{$t('account.emailUnverified')}
+				{/if}
+			</p>
+			<form class="account-form" on:submit|preventDefault={submitEmail}>
+				<label class="input-wrap">
+					<span class="input-label">{$t('account.emailLabel')}</span>
+					<input class="input-field" type="email" bind:value={newEmail} autocomplete="email" />
+				</label>
+				<button class="button button-primary" type="submit" disabled={busy}>
+					{$t('account.saveEmail')}
+				</button>
+			</form>
+			{#if data.user.email && !emailVerified}
+				<button
+					class="button button-ghost"
+					type="button"
+					disabled={busy}
+					on:click={resendVerification}
+				>
+					{$t('account.resendVerification')}
+				</button>
+			{/if}
+			{#if emailMsg}<p class="account-ok">{emailMsg}</p>{/if}
+			{#if resendMsg}<p class="account-ok">{resendMsg}</p>{/if}
+			{#if emailErr}<p class="account-err">{emailErr}</p>{/if}
+		</div>
+
+		<div class="account-card">
+			<h2>{$t('account.googleTitle')}</h2>
+			{#if googleLinked}
+				<p class="account-hint">{$t('account.googleConnected')}</p>
+				{#if hasPassword}
+					<button
+						class="button button-ghost"
+						type="button"
+						disabled={busy}
+						on:click={disconnectGoogle}
+					>
+						{$t('account.googleDisconnect')}
+					</button>
+				{:else}
+					<p class="account-hint">{$t('account.googleSetPasswordFirst')}</p>
+				{/if}
+			{:else}
+				<p class="account-hint">{$t('account.googleNotConnected')}</p>
+				<a class="button button-primary" href="/auth/google?mode=link"
+					>{$t('account.googleConnect')}</a
+				>
+			{/if}
+			{#if googleErr}<p class="account-err">{googleErr}</p>{/if}
 		</div>
 
 		<div class="account-card">

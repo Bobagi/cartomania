@@ -42,6 +42,10 @@ model Player {
   googleId      String?  @unique @db.VarChar(255)
   emailVerified Boolean  @default(false)
 
+  // Bumped to revoke every outstanding session (password change/reset, unlink).
+  // The JWT carries this value; the guard rejects a token whose tv is stale.
+  tokenVersion  Int      @default(0)
+
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   lastSeenAt   DateTime?
@@ -53,6 +57,29 @@ model Player {
   sentMessages        FriendChatMessage[] @relation("ChatSender")
   receivedMessages    FriendChatMessage[] @relation("ChatRecipient")
   agreementAcceptances AgreementAcceptance[]
+  authTokens           AuthToken[]
+}
+
+enum AuthTokenPurpose {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+/// One-time tokens for email verification and password reset. Only the SHA-256
+/// HASH of the token is stored (like a session token); the raw token lives only
+/// in the email link. Single-use (usedAt) + time-limited (expiresAt). Requesting
+/// a new token of a purpose invalidates the user's prior ones of that purpose.
+model AuthToken {
+  id         String           @id @default(uuid()) @db.Uuid
+  playerId   String           @db.Uuid
+  player     Player           @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  purpose    AuthTokenPurpose
+  tokenHash  String           @unique @db.VarChar(64)
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime         @default(now())
+
+  @@index([playerId, purpose])
 }
 
 /// Append-only proof that a player accepted the Terms of Use + Privacy Policy.
