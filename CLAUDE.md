@@ -511,9 +511,15 @@ web/                         SvelteKit frontend
   login/link/refresh, cleared on unlink. `AvatarPicker` shows it as the first option (blue ring + "G"
   badge) so a user who switched to card art can go back to their Google photo. NOTE: the dashboard reads
   the user from the session-cookie snapshot, so `googleAvatarUrl` shows up after a login that included it
-  (the real Google login already does). **Account note:** logging in with Google created a SEPARATE account
-  `Gustavo` (Google email + photo) because `Bobagi` had no email to auto-link by. To consolidate, the owner
-  can add an email to `Bobagi` and connect Google there, or keep using `Gustavo`.
+  (the real Google login already does).
+- **Owner account consolidated + dedicated SMTP app password (2026-07-26).** The first Google login had
+  created a separate `Gustavo` account (no email on `Bobagi` to auto-link). Consolidated at the owner's
+  request: migrated the Google identity (googleId + `gustavoperin067@gmail.com` + photo) onto **`Bobagi`**
+  (now ADMIN, email-verified, password + Google both work) and hard-deleted `Gustavo`. Also: the live
+  **SMTP now uses a Gmail app password DEDICATED to Cartomania** (still `bobagi.contact@gmail.com`, no longer
+  shared with Coin Hub) in `.env` `SMTP_PASSWORD`. Verified end-to-end: a real reset email was delivered to
+  the owner's inbox. **Only `admin` (seed) and `Bobagi` are ADMIN;** the other seed/demo users
+  (`admin2`/`bobao`/`Leftninja`) remain USERs, no email.
 - **Landing polish + em dash purge (2026-07-26).** Owner feedback pass on the hero: (1) **Copy is now
   truthful** in en/pt/es. It used to say "two dragons" / "hand-painted dragons", but the Dracomania set
   is 32 cards, only 10 of them dragons (rest: warriors, mages, mythic creatures). Verify future copy
