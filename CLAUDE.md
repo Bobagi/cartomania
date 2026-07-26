@@ -80,6 +80,18 @@ their discard pile; whoever captured more cards when a hand empties wins the mat
   passing the wrong aspect ratio silently distorts the whole card (banner height, attribute sizes,
   positions) - which is exactly why cards in the gallery/duel once looked different from `/cards-lab`
   (the lab uses the correct 1444/1920 default). Keep every call site on 1444/1920.
+  **RULE - every card, everywhere, renders identically (hero, gallery, duel hand, arena):**
+  a `CardComposite` MUST get its size from ONE clean dimension anchor. Because it is
+  `container-type:size` it CANNOT take its size from its content, so a wrapper that gives it only
+  `aspect-ratio` (with no width or height) leaves the size ambiguous and the card renders slightly
+  STRETCHED. Give the wrapper an explicit width OR height and let the ratio supply the other
+  (`.hand.fan .card-socket` derives `width: calc(var(--card-h) * 1444 / 1920)` from the fixed
+  row height - fixed 2026-07-26 after hand cards looked subtly wider than gallery/hero). And do NOT
+  scale one card differently from its siblings (the hero fan's centre card had `scale(1.07)`, 7%
+  bigger than the rest - removed; use lift/z-index/glow for depth, never size). **Measuring aspect:
+  use `offsetWidth/offsetHeight`, NEVER `getBoundingClientRect` - the latter includes the fan's
+  `rotate()` and reports a false, stretched aspect (this sent a whole debugging pass chasing a
+  non-bug). Confirm with a pixel-diff of the SAME card in two contexts.**
 
 ### Deploy the FRONTEND (after editing anything in `web/`)
 ```bash
