@@ -402,9 +402,15 @@ web/                         SvelteKit frontend
   playerId, documentVersion, ip, ua) + `CURRENT_AGREEMENT_VERSION` in `src/auth/agreement.constants.ts`
   (**date `2026-07-23`; KEEP IN SYNC with `LegalDocument.svelte`'s "last updated" date** - they must match or
   the gate contradicts the page). Register requires + records acceptance (checkbox on `/register`). `/auth/me`
-  returns `termsAccepted`; `+layout.server.ts` fetches it and `+layout.svelte` shows the blocking
-  **`AgreementGate.svelte`** to a signed-in user who hasn't accepted the version in force (legacy accounts,
-  Google sign-ins, or after a version bump). Endpoints: `GET /auth/agreement`, `POST /auth/accept-terms`.
+  returns `termsAccepted`; `+layout.server.ts` fetches `{accepted, currentVersion}` and `+layout.svelte`
+  shows the blocking **`AgreementGate.svelte`** to a signed-in user who hasn't accepted the version in force
+  (legacy accounts, Google sign-ins, or after a version bump). Endpoints: `GET /auth/agreement`, `POST
+  /auth/accept-terms`. **The gate is modelled on CoinHub's `AgreementGate` (reworked 2026-07-26):** language
+  selector, the version tag, the **full Terms rendered inline in a scrollable box** (from the `legal.terms`
+  i18n doc) + links that open `/terms` and `/privacy` in a new tab, **three required checkboxes** (18+, accept
+  Terms, accept Privacy) so `I accept` stays disabled until all three are ticked, and a **Decline and sign
+  out** button (`/api/auth/logout` + back to `/`). i18n keys: `agreement.*` (all three locales). Do NOT
+  regress it back to a single "I accept" with no checkboxes/no visible terms/no decline.
 - **Full account/email suite (2026-07-26, CoinHub-modelled) - READ before touching auth.**
   - **Registration now REQUIRES an email** (unique, validated) → sends a verification email. `register(username,
     email, password, acceptTerms, ctx)`. Existing username-only accounts keep working (email NULL); they can

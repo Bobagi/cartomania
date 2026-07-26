@@ -24,6 +24,7 @@
 	export let data: {
 		authUser: AuthenticatedCartomaniaUser | null;
 		termsAccepted: boolean;
+		agreementVersion?: string;
 		locale: Locale;
 		consentCookie: string | null;
 	};
@@ -105,7 +106,7 @@
 
 <!-- Signed-in but hasn't accepted the current Terms/Privacy - blocking consent gate. -->
 {#if mustAcceptTerms}
-	<AgreementGate />
+	<AgreementGate version={data.agreementVersion ?? ''} />
 {/if}
 
 <style src="../app.postcss"></style>

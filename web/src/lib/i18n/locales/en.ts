@@ -173,15 +173,19 @@ const en = {
 	},
 	agreement: {
 		title: 'Before you play',
-		body: {
-			prefix: 'To keep using Cartomania, please review and accept our',
-			terms: 'Terms of Use',
-			and: 'and',
-			privacy: 'Privacy Policy',
-			suffix: '.'
-		},
+		version: 'Version {version}',
+		intro:
+			'To keep playing Cartomania, please review and accept our Terms of Use and Privacy Policy. You can read the Terms below, and open either document in a new tab.',
+		viewTerms: 'Open Terms of Use',
+		viewPrivacy: 'Open Privacy Policy',
+		termsLabel: 'Terms of Use',
+		privacyLabel: 'Privacy Policy',
+		checkboxAge: 'I am at least 18 years old, or I have my guardian’s consent.',
+		checkboxTermsPre: 'I have read and accept the',
+		checkboxPrivacyPre: 'I have read and accept the',
 		accept: 'I accept',
 		accepting: 'Saving…',
+		decline: 'Decline and sign out',
 		error: 'Could not save your acceptance. Please try again.'
 	},
 	forgot: {
@@ -520,7 +524,7 @@ const en = {
 		save: 'Save',
 		cancel: 'Cancel',
 		usernameTitle: 'Username',
-		usernameHint: 'Your display and login name (3–50 characters).',
+		usernameHint: 'Your display and login name (3-50 characters).',
 		newUsername: 'New username',
 		changeUsername: 'Change username',
 		passwordTitle: 'Password',

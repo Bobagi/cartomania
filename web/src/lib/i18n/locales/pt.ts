@@ -174,15 +174,19 @@ const pt: typeof en = {
 	},
 	agreement: {
 		title: 'Antes de jogar',
-		body: {
-			prefix: 'Para continuar usando o Cartomania, leia e aceite nossos',
-			terms: 'Termos de Uso',
-			and: 'e a',
-			privacy: 'Política de Privacidade',
-			suffix: '.'
-		},
+		version: 'Versão {version}',
+		intro:
+			'Para continuar jogando o Cartomania, leia e aceite nossos Termos de Uso e a Política de Privacidade. Você pode ler os Termos abaixo e abrir qualquer um dos documentos em uma nova aba.',
+		viewTerms: 'Abrir Termos de Uso',
+		viewPrivacy: 'Abrir Política de Privacidade',
+		termsLabel: 'Termos de Uso',
+		privacyLabel: 'Política de Privacidade',
+		checkboxAge: 'Tenho pelo menos 18 anos, ou tenho o consentimento do meu responsável.',
+		checkboxTermsPre: 'Li e aceito os',
+		checkboxPrivacyPre: 'Li e aceito a',
 		accept: 'Eu aceito',
 		accepting: 'Salvando…',
+		decline: 'Recusar e sair',
 		error: 'Não foi possível salvar sua aceitação. Tente novamente.'
 	},
 	forgot: {
@@ -515,7 +519,7 @@ const pt: typeof en = {
 		save: 'Salvar',
 		cancel: 'Cancelar',
 		usernameTitle: 'Usuário',
-		usernameHint: 'Seu nome de exibição e de login (3–50 caracteres).',
+		usernameHint: 'Seu nome de exibição e de login (3-50 caracteres).',
 		newUsername: 'Novo nome de usuário',
 		changeUsername: 'Alterar nome de usuário',
 		passwordTitle: 'Senha',
