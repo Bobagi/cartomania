@@ -24,7 +24,7 @@ function forwardedContextHeaders(request: Request): Record<string, string> {
 /**
  * Google OAuth callback. Verifies the CSRF `state`, then hands the single-use
  * `code` to the backend (which owns the client secret and does the exchange).
- * Two modes: 'login' (default — sets a fresh session) and 'link' (connects Google
+ * Two modes: 'login' (default - sets a fresh session) and 'link' (connects Google
  * to the already-signed-in account).
  */
 export const GET: RequestHandler = async ({ url, cookies, request, locals }) => {

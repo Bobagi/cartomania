@@ -1,12 +1,12 @@
 /*
- * Duel board layout — the immersive vertical "mesa" from the design handoff,
+ * Duel board layout - the immersive vertical "mesa" from the design handoff,
  * mapped onto Cartomania's tokens (gold theme, Exocet display font, CardComposite).
  * Only LAYOUT lives here; cards/flip/chooser/hand-fan/round-banner/endscreen come
  * from game.css + gameDuelPage.css.
  *
  * The felt (.lb__table) fills the WHOLE viewport; the opponent strip, the hand +
  * HUD strip, the battle log and the chooser are absolute OVERLAYS on top of it, so
- * the circular battlefield ARENA (.lb__arena — the played cards' creature art masked
+ * the circular battlefield ARENA (.lb__arena - the played cards' creature art masked
  * into a felt disc, top = opponent / bottom = you) is the focus and the hand sits on
  * top at the bottom, always visible.
  */
@@ -606,7 +606,7 @@
 }
 
 /* Power icons ride the disc's CIRCUMFERENCE (concentric `.lb__powers`). Each power is
-   rendered like a card attribute — the icon with its value centred on it (reusing
+   rendered like a card attribute - the icon with its value centred on it (reusing
    `.card-attribute-value` for the exact card font + outline). The AURA is a coloured GLOW on
    the ICON itself (drop-shadow → it traces the symbol's CONTOUR, not the number): green on
    hover / your chosen power, red on the opponent's. The picks spread along the lower arc; at

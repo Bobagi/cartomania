@@ -7,7 +7,7 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
 	const token = requireSessionToken(locals);
 	const body = await request.json().catch(() => ({}));
 	// The backend bumps tokenVersion (revoking OTHER sessions) and returns a fresh
-	// token for THIS device — re-set the cookie or the current session dies too.
+	// token for THIS device - re-set the cookie or the current session dies too.
 	const result = (await callBackendAuthed(token, '/auth/password', 'PATCH', {
 		currentPassword: body?.currentPassword,
 		newPassword: body?.newPassword

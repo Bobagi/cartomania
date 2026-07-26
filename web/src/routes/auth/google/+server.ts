@@ -13,7 +13,7 @@ import {
  *
  * Sets a random `state` in a short-lived HttpOnly cookie and echoes it in the
  * consent URL; the callback verifies they match (CSRF protection). The client
- * secret is NOT here — the backend performs the code exchange.
+ * secret is NOT here - the backend performs the code exchange.
  */
 export const GET: RequestHandler = ({ url, cookies }) => {
 	const clientId = env.GOOGLE_CLIENT_ID?.trim();

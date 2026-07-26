@@ -1,5 +1,5 @@
 /**
- * Card destruction effects — Burn / Dissolve / Crush.
+ * Card destruction effects - Burn / Dissolve / Crush.
  *
  * Faithful TypeScript port of the designer's `destruction.jsx` prototype, adapted
  * to our cards (raster art instead of SVG playing cards) and generalised to operate
@@ -13,7 +13,7 @@
  *   DOM debris (flash, shockwave, dust, shards) from the impact point.
  *
  * Everything is strictly confined to the card element (drop shadows / halos are
- * disabled during the effect — otherwise the SVG filter eats them too). The SVG
+ * disabled during the effect - otherwise the SVG filter eats them too). The SVG
  * filters live once in the DOM (see CardFxFilters.svelte); only one card destructs
  * at a time, which is all we need (the loser of a duel round).
  */

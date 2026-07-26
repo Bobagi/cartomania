@@ -37,7 +37,7 @@
 
 	// Seed consent from the server-resolved cookie, then load the analytics script
 	// ONLY once the visitor has accepted it (now, or on a return visit). The script
-	// is never present until consent.analytics is true — see $lib/consent/consent.
+	// is never present until consent.analytics is true - see $lib/consent/consent.
 	$: initConsent(data.consentCookie);
 	$: if (browser && $consent.analytics) loadAnalytics();
 
@@ -103,7 +103,7 @@
 	board) so no script ever loads without consent. -->
 <CookieBanner />
 
-<!-- Signed-in but hasn't accepted the current Terms/Privacy — blocking consent gate. -->
+<!-- Signed-in but hasn't accepted the current Terms/Privacy - blocking consent gate. -->
 {#if mustAcceptTerms}
 	<AgreementGate />
 {/if}

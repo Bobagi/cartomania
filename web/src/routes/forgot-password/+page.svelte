@@ -18,7 +18,7 @@
 				body: JSON.stringify({ email: emailInputValue.trim() })
 			});
 		} catch {
-			// swallow — we still show the neutral confirmation
+			// swallow - we still show the neutral confirmation
 		} finally {
 			submitting = false;
 			done = true;

@@ -16,7 +16,7 @@
 		aria-hidden="true"
 		style:height={bannerHeight ? `${bannerHeight}px` : null}
 	></div>
-	<!-- Non-blocking consent bar: a labelled landmark (not a modal — it traps no
+	<!-- Non-blocking consent bar: a labelled landmark (not a modal - it traps no
 		focus and the page stays usable behind it). -->
 	<div
 		class="cookie-banner"

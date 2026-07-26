@@ -49,7 +49,7 @@
 	const heroCardTitleImageUrl = '/frames/title.png';
 	const heroCardTiltClasses = ['tilt-left', 'tilt-center', 'tilt-right'];
 
-	// The three attributes a round can be fought on — the spine of the landing
+	// The three attributes a round can be fought on - the spine of the landing
 	// page, rendered with the same icons the cards and the duel board use.
 	const duelAttributes = [
 		{ key: 'magic', iconUrl: '/icons/magic_icon.png' },
@@ -206,7 +206,7 @@
 			? formatRelativeLastActivity(
 					Math.max(...myActiveCartomaniaGames.map((g) => extractLastActivityTimestamp(g) || 0))
 				)
-			: '—';
+			: '·';
 	$: statRank = 'Bronze I';
 	$: backendStatusIcon = backendHealthMessage.toLowerCase().includes('online')
 		? '🟢'

@@ -1,5 +1,5 @@
 /**
- * Void Flames — an ambient particle effect for the duel arena.
+ * Void Flames - an ambient particle effect for the duel arena.
  *
  * Dark, smoky "flame tongues" emanate OUTWARD from each played card's art into the empty
  * space of the circular battlefield, like the black/void flames in games such as
@@ -7,7 +7,7 @@
  * emanates from, so the flames bleed the card's own border colours.
  *
  * Same family as the card destruction FX (`cardDestruction.ts`): a requestAnimationFrame
- * loop driving a <canvas> particle system — ambient/continuous, confined to the disc, and
+ * loop driving a <canvas> particle system - ambient/continuous, confined to the disc, and
  * it NEVER touches the art's pixels/edges.
  *
  * The engine self-discovers emitters each frame by querying `.lb__arena-art` inside the
@@ -93,7 +93,7 @@ interface Emitter {
 }
 
 const MAX_PARTICLES = 560;
-const RATE_PER_EMITTER = 96; // particles/sec — dense enough to fill a half
+const RATE_PER_EMITTER = 96; // particles/sec - dense enough to fill a half
 
 export class VoidFlames {
 	private canvas: HTMLCanvasElement;
@@ -116,7 +116,7 @@ export class VoidFlames {
 
 	start(): void {
 		if (this.running || !this.ctx) return;
-		// Accessibility: honour reduced-motion — skip the animated particle flames entirely.
+		// Accessibility: honour reduced-motion - skip the animated particle flames entirely.
 		if (
 			typeof window !== 'undefined' &&
 			window.matchMedia?.('(prefers-reduced-motion: reduce)').matches

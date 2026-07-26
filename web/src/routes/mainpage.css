@@ -75,7 +75,7 @@
  * A game landing page, not a login screen: a hero that states the one decision
  * a round asks of you, then the three attributes, how a round plays, the real
  * collection, and a closing call. The three attribute icons are the page's
- * structural spine — the same art the cards and the duel board use.
+ * structural spine - the same art the cards and the duel board use.
  */
 .landing {
 	width: min(1120px, 100%);
@@ -91,13 +91,13 @@
 	position: relative;
 	/* The cards ARE the pitch, so the hero is a single centred stage: title and
 	   promise, then the card fan front-and-centre, then the play call. Login is not
-	   here — it lives in a quiet panel at the bottom (#login) for returning players. */
+	   here - it lives in a quiet panel at the bottom (#login) for returning players. */
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	text-align: center;
-	gap: clamp(12px, 1.6vw, 18px);
-	padding-top: clamp(4px, 1.5vw, 16px);
+	gap: clamp(14px, 2vw, 22px);
+	padding-top: clamp(2px, 1vw, 10px);
 }
 
 .landing-hero {
@@ -270,7 +270,7 @@
 	margin: 0;
 	position: relative;
 	z-index: 1;
-	max-width: 54ch;
+	max-width: 62ch;
 	color: var(--text);
 	opacity: 0.9;
 	font-size: clamp(16px, 1.7vw, 19px);
@@ -310,7 +310,7 @@
 	opacity: 0.8;
 }
 
-/* Quiet "already have an account?" shortcut to the #login panel — a returning
+/* Quiet "already have an account?" shortcut to the #login panel - a returning
    player's escape hatch that never competes with the Play button. */
 .hero-login-link {
 	color: var(--gold-1);
@@ -335,7 +335,7 @@
 	border-radius: 4px;
 }
 
-/* The card fan is the hero's centrepiece, standing on a lit arena disc — the same
+/* The card fan is the hero's centrepiece, standing on a lit arena disc - the same
    shape the duel board uses. */
 .hero-art {
 	position: relative;
@@ -355,19 +355,22 @@
 	position: absolute;
 	top: 50%;
 	left: 50%;
-	width: min(560px, 96%);
+	/* Kept a touch smaller and softer than before so the spinning rim and its glow
+	   stay behind the cards instead of bleeding up into the promise text and down
+	   into the buttons, which made both harder to read. */
+	width: min(480px, 88%);
 	max-width: 100%;
 	aspect-ratio: 1;
 	transform: translate(-50%, -50%);
 	border-radius: 50%;
-	border: 1px solid rgba(214, 178, 92, 0.28);
+	border: 1px solid rgba(214, 178, 92, 0.22);
 	background: radial-gradient(
 		circle at 50% 55%,
-		rgba(231, 178, 74, 0.16),
-		rgba(231, 178, 74, 0.05) 46%,
-		transparent 68%
+		rgba(231, 178, 74, 0.14),
+		rgba(231, 178, 74, 0.04) 42%,
+		transparent 60%
 	);
-	box-shadow: 0 0 70px rgba(231, 178, 74, 0.14);
+	box-shadow: 0 0 48px rgba(231, 178, 74, 0.1);
 	animation: heroRingSpin 46s linear infinite;
 	pointer-events: none;
 }
@@ -391,9 +394,9 @@
 	align-items: flex-end;
 	justify-content: center;
 	/* Card width drives the overlap, so the fan keeps every name readable at any
-	   size — a fixed negative margin used to swallow the outer two titles. Sized so
+	   size - a fixed negative margin used to swallow the outer two titles. Sized so
 	   the whole fan + the Play call fit above the fold on a laptop. */
-	--hero-card-w: clamp(140px, 17vw, 224px);
+	--hero-card-w: clamp(138px, 16vw, 210px);
 }
 
 .hero-card {
@@ -443,7 +446,7 @@
 	color: var(--danger);
 }
 
-/* Login panel — the last section of the landing (#login), for players who already
+/* Login panel - the last section of the landing (#login), for players who already
    have an account. Quiet by design (neutral submit, no gold) so it never competes
    with the hero's Play call. Reached fast via the top-bar "Log in" link. */
 .lp-login {
@@ -622,7 +625,7 @@
 
 .attr-name {
 	margin: 0;
-	/* Exocet — the same face the cards print MAGIC / MIGHT / FIRE in, so the page
+	/* Exocet - the same face the cards print MAGIC / MIGHT / FIRE in, so the page
 	   and the cards speak one language. */
 	font-family: 'Draco', 'Morpheus', system-ui, sans-serif;
 	font-size: clamp(19px, 2.2vw, 25px);
@@ -732,7 +735,7 @@
 }
 
 /* `safe` centres the rail when the whole set fits and falls back to flex-start
-   when it doesn't — plain `center` on an overflowing flex row pushes the first
+   when it doesn't - plain `center` on an overflowing flex row pushes the first
    card past the left edge where it can never be scrolled back into view. */
 @media (min-width: 1180px) {
 	.collection-rail {
@@ -1086,7 +1089,7 @@
 	}
 }
 
-/* Decorative motion only — no information is carried by the embers or the ring. */
+/* Decorative motion only - no information is carried by the embers or the ring. */
 @media (prefers-reduced-motion: reduce) {
 	.hero-embers {
 		display: none;

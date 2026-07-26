@@ -35,24 +35,24 @@ const es: typeof en = {
 		kicker: 'Duelo de Cartas Coleccionables',
 		serverLabel: 'Servidor',
 		promise:
-			'Dos dragones salen a la mesa. Tú eliges el atributo que crees que gana — magia, fuerza o fuego. Si aciertas, las dos cartas son tuyas.',
+			'Dragones, guerreros y criaturas míticas se enfrentan en la mesa. Eliges el atributo que crees que gana la ronda: magia, fuerza o fuego. Si aciertas, las dos cartas son tuyas.',
 		playCta: 'Juega tu primer duelo',
 		playNote: 'Gratis, directo en el navegador.',
 		galleryCta: 'Ver las cartas',
 		attributes: {
 			title: 'Tres formas de ganar la ronda',
-			subtitle: 'Cada dragón lleva los tres. Solo cuenta el atributo que tú elijas.',
+			subtitle: 'Cada carta lleva los tres. Solo cuenta el atributo que tú elijas.',
 			magic: {
 				name: 'Magia',
 				text: 'Poder arcano. La carta que perdería a golpes suele ganar con el hechizo.'
 			},
 			might: {
 				name: 'Fuerza',
-				text: 'Fuerza bruta. La elección segura, y por qué los dragones pesados siguen siendo peligrosos.'
+				text: 'Fuerza bruta. La elección segura, y lo que mantiene peligrosos a los pesados.'
 			},
 			fire: {
 				name: 'Fuego',
-				text: 'Aliento de dragón. La mayor variación del tablero, y por eso la apuesta más audaz.'
+				text: 'Llama ardiente. La mayor variación del tablero, y por eso la apuesta más audaz.'
 			}
 		},
 		how: {
@@ -61,7 +61,7 @@ const es: typeof en = {
 			revealTitle: 'Revelar',
 			revealText: 'Ambos duelistas juegan una carta de su mano. La arena las voltea a la vez.',
 			clashTitle: 'Enfrentar',
-			clashText: 'Uno de los duelistas elige el atributo. Ambos dragones valen solo ese número.',
+			clashText: 'Uno de los duelistas elige el atributo. Ambas cartas valen solo ese número.',
 			captureTitle: 'Capturar',
 			captureText:
 				'El valor más alto se lleva las dos cartas. Cuando una mano se acaba, la pila mayor gana la partida.'
@@ -69,12 +69,12 @@ const es: typeof en = {
 		collection: {
 			title: 'La colección Dracomania',
 			subtitle:
-				'{count} dragones pintados a mano, cada uno con su magia, fuerza y fuego. Aprende los números y sabrás qué atributo elegir.',
+				'{count} dragones, guerreros y criaturas míticas pintados a mano, cada uno con su magia, fuerza y fuego. Aprende los números y sabrás qué atributo elegir.',
 			cta: 'Ver todas las cartas'
 		},
 		finalCta: {
 			title: 'La arena está abierta',
-			text: 'Crea una cuenta y en segundos estarás duelando — contra el bot de la casa, o contra un amigo al que retes.',
+			text: 'Crea una cuenta y en segundos estarás duelando, contra el bot de la casa o contra un amigo al que retes.',
 			button: 'Juega tu primer duelo'
 		},
 		auth: {

@@ -43,7 +43,7 @@
 	export const REVEAL_EXTRA_BUFFER_MS = 400;
 
 	// The server (DuelProgressionService) is the single authority for turn timeouts and
-	// round advancement. The client never drives the game — it only renders the latest
+	// round advancement. The client never drives the game - it only renders the latest
 	// server state (polled) and sends real moves. Flip this on only to debug locally.
 	const CLIENT_DRIVES_TIMEOUTS = false;
 	const STATE_POLL_INTERVAL_MS = 1000;
@@ -144,13 +144,13 @@
 	let opponentHandContainerElement: HTMLDivElement | null = null;
 	let centerSlotAElement: HTMLDivElement | null = null;
 	let centerSlotBElement: HTMLDivElement | null = null;
-	// The arena creature-art <img>s — the destruction target for the art-only layout.
+	// The arena creature-art <img>s - the destruction target for the art-only layout.
 	// The old card result-wraps (centerSlot{A,B}Element) still take priority when present,
 	// so the burn/dissolve/crush keeps working on BOTH representations (cards AND art).
 	let arenaArtYouElement: HTMLImageElement | null = null;
 	let arenaArtOppElement: HTMLImageElement | null = null;
 	// Ambient void-flame particle effect (canvas inside the arena disc; colours sampled
-	// from each played card's art — see voidFlames.ts).
+	// from each played card's art - see voidFlames.ts).
 	let arenaEl: HTMLDivElement | null = null;
 	let flamesCanvasEl: HTMLCanvasElement | null = null;
 	let voidFlames: VoidFlames | null = null;
@@ -465,7 +465,7 @@
 				const newOppCount = Array.isArray(state.hands?.[opp]) ? state.hands[opp].length : 0;
 
 				if (state.mode === 'ATTRIBUTE_DUEL' && state.duelStage === 'REVEAL') {
-					// Animate the flip/defeat only once per reveal — polling re-runs this block.
+					// Animate the flip/defeat only once per reveal - polling re-runs this block.
 					if (previousDuelStage !== 'REVEAL') {
 						centerRevealCycle++;
 					}
@@ -631,7 +631,7 @@
 			mode === 'magic' ? 'dissolve' : mode === 'might' ? 'crush' : 'burn';
 		const destroyer = new CardDestroyer({ card: loserEl, wrap, canvas });
 		destroyer.play(type, { ...DESTRUCTION_DEFAULTS, destructDuration: 1.4 });
-		// Do NOT reset — the card stays consumed/crushed until the round advances and
+		// Do NOT reset - the card stays consumed/crushed until the round advances and
 		// the slot clears it. (Resetting made it "reappear whole" before advancing.)
 		activeDestruction = { destroyer, canvas, card: loserEl, wrap };
 	}
@@ -640,7 +640,7 @@
 		const winner = currentDuelRoundWinner;
 		if (!winner) return null;
 		// Prefer the whole-card element when it's rendered (old method); otherwise fall
-		// back to the arena creature-art <img> (new method) — so the FX works on both.
+		// back to the arena creature-art <img> (new method) - so the FX works on both.
 		if (winner === playerA) return centerSlotBElement ?? arenaArtOppElement;
 		if (winner === playerB) return centerSlotAElement ?? arenaArtYouElement;
 		return null;
@@ -1023,7 +1023,7 @@
 	<section class="lb__table">
 		<!-- Circular battlefield arena (art only): the played card's creature ART is masked into the
 		     felt disc, sized to the circle's vertical RADIUS and centred (the left/right sides stay
-		     empty by design — reserved for later). Rotating arcane rings add motion, and the attribute
+		     empty by design - reserved for later). Rotating arcane rings add motion, and the attribute
 		     selector lives INSIDE the disc (lower-inner): an icon + value per power; click one to choose. -->
 		<div class="lb__arena-rings" aria-hidden="true">
 			<span class="lb__arena-ring lb__arena-ring--1"></span>
@@ -1114,7 +1114,7 @@
 			{/if}
 		</div>
 
-		<!-- Round-result banner intentionally hidden — the clash orbs now convey the outcome. -->
+		<!-- Round-result banner intentionally hidden - the clash orbs now convey the outcome. -->
 
 		<div class="lb__notices">
 			{#if duelStage === 'PICK_ATTRIBUTE' && chooserId !== playerA}

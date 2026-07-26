@@ -3,7 +3,7 @@
  *
  * The only non-essential script the site loads is privacy-friendly, self-hosted
  * Umami analytics. We never load it until the visitor has explicitly accepted
- * analytics in the consent banner — that is the whole point of this module:
+ * analytics in the consent banner - that is the whole point of this module:
  *   - essential cookies (session, language, this consent choice) always work;
  *   - the analytics script is injected lazily, client-side, ONLY after consent.
  *
@@ -16,7 +16,7 @@ import { writable } from 'svelte/store';
 /** Cookie that persists the visitor's consent choice across requests. */
 export const CONSENT_COOKIE = 'cartomania_consent';
 
-/** A year, in seconds — same lifetime as the language cookie. */
+/** A year, in seconds - same lifetime as the language cookie. */
 const CONSENT_MAX_AGE = 31_536_000;
 
 /** Self-hosted, cookieless analytics. Loaded only after the user accepts. */

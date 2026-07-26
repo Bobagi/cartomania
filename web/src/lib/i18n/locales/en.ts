@@ -1,4 +1,4 @@
-// English — the canonical dictionary; its shape is the source of truth for the
+// English - the canonical dictionary; its shape is the source of truth for the
 // other locales (see src/lib/i18n/index.ts).
 const en = {
 	language: {
@@ -60,7 +60,7 @@ const en = {
 			revealTitle: 'Reveal',
 			revealText: 'Both duelists commit one card from their hand. The arena flips them together.',
 			clashTitle: 'Clash',
-			clashText: 'One duelist calls the attribute. Both dragons are read on that value alone.',
+			clashText: 'One duelist calls the attribute. Both cards are read on that value alone.',
 			captureTitle: 'Capture',
 			captureText:
 				'The higher value takes both cards. When a hand runs out, the bigger pile wins the match.'

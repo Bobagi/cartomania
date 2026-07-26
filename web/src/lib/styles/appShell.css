@@ -1,5 +1,5 @@
 /*
- * Cartomania app shell — the global design system loaded by the root layout, so
+ * Cartomania app shell - the global design system loaded by the root layout, so
  * every route shares one cohesive "dark fantasy / Dracomania gold" look:
  * design tokens, the atmospheric background, the top bar / footer, and the
  * shared button + input primitives used across all screens.
@@ -17,7 +17,7 @@
 }
 
 @font-face {
-	/* Morpheus — used ONLY for the "CARTOMANIA" brand title (top bar, footer, landing
+	/* Morpheus - used ONLY for the "CARTOMANIA" brand title (top bar, footer, landing
 	   hero). All other UI text uses the readable system-ui stack. On cards: name banner. */
 	font-family: 'Morpheus';
 	src: url('/fonts/Morpheus.ttf') format('truetype');
@@ -202,7 +202,7 @@ body {
 	gap: 12px;
 }
 
-/* Compact ghost "Log in" for logged-out visitors — present but never louder than
+/* Compact ghost "Log in" for logged-out visitors - present but never louder than
    the hero's Play call. */
 .topbar-login {
 	padding: 8px 16px;
@@ -397,12 +397,16 @@ body {
 }
 
 .button-ghost {
-	background: rgba(255, 255, 255, 0.03);
+	/* Opaque-ish dark fill + blur so whatever moves behind it (the hero's animated
+	   rings and card art) is frosted out and the label stays readable. */
+	background: rgba(14, 18, 30, 0.62);
+	backdrop-filter: blur(8px) saturate(1.1);
+	-webkit-backdrop-filter: blur(8px) saturate(1.1);
 	border-color: var(--border-strong);
 	color: var(--gold-1);
 }
 .button-ghost:hover {
-	background: rgba(231, 178, 74, 0.1);
+	background: rgba(231, 178, 74, 0.16);
 }
 
 .button-danger {
@@ -424,7 +428,7 @@ body {
 	pointer-events: none;
 }
 
-/* Visible keyboard focus for all shared buttons (was missing site-wide — only
+/* Visible keyboard focus for all shared buttons (was missing site-wide - only
    inputs had a focus style). Uses the gold focus-ring token. */
 .button:focus-visible {
 	outline: none;

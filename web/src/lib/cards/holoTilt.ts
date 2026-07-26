@@ -1,5 +1,5 @@
 /**
- * Holographic tilt loop — port of the designer's iridescent-card rAF loop.
+ * Holographic tilt loop - port of the designer's iridescent-card rAF loop.
  * Tracks the pointer over a scene element and drives CSS custom properties on the
  * card (`--rx/--ry/--lift/--mx/--my/--irid-x/--irid-y/--irid-angle/--sheen-pos/
  * --hover`) so the foil layers (.cardfx-foil / .cardfx-glow in cardFx.css) shift and

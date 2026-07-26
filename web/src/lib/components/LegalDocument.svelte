@@ -55,7 +55,7 @@
 					<ul>
 						{#each section.items as item}
 							<li>
-								{#if item.strong}<strong>{item.strong}</strong> —
+								{#if item.strong}<strong>{item.strong}</strong>:
 								{/if}{item.text}
 							</li>
 						{/each}

@@ -35,17 +35,17 @@
 
 	const STORAGE_KEY = 'cardfx-tweaks-v1';
 
-	// Card-text styling defaults — must match the fallbacks in game/fonts.css and the
+	// Card-text styling defaults - must match the fallbacks in game/fonts.css and the
 	// prop defaults in CardComposite. Tune here, then bake the exported values there.
 	const CARD_TEXT_DEFAULTS = {
 		ccOutlineColor: '#000000',
 		ccOutlineSize: 0.09, // em-fraction; visible outline = this × 1em (stroke is doubled internally)
 		ccTextColor: '#ffffff',
 		// elastic title banner (must match the CSS fallbacks in CardComposite)
-		ccBannerH: 25, // cqh — banner height
+		ccBannerH: 25, // cqh - banner height
 		ccBannerTop: 2.2, // %
 		ccBannerRight: 1, // %
-		ccBannerMin: 21, // cqw — min ribbon width (short names)
+		ccBannerMin: 21, // cqw - min ribbon width (short names)
 		ccNameFactor: 0.29, // name font = banner height * this
 		ccNumFactor: 0.26, // number font = banner height * this
 		ccNumX: 50.5, // % within the right ornament
@@ -287,7 +287,7 @@
 			</div>
 		{/each}
 
-		<h2>Card text — fonts</h2>
+		<h2>Card text - fonts</h2>
 		<div class="row">
 			<label for="cnf">Name font</label>
 			<select id="cnf" bind:value={t.ccNameFont}>
@@ -317,7 +317,7 @@
 			</select>
 		</div>
 
-		<h2>Card text — size / outline / position</h2>
+		<h2>Card text - size / outline / position</h2>
 		<div class="row">
 			<label for="tc">Text color</label>
 			<input id="tc" type="color" bind:value={t.ccTextColor} />

@@ -65,7 +65,7 @@
 }
 
 /* The opponent's hidden field card: show the whole card-back (it has a narrower
-   native aspect than the slot — 0.6656 vs 0.7521 — so `contain`, never `cover`,
+   native aspect than the slot - 0.6656 vs 0.7521 - so `contain`, never `cover`,
    which would clip its ornate top/bottom border). Matches the flip-back. */
 .slot-placeholder.bot-card-back img {
 	width: 100%;

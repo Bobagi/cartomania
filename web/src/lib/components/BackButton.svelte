@@ -33,7 +33,7 @@
 {/if}
 
 <style>
-	/* Shared "back" control — modelled on the Friends panel's ghost pill so every
+	/* Shared "back" control - modelled on the Friends panel's ghost pill so every
 	   screen's back affordance looks identical (rounded pill, muted → gold on hover). */
 	.back-button {
 		display: inline-flex;

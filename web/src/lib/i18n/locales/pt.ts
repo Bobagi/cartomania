@@ -61,7 +61,7 @@ const pt: typeof en = {
 			revealTitle: 'Revelar',
 			revealText: 'Os dois duelistas jogam uma carta da mão. A arena vira as duas juntas.',
 			clashTitle: 'Confrontar',
-			clashText: 'Um dos duelistas escolhe o atributo. Os dois dragões valem só aquele número.',
+			clashText: 'Um dos duelistas escolhe o atributo. As duas cartas valem só aquele número.',
 			captureTitle: 'Capturar',
 			captureText:
 				'O maior valor leva as duas cartas. Quando uma mão acaba, quem tem a pilha maior vence a partida.'
@@ -103,7 +103,7 @@ const pt: typeof en = {
 			readySub: 'Inicie um Duelo de Atributos contra o bot e aumente sua coleção de vitórias.',
 			startDuel: 'Iniciar Duelo',
 			yourGames: 'Seus jogos ativos',
-			noGames: 'Nenhum jogo ativo ainda — inicie um duelo acima.',
+			noGames: 'Nenhum jogo ativo ainda. Inicie um duelo acima.',
 			mode: 'Modo',
 			updated: 'Atualizado',
 			resume: 'Retomar',
@@ -260,7 +260,7 @@ const pt: typeof en = {
 		errorSurrender: 'Não foi possível se render.',
 		playerSurrendered: 'Um jogador se rendeu.',
 		historyTitle: 'Registro de Batalha',
-		historyEmpty: 'Nenhuma rodada ainda — escolha uma carta para começar o duelo.',
+		historyEmpty: 'Nenhuma rodada ainda. Escolha uma carta para começar o duelo.',
 		historyRound: 'Rodada {n}',
 		historyLive: 'AO VIVO',
 		historyTie: 'Empate',
@@ -338,7 +338,7 @@ const pt: typeof en = {
 		privacy: {
 			title: 'Política de Privacidade',
 			intro:
-				'O Cartomania é um projeto de portfólio gratuito e não comercial — um jogo de cartas colecionáveis digital criado para apresentar a coleção Dracomania. Esta página explica, em linguagem simples, quais informações o jogo manipula e por quê. Coletamos o mínimo possível e nunca vendemos seus dados.',
+				'O Cartomania é um projeto de portfólio gratuito e não comercial: um jogo de cartas colecionáveis digital criado para apresentar a coleção Dracomania. Esta página explica, em linguagem simples, quais informações o jogo manipula e por quê. Coletamos o mínimo possível e nunca vendemos seus dados.',
 			contactHeading: 'Contato',
 			contactText: 'Dúvidas sobre privacidade? Entre em contato pelo',
 			sections: [
@@ -386,7 +386,7 @@ const pt: typeof en = {
 				{
 					heading: 'Análises',
 					paragraphs: [
-						'Com o seu consentimento, o Cartomania carrega um script de análises próprio e focado em privacidade (Umami, servido de analytics.bobagi.space) para medir o uso agregado, como visualizações de página e visitas. Ele não usa cookies, não coleta informações pessoais e nunca rastreia você por outros sites. O script só é carregado depois que você aceita as análises no banner de consentimento — se você escolher “Apenas essenciais”, ele nunca é carregado. Você pode mudar sua decisão a qualquer momento pelo link “Preferências de cookies” no rodapé.'
+						'Com o seu consentimento, o Cartomania carrega um script de análises próprio e focado em privacidade (Umami, servido de analytics.bobagi.space) para medir o uso agregado, como visualizações de página e visitas. Ele não usa cookies, não coleta informações pessoais e nunca rastreia você por outros sites. O script só é carregado depois que você aceita as análises no banner de consentimento. Se você escolher “Apenas essenciais”, ele nunca é carregado. Você pode mudar sua decisão a qualquer momento pelo link “Preferências de cookies” no rodapé.'
 					],
 					items: []
 				},

@@ -63,7 +63,7 @@ export function selectFeaturedHeroCards(
 	return chosen;
 }
 
-/** Total number of cards in the catalog — the landing quotes it as real proof. */
+/** Total number of cards in the catalog - the landing quotes it as real proof. */
 export function countCatalogCards(collections: CartomaniaCardCollection[]): number {
 	return collections.reduce((total, collection) => total + (collection.cards?.length ?? 0), 0);
 }
