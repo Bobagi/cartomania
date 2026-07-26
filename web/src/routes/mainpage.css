@@ -418,7 +418,11 @@
 	transform: rotate(8deg) translateY(12px);
 }
 .hero-card.tilt-center {
-	transform: translateY(-14px) scale(1.07);
+	/* No scale: all three hero cards render at the SAME size, exactly like the cards
+	   everywhere else on the site. The centre card is still brought forward with a
+	   lift (translateY), a higher z-index and a soft glow, so the fan keeps its
+	   depth without making the middle card a different size from its neighbours. */
+	transform: translateY(-16px);
 	box-shadow:
 		0 26px 60px rgba(0, 0, 0, 0.6),
 		0 0 44px rgba(231, 178, 74, 0.32);

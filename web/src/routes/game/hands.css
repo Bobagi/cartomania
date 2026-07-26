@@ -5,13 +5,25 @@
 	position: relative;
 	display: block;
 	width: 100%;
-	height: clamp(138px, 23vh, 215px);
+	/* Single source of truth for the hand card height; the socket derives its width
+	   from it with the exact 1444/1920 ratio baked in (see below). */
+	--card-h: clamp(138px, 23vh, 215px);
+	height: var(--card-h);
 }
 .hand.fan .card-socket {
 	position: absolute;
 	top: 50%;
 	left: 50%;
-	aspect-ratio: 1444/1920;
+	/* EXPLICIT width AND height so every hand card renders at the exact 1444/1920
+	   card ratio, identical to the gallery/hero. aspect-ratio ALONE was not enough
+	   here: the inner CardComposite is container-type:size (it cannot take its size
+	   from its content), so with only aspect-ratio the socket/flip-wrap chain left
+	   the socket a touch wide and the card overflowed it. Deriving the width from the
+	   fixed height with the ratio baked in removes that ambiguity. Every card on the
+	   site MUST render at 1444/1920 - measure with offsetWidth/Height (NOT
+	   getBoundingClientRect, which includes the fan rotation and lies). */
+	height: var(--card-h);
+	width: calc(var(--card-h) * 1444 / 1920);
 	background: transparent;
 	border: none;
 	padding: 0;
