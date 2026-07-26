@@ -476,6 +476,18 @@ web/                         SvelteKit frontend
 
 ## Status (update as you go)
 
+- **Landing polish + em dash purge (2026-07-26).** Owner feedback pass on the hero: (1) **Copy is now
+  truthful** in en/pt/es. It used to say "two dragons" / "hand-painted dragons", but the Dracomania set
+  is 32 cards, only 10 of them dragons (rest: warriors, mages, mythic creatures). Verify future copy
+  against the real catalog (`curl -s http://localhost:3056/game/cards` or `prisma/seed.ts`). (2) **The em
+  dash (U+2014) is BANNED app-wide** and is now a global standing rule (`~/.claude/CLAUDE.md` +
+  `Bobagi/claude-skills` `config/CLAUDE.md`): all UI strings reworded, all code comments use a plain
+  hyphen. Check: `grep -rnP "\x{2014}" web/src` must be empty. (3) `.button-ghost` (the hero's "See the
+  cards") got a dark ~0.62 fill + `backdrop-filter: blur()` so animated art behind it is frosted and the
+  label stays readable. (4) The hero `.hero-art-ring` was shrunk + softened and the `.lp-hero` gap grown
+  so the spinning rings stay behind the cards instead of bleeding into the copy/buttons; card size, gap
+  and promise width re-tuned so the Play CTA still clears the cookie bar above the fold at 1440.
+
 - **Account/email suite — password reset, email verification, Google linking, session revocation
   (2026-07-26, CoinHub-modelled).** Registration now takes an **email** (unique, verified). Added
   transactional email (`nodemailer`, config-driven; live via the owner's Gmail app password), one-time
