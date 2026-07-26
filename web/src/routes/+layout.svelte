@@ -30,7 +30,13 @@
 	};
 
 	// Block the app for a signed-in user who hasn't accepted the current legal terms.
-	$: mustAcceptTerms = data?.authUser !== null && data?.termsAccepted === false;
+	// EXCEPT on the pages they need in order TO decide: the legal documents themselves
+	// (so they can actually read the Terms/Privacy the gate links to) and the public
+	// auth flows (reset/verify). The gate reappears the moment they navigate elsewhere.
+	$: gateExemptRoute = /^\/(terms|privacy|forgot-password|reset-password|verify-email|auth\/)/.test(
+		$page.url?.pathname ?? ''
+	);
+	$: mustAcceptTerms = data?.authUser !== null && data?.termsAccepted === false && !gateExemptRoute;
 
 	// Keep the i18n store in sync with the locale the server resolved (cookie or
 	// Accept-Language). Runs during SSR and on every client navigation.
