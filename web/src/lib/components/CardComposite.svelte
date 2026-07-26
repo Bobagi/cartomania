@@ -135,14 +135,14 @@
 	aria-label={titleText ?? 'card'}
 	title={tooltipText}
 	class="card-font"
-	style={`position:relative;width:100%;aspect-ratio:${aspectWidth}/${aspectHeight};overflow:hidden;border-radius:5px;transform:translateZ(0) perspective(900px);will-change:transform;container-type:size;container-name:card;`}
+	style={`position:relative;width:100%;aspect-ratio:${aspectWidth}/${aspectHeight};overflow:hidden;border-radius:5px;background:#0d0a12;transform:translateZ(0) perspective(900px);will-change:transform;container-type:size;container-name:card;`}
 >
 	<div style="position:absolute;inset:0;display:flex;flex-direction:column;width:100%;height:100%;">
 		<div style="position:relative;width:100%;height:70%;z-index:0;">
 			<img
 				src={artImageUrl}
 				alt={titleText ?? 'card-art'}
-				style={`position:absolute;inset:0;width:100%;height:100%;object-fit:${artObjectFit};display:block;padding: 6% 6% 0 6%;`}
+				style={`position:absolute;inset:0;width:100%;height:100%;object-fit:${artObjectFit};display:block;padding: 4% 4% 0 4%;`}
 				loading="lazy"
 				decoding="async"
 				draggable="false"
