@@ -9,6 +9,7 @@ export interface AuthenticatedCartomaniaUser {
 	emailVerified?: boolean;
 	hasPassword?: boolean;
 	googleLinked?: boolean;
+	googleAvatarUrl?: string | null;
 }
 
 export interface CartomaniaGameStatistics {

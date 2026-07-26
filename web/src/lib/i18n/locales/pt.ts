@@ -516,6 +516,7 @@ const pt: typeof en = {
 		title: 'Configurações da conta',
 		back: 'Voltar',
 		chooseAvatar: 'Escolha seu avatar',
+		googlePhoto: 'Sua foto do Google',
 		save: 'Salvar',
 		cancel: 'Cancelar',
 		usernameTitle: 'Usuário',

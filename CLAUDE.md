@@ -92,6 +92,14 @@ their discard pile; whoever captured more cards when a hand empties wins the mat
   use `offsetWidth/offsetHeight`, NEVER `getBoundingClientRect` - the latter includes the fan's
   `rotate()` and reports a false, stretched aspect (this sent a whole debugging pass chasing a
   non-bug). Confirm with a pixel-diff of the SAME card in two contexts.**
+  **Transparency between art and frame (fixed 2026-07-26):** `CardComposite` gives the art `padding: 4%`
+  (was 6%) so it slides UNDER the frame's opaque border (~6%/94% window) with overlap, and the root has
+  an opaque `background:#0d0a12`. With 6% padding the art ended EXACTLY at the frame's window edge, so
+  sub-pixel rounding left a see-through sliver on the sides; harmless on dark surfaces but in the hero
+  fan (overlapping cards) it showed the card BEHIND, which reads as "the art is too small, with side
+  gaps". Keep the padding < the frame border and keep the opaque bg. Method that PROVED it: put a bright
+  red plane behind the cards and check no red bleeds through (the only red left should be a card's own
+  art). Do this whenever art sits inside a PNG frame with a transparent window.
 
 ### Deploy the FRONTEND (after editing anything in `web/`)
 ```bash
@@ -494,6 +502,18 @@ web/                         SvelteKit frontend
 
 ## Status (update as you go)
 
+- **Account admin + Google avatar as a pick (2026-07-26).** Owner requests: (1) **seed only creates
+  `admin`** now (removed `alice`), and `admin` gets `email=bobagi.contact@gmail.com` + `emailVerified`
+  (`prisma/seed.ts`; the seed no longer needs `ALICE_PASSWORD`). Applied live too: `alice` hard-deleted
+  via the app endpoint, `Bobagi` promoted to ADMIN (direct UPDATE). (2) **The Google profile photo is now a
+  permanent avatar pick.** New `Player.googleAvatarUrl` (migration `20260726120000`, with a backfill of
+  existing Google accounts) is kept separate from `avatarUrl` (the current choice); set on Google
+  login/link/refresh, cleared on unlink. `AvatarPicker` shows it as the first option (blue ring + "G"
+  badge) so a user who switched to card art can go back to their Google photo. NOTE: the dashboard reads
+  the user from the session-cookie snapshot, so `googleAvatarUrl` shows up after a login that included it
+  (the real Google login already does). **Account note:** logging in with Google created a SEPARATE account
+  `Gustavo` (Google email + photo) because `Bobagi` had no email to auto-link by. To consolidate, the owner
+  can add an email to `Bobagi` and connect Google there, or keep using `Gustavo`.
 - **Landing polish + em dash purge (2026-07-26).** Owner feedback pass on the hero: (1) **Copy is now
   truthful** in en/pt/es. It used to say "two dragons" / "hand-painted dragons", but the Dracomania set
   is 32 cards, only 10 of them dragons (rest: warriors, mages, mythic creatures). Verify future copy

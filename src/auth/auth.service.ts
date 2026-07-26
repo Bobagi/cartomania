@@ -25,7 +25,7 @@ import { GoogleUserInfo } from './google-oauth.service';
 
 /** bcrypt work factor. 12 is the current sane minimum for a public app. */
 const BCRYPT_ROUNDS = 12;
-/** bcrypt silently truncates at 72 bytes — reject longer so nothing is ignored. */
+/** bcrypt silently truncates at 72 bytes - reject longer so nothing is ignored. */
 const PASSWORD_MIN = 8;
 const PASSWORD_MAX = 72;
 const USERNAME_MIN = 3;
@@ -37,14 +37,14 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 /**
  * A REAL bcrypt hash (cost 12) of a throwaway string. Used as the decoy on the
  * "user does not exist" login branch so bcrypt.compare actually runs the KDF and
- * the response time matches the real-user branch — closes the timing oracle that
+ * the response time matches the real-user branch - closes the timing oracle that
  * would otherwise leak whether a username exists (an invalid hash short-circuits).
  * Not a secret: it verifies nothing.
  */
 const LOGIN_TIMING_DECOY_HASH =
   '$2a$12$8D175VdYl9XpvepjQ.sVF.VJVKonCt7i3lQm./6g9FA5ypBbckdqK';
 
-/** Login lockout (per submitted username). Temporary — never permanent. Keyed on
+/** Login lockout (per submitted username). Temporary - never permanent. Keyed on
  *  the submitted username (real OR not) so a lockout can't become an existence
  *  oracle. Complements the edge (nginx rate-limit + fail2ban) which caps per IP. */
 const LOGIN_MAX_FAILS = 10;
@@ -113,6 +113,7 @@ export class AuthService {
       emailVerified: player.emailVerified,
       hasPassword: Boolean(player.passwordHash),
       googleLinked: Boolean(player.googleId),
+      googleAvatarUrl: player.googleAvatarUrl ?? null,
     };
   }
 
@@ -120,7 +121,7 @@ export class AuthService {
     const username = (raw ?? '').trim();
     if (username.length < USERNAME_MIN || username.length > USERNAME_MAX)
       throw new BadRequestException(
-        `Username must be ${USERNAME_MIN}–${USERNAME_MAX} characters`,
+        `Username must be ${USERNAME_MIN}-${USERNAME_MAX} characters`,
       );
     return username;
   }
@@ -129,7 +130,7 @@ export class AuthService {
     const password = raw ?? '';
     if (password.length < PASSWORD_MIN || password.length > PASSWORD_MAX)
       throw new BadRequestException(
-        `Password must be ${PASSWORD_MIN}–${PASSWORD_MAX} characters`,
+        `Password must be ${PASSWORD_MIN}-${PASSWORD_MAX} characters`,
       );
     return password;
   }
@@ -142,7 +143,7 @@ export class AuthService {
   }
 
   /**
-   * Register a new email/password account. The role is ALWAYS USER — it is never
+   * Register a new email/password account. The role is ALWAYS USER - it is never
    * taken from the request (a self-service caller must not be able to mint an
    * ADMIN). Email is required (drives verification + password reset + Google
    * auto-link). Accepting the Terms + Privacy is required and recorded.
@@ -214,7 +215,7 @@ export class AuthService {
 
   /**
    * Find-or-create-or-link a Player for a verified Google identity (login/signup
-   * with Google — no session required).
+   * with Google - no session required).
    *  - a previously linked account (by googleId) is returned directly;
    *  - an existing account with the same VERIFIED email gets Google linked;
    *  - otherwise a new passwordless account is provisioned.
@@ -244,6 +245,8 @@ export class AuthService {
         data: {
           googleId: profile.sub,
           emailVerified: true,
+          googleAvatarUrl:
+            this.safeAvatar(profile.picture) ?? byEmail.googleAvatarUrl,
           avatarUrl: byEmail.avatarUrl ?? this.safeAvatar(profile.picture),
         },
       });
@@ -254,6 +257,7 @@ export class AuthService {
     }
 
     const username = await this.deriveUniqueUsername(profile);
+    const picture = this.safeAvatar(profile.picture);
     const created = await this.prisma.player.create({
       data: {
         username,
@@ -261,7 +265,8 @@ export class AuthService {
         googleId: profile.sub,
         emailVerified: true,
         role: UserRole.USER,
-        avatarUrl: this.safeAvatar(profile.picture),
+        avatarUrl: picture,
+        googleAvatarUrl: picture,
       },
     });
     return {
@@ -272,7 +277,7 @@ export class AuthService {
 
   /**
    * Link a Google identity to the CURRENTLY signed-in account (from the account
-   * page). Matches by the SESSION user, not by email — so it can't hijack another
+   * page). Matches by the SESSION user, not by email - so it can't hijack another
    * account. Refuses if the Google identity is already linked elsewhere.
    */
   async linkGoogleToUser(userId: string, profile: GoogleUserInfo) {
@@ -302,12 +307,14 @@ export class AuthService {
       if (!emailOwner || emailOwner.id === userId) adoptEmail = email;
     }
 
+    const picture = this.safeAvatar(profile.picture);
     const updated = await this.prisma.player.update({
       where: { id: userId },
       data: {
         googleId: profile.sub,
         ...(adoptEmail ? { email: adoptEmail, emailVerified: true } : {}),
-        avatarUrl: owner.avatarUrl ?? this.safeAvatar(profile.picture),
+        googleAvatarUrl: picture ?? owner.googleAvatarUrl,
+        avatarUrl: owner.avatarUrl ?? picture,
       },
     });
     return this.toUserDto(updated);
@@ -328,7 +335,9 @@ export class AuthService {
       );
     const updated = await this.prisma.player.update({
       where: { id: userId },
-      data: { googleId: null },
+      // Drop the Google identity + its picture as a pick (the current avatarUrl,
+      // even if it was the Google photo, is kept as the user's current choice).
+      data: { googleId: null, googleAvatarUrl: null },
     });
     return this.toUserDto(updated);
   }
@@ -340,10 +349,18 @@ export class AuthService {
 
   private async maybeRefreshAvatar(player: Player, profile: GoogleUserInfo) {
     const next = this.safeAvatar(profile.picture);
-    if (!next || player.avatarUrl) return player;
+    if (!next) return player;
+    // Always keep googleAvatarUrl current (so it stays a selectable pick); only
+    // overwrite the visible avatarUrl if the user hasn't chosen one yet.
+    const needsGoogleUpdate = player.googleAvatarUrl !== next;
+    const needsAvatarUpdate = !player.avatarUrl;
+    if (!needsGoogleUpdate && !needsAvatarUpdate) return player;
     return this.prisma.player.update({
       where: { id: player.id },
-      data: { avatarUrl: next },
+      data: {
+        googleAvatarUrl: next,
+        ...(needsAvatarUpdate ? { avatarUrl: next } : {}),
+      },
     });
   }
 
@@ -403,7 +420,7 @@ export class AuthService {
 
   /**
    * Change the password of the signed-in user. Requires the current password
-   * (unless the account is passwordless — a Google-only account SETS its first
+   * (unless the account is passwordless - a Google-only account SETS its first
    * password here). Bumps tokenVersion to revoke OTHER sessions, and returns a
    * fresh token so the CURRENT device stays signed in.
    */

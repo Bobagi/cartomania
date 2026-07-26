@@ -521,6 +521,7 @@ const en = {
 		title: 'Account settings',
 		back: 'Back',
 		chooseAvatar: 'Choose your avatar',
+		googlePhoto: 'Your Google photo',
 		save: 'Save',
 		cancel: 'Cancel',
 		usernameTitle: 'Username',

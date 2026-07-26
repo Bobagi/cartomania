@@ -5,6 +5,7 @@
 	import { createEventDispatcher } from 'svelte';
 
 	export let currentAvatarUrl: string | null = null;
+	export let googleAvatarUrl: string | null = null;
 
 	const dispatch = createEventDispatcher<{
 		close: void;
@@ -12,6 +13,14 @@
 	}>();
 	let saving = false;
 	let errorText = '';
+
+	// If the account has a Google profile picture, offer it as a pick (first), so a
+	// user who switched to card art can always go back to their Google photo. It is
+	// kept separate from `avatarUrl` (the current choice) on the backend.
+	$: options =
+		googleAvatarUrl && !AVATAR_OPTIONS.includes(googleAvatarUrl)
+			? [googleAvatarUrl, ...AVATAR_OPTIONS]
+			: AVATAR_OPTIONS;
 
 	async function choose(url: string) {
 		if (saving) return;
@@ -54,15 +63,24 @@
 		</header>
 		{#if errorText}<p class="avatar-error">{errorText}</p>{/if}
 		<div class="avatar-grid">
-			{#each AVATAR_OPTIONS as url (url)}
+			{#each options as url (url)}
 				<button
 					type="button"
 					class="avatar-option"
 					class:active={url === currentAvatarUrl}
+					class:is-google={url === googleAvatarUrl}
 					disabled={saving}
 					on:click={() => choose(url)}
+					title={url === googleAvatarUrl ? $t('account.googlePhoto') : undefined}
 				>
-					<img src={url} alt="" loading="lazy" decoding="async" />
+					<img
+						src={url}
+						alt={url === googleAvatarUrl ? $t('account.googlePhoto') : ''}
+						referrerpolicy="no-referrer"
+						loading="lazy"
+						decoding="async"
+					/>
+					{#if url === googleAvatarUrl}<span class="avatar-badge">G</span>{/if}
 				</button>
 			{/each}
 		</div>
@@ -127,6 +145,7 @@
 		gap: 12px;
 	}
 	.avatar-option {
+		position: relative;
 		aspect-ratio: 1;
 		padding: 0;
 		border-radius: 50%;
@@ -138,6 +157,25 @@
 			transform 0.15s ease,
 			border-color 0.15s ease,
 			box-shadow 0.15s ease;
+	}
+	.avatar-option.is-google {
+		border-color: rgba(66, 133, 244, 0.7);
+	}
+	.avatar-badge {
+		position: absolute;
+		right: 2px;
+		bottom: 2px;
+		width: 18px;
+		height: 18px;
+		display: grid;
+		place-items: center;
+		border-radius: 50%;
+		background: #fff;
+		color: #4285f4;
+		font-size: 11px;
+		font-weight: 800;
+		line-height: 1;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 	}
 	.avatar-option:hover:not(:disabled) {
 		transform: translateY(-3px);

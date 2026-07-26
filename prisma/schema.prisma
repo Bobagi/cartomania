@@ -41,6 +41,10 @@ model Player {
   email         String?  @unique @db.VarChar(255)
   googleId      String?  @unique @db.VarChar(255)
   emailVerified Boolean  @default(false)
+  // The Google profile picture, kept separate from `avatarUrl` (the current choice)
+  // so it stays available as a pick in the avatar picker even after the user switches
+  // to card art and back.
+  googleAvatarUrl String? @db.VarChar(255)
 
   // Bumped to revoke every outstanding session (password change/reset, unlink).
   // The JWT carries this value; the guard rejects a token whose tv is stale.

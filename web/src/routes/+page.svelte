@@ -702,6 +702,7 @@
 			{#if showAvatarPicker}
 				<AvatarPicker
 					currentAvatarUrl={currentUser.avatarUrl ?? null}
+					googleAvatarUrl={currentUser.googleAvatarUrl ?? null}
 					on:close={() => (showAvatarPicker = false)}
 					on:updated={handleAvatarUpdated}
 				/>
