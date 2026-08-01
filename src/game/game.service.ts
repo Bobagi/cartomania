@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import {
   DuelStage,
   FriendshipStatus,
@@ -32,6 +32,23 @@ import {
 
 const DUEL_EXP_MS = 5 * 60 * 1000; // 5 min
 const TURN_DURATION_MS = 10 * 1000;
+
+/**
+ * The one filter that defines an "active" duel, shared by every place that has
+ * to agree on it (the dashboard list, the progression loop's view of the world
+ * and the one-match-per-player rule below).
+ */
+const ACTIVE_DUEL_FILTER = {
+  mode: 'ATTRIBUTE_DUEL' as PrismaGameMode,
+  winner: null,
+  duelStage: { not: 'RESOLVED' as DuelStage },
+};
+
+/** A match a player is already in, as reported by the one-match-per-player rule. */
+export interface ActiveGameReference {
+  gameId: string;
+  mode: PrismaGameMode;
+}
 
 function createShuffledDeck(cardCodes: string[]): string[] {
   const shuffledDeck = [...cardCodes];
@@ -82,6 +99,81 @@ export class GameService {
 
   async getAllTemplates(): Promise<PrismaCardTemplate[]> {
     return this.prisma.cardTemplate.findMany();
+  }
+
+  /* ---------- One match per player ---------- */
+
+  /**
+   * ONE ACTIVE MATCH PER PLAYER (owner rule, 2026-08-01). A player who is already
+   * in a match cannot be put into another one - not by starting a duel, not by a
+   * friend challenging them.
+   *
+   * "Active" is EXACTLY what the dashboard lists in `listActiveForPlayer`: an
+   * unresolved ATTRIBUTE_DUEL row, or a CLASSIC game still held in memory. CLASSIC
+   * rows in the database are deliberately NOT counted: their state lives in memory,
+   * is lost on restart and nothing ever marks the row finished, so counting them
+   * would lock a player out of the game forever. Keeping the two definitions equal
+   * is what stops the UI from saying "no games" while the server refuses to start one.
+   *
+   * A stuck player is never stuck for long: `DuelProgressionService` drives every
+   * duel to a winner on its own (10s per turn), and the player can always surrender.
+   */
+  private async findActiveGameForPlayer(
+    playerId: string,
+    client: Prisma.TransactionClient = this.prisma,
+  ): Promise<ActiveGameReference | null> {
+    if (playerId === BOT_ID) return null; // the bot plays everyone at once
+
+    const activeDuel = await client.game.findFirst({
+      where: {
+        ...ACTIVE_DUEL_FILTER,
+        OR: [{ playerAId: playerId }, { playerBId: playerId }],
+      },
+      orderBy: { updatedAt: 'desc' },
+      select: { id: true, mode: true },
+    });
+    if (activeDuel) return { gameId: activeDuel.id, mode: activeDuel.mode };
+
+    const activeClassic = this.classic
+      .listActiveFromMemory()
+      .find(
+        (game) =>
+          game.winner === null && (game.players ?? []).includes(playerId),
+      );
+    if (activeClassic) return { gameId: activeClassic.gameId, mode: 'CLASSIC' };
+
+    return null;
+  }
+
+  /**
+   * The game id is only handed back to the player who is actually IN that match:
+   * duel state/actions are unauthenticated (see the TODO in CLAUDE.md), so a game
+   * id is a capability - telling A that B is busy must not tell A *which* match.
+   */
+  private buildActiveGameConflict(
+    busyPlayerId: string,
+    requesterId: string,
+    activeGame: ActiveGameReference,
+  ): ConflictException {
+    const isRequester = busyPlayerId === requesterId;
+    return new ConflictException({
+      error: 'ActiveGameExists',
+      message: isRequester
+        ? 'You already have a match in progress. Finish it before starting another one.'
+        : 'That player already has a match in progress.',
+      playerId: busyPlayerId,
+      isRequester,
+      ...(isRequester
+        ? { gameId: activeGame.gameId, mode: activeGame.mode }
+        : {}),
+    });
+  }
+
+  /** The match a player is currently in, or null. Used by the controller. */
+  async getActiveGameForPlayer(
+    playerId: string,
+  ): Promise<ActiveGameReference | null> {
+    return this.findActiveGameForPlayer(playerId);
   }
 
   /* ---------- Create Game ---------- */
@@ -144,37 +236,61 @@ export class GameService {
       passwordHash: placeholderHash,
     };
 
-    await this.prisma.game.create({
-      data: {
-        id: gameId,
-        turn: initialState.turn,
-        hp: initialState.hp,
-        winner: initialState.winner,
-        hands: initialState.hands,
-        decks: initialState.decks,
-        log: initialState.log,
-        mode,
-        duelStage: initialState.duelStage,
-        duelCenter: prepareNullableJsonField(
-          serializeDuelCenter(initialState.duelCenter),
-        ),
-        discardPiles: prepareNullableJsonField(
-          convertCardCollectionToPrismaInput(initialState.discardPiles),
-        ),
-        playerA: {
-          connectOrCreate: {
-            where: { id: playerAId },
-            create: createPlayerAInput,
+    // The whole check-then-create runs in ONE transaction, and each human player
+    // is serialized by a Postgres advisory lock first. Without the lock two
+    // requests firing at the same instant (double click, replayed request, two
+    // tabs) both read "no active match" and both create one - the exact race the
+    // rule is meant to make impossible. Locks are taken in a stable order so two
+    // concurrent friend matches can never deadlock each other.
+    const humanPlayerIds = Array.from(
+      new Set([playerAId, playerBId].filter((id) => id !== BOT_ID)),
+    );
+    const lockOrderedPlayerIds = [...humanPlayerIds].sort();
+
+    await this.prisma.$transaction(async (tx) => {
+      for (const playerId of lockOrderedPlayerIds) {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${playerId}))`;
+      }
+
+      for (const playerId of humanPlayerIds) {
+        const activeGame = await this.findActiveGameForPlayer(playerId, tx);
+        if (activeGame) {
+          throw this.buildActiveGameConflict(playerId, playerAId, activeGame);
+        }
+      }
+
+      await tx.game.create({
+        data: {
+          id: gameId,
+          turn: initialState.turn,
+          hp: initialState.hp,
+          winner: initialState.winner,
+          hands: initialState.hands,
+          decks: initialState.decks,
+          log: initialState.log,
+          mode,
+          duelStage: initialState.duelStage,
+          duelCenter: prepareNullableJsonField(
+            serializeDuelCenter(initialState.duelCenter),
+          ),
+          discardPiles: prepareNullableJsonField(
+            convertCardCollectionToPrismaInput(initialState.discardPiles),
+          ),
+          playerA: {
+            connectOrCreate: {
+              where: { id: playerAId },
+              create: createPlayerAInput,
+            },
+          },
+          playerB: {
+            connectOrCreate: {
+              where: { id: playerBId },
+              create: createPlayerBInput,
+            },
           },
         },
-        playerB: {
-          connectOrCreate: {
-            where: { id: playerBId },
-            create: createPlayerBInput,
-          },
-        },
-      },
-      select: { id: true },
+        select: { id: true },
+      });
     });
 
     if (mode === 'CLASSIC') this.classic.setActiveState(gameId, initialState);
@@ -359,11 +475,7 @@ export class GameService {
   /* ---------- Active list ---------- */
   private async listActiveDuelFromDb() {
     const rows = await this.prisma.game.findMany({
-      where: {
-        mode: 'ATTRIBUTE_DUEL',
-        winner: null,
-        duelStage: { not: 'RESOLVED' },
-      },
+      where: ACTIVE_DUEL_FILTER,
       orderBy: { updatedAt: 'desc' },
       take: 50,
       select: {
@@ -397,9 +509,7 @@ export class GameService {
     const cutoff = new Date(Date.now() - DUEL_EXP_MS);
     await this.prisma.game.updateMany({
       where: {
-        mode: 'ATTRIBUTE_DUEL',
-        winner: null,
-        duelStage: { not: 'RESOLVED' },
+        ...ACTIVE_DUEL_FILTER,
         updatedAt: { lt: cutoff },
       },
       data: { duelStage: 'RESOLVED' as DuelStage },
@@ -431,9 +541,7 @@ export class GameService {
       .filter((g) => g.players?.includes(playerId));
     const rows = await this.prisma.game.findMany({
       where: {
-        mode: 'ATTRIBUTE_DUEL',
-        winner: null,
-        duelStage: { not: 'RESOLVED' },
+        ...ACTIVE_DUEL_FILTER,
         OR: [{ playerAId: playerId }, { playerBId: playerId }],
       },
       orderBy: { updatedAt: 'desc' },

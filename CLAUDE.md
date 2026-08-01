@@ -196,6 +196,35 @@ web/                         SvelteKit frontend
 
 ## Architecture gotchas (important - learned the hard way)
 
+- **ONE ACTIVE MATCH PER PLAYER (2026-08-01, owner rule).** A player can be in **at most one** match
+  at a time. Enforced server-side in `GameService.createGame` (`src/game/game.service.ts`), the single
+  funnel every start endpoint goes through (`start-duel`, `start-classic`, `start`, `start-with-friend`),
+  so there is no path around it. A refusal is a **409** with
+  `{error:'ActiveGameExists', message, playerId, isRequester, gameId?, mode?}`.
+  - **"Active" has ONE definition**, the constant `ACTIVE_DUEL_FILTER` + the in-memory classic list,
+    the same one `listActiveForPlayer` (the dashboard) uses: an `ATTRIBUTE_DUEL` row with `winner:null`
+    and `duelStage != RESOLVED`, or a CLASSIC game still held in memory. **CLASSIC rows in the DB are
+    deliberately NOT counted** - their state lives in memory, is lost on restart and nothing ever marks
+    the row finished, so counting them would lock a player out of the game forever. Keep the two
+    definitions equal, or the UI says "no games" while the server refuses to start one.
+  - **The check and the insert run in ONE transaction behind `pg_advisory_xact_lock(hashtext(playerId))`**
+    for each human player, locked in sorted order (deadlock-free when two friends challenge each other
+    at the same instant). Without the lock, two simultaneous requests both read "free" and both create.
+    Proven live: 20 concurrent `start-duel` calls produced exactly 1 match, and 10 crossed friend
+    challenges produced exactly 1 match with 0 deadlocks.
+  - **`gameId` is only returned to the player who is IN that match** (`isRequester`). Duel state/actions
+    are unauthenticated (TODO 2 below), so a game id is a capability: telling A that B is busy must not
+    tell A *which* match.
+  - **The start endpoints are now authenticated** and always act on the **token owner**; `playerAId` in
+    the body is ignored. Before, an anonymous caller could name someone else's id, and with a one-match
+    cap that would burn the victim's only slot and lock them out.
+  - **Nobody stays stuck:** `DuelProgressionService` drives every duel to a winner on its own (10s per
+    turn), and the player can always surrender.
+  - **UI:** the dashboard call to action flips to "Resume duel" while a match is in progress (with its
+    mode + last activity folded in), and the separate "Your active games" list is **admin-only** now (for
+    a player it would render the same single match a second time). A 409 that carries a `gameId` sends the
+    player straight to that match. Tests: `src/game/game.service.spec.ts` + `game.controller.spec.ts`
+    (15, mutation-checked). Review: `.claude/frontend-review/20260801-one-match/`.
 - **Duel center shape mismatch.** The backend persists/returns the duel center with INTERNAL keys
   (`playerACardCode`, `playerBCardCode`, `roundWinnerId`, `isRevealed`, `playerAAttributeValue`…),
   but the UI uses the PUBLIC shape (`aCardCode`, `bCardCode`, `roundWinner`, `revealed`, `aVal`,
@@ -467,13 +496,19 @@ web/                         SvelteKit frontend
 
 ## Verifying changes
 
-- **API smoke (fast, no browser):** start a duel, choose a card, choose the winning attribute:
+- **API smoke (fast, no browser):** the start endpoints are **authenticated** and always start the match
+  for the token owner (a `playerAId` in the body is ignored), and that player must have **no active
+  match** (see the one-match rule above) or you get a 409. Easiest is a throwaway account:
   ```bash
-  ADMIN=$(docker exec cartomania-db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -t -A -c \
-    "SELECT id FROM \"Player\" WHERE username='admin'")   # (load .env first)
-  GID=$(curl -s -XPOST localhost:3056/game/start-duel -H 'Content-Type: application/json' \
-    -d "{\"playerAId\":\"$ADMIN\"}" | python3 -c 'import sys,json;print(json.load(sys.stdin)["gameId"])')
-  curl -s localhost:3056/game/state/$GID            # inspect duelStage + duelCenter
+  U=smoke$RANDOM
+  TOKEN=$(curl -s -XPOST localhost:3056/auth/register -H 'Content-Type: application/json' \
+    -d "{\"username\":\"$U\",\"email\":\"$U@example.com\",\"password\":\"TestPass123!\",\"acceptTerms\":true}" \
+    | python3 -c 'import sys,json;print(json.load(sys.stdin)["accessToken"])')
+  GID=$(curl -s -XPOST localhost:3056/game/start-duel -H "Authorization: Bearer $TOKEN" \
+    | python3 -c 'import sys,json;print(json.load(sys.stdin)["gameId"])')
+  curl -s localhost:3056/game/state/$GID            # inspect duelStage + duelCenter (unauthenticated)
+  curl -s -H "Authorization: Bearer $TOKEN" localhost:3056/game/active/current   # the one match, or null
+  curl -s -XDELETE localhost:3056/auth/me -H "Authorization: Bearer $TOKEN"      # clean up after
   ```
 - **Browser (Playwright is installed, chromium headless):** drive `https://cartomania.bobagi.space` or
   navigate directly to `/game/duel/<id>` (state fetch + duel actions are unauthenticated) and
@@ -502,6 +537,20 @@ web/                         SvelteKit frontend
 
 ## Status (update as you go)
 
+- **One active match per player (2026-08-01, owner request).** Before this, a player could stack any
+  number of matches (the owner had 2 open duels when the session started, and 20 concurrent start calls
+  would have created 20). Now `createGame` refuses a second match for either duellist, atomically
+  (transaction + per-player advisory lock), and the start endpoints act on the authenticated user so
+  nobody can spend someone else's slot. The dashboard call to action becomes "Resume duel" instead of
+  offering a start that would be refused, and the friends panel says whether it is you or the friend who
+  is busy. Verified live on the deploy: unauthenticated start 401, second start 409 with the existing
+  gameId, **20 concurrent starts -> exactly 1 match**, 10 crossed friend challenges -> exactly 1 match,
+  0 deadlocks, and a busy friend's gameId is not leaked to the challenger. Tests: 15 new, all
+  mutation-checked (removing the throw, the `winner:null` filter, the playerB side of the `OR`, the
+  advisory lock, the bot exemption or the controller's use of the token all go red). Full suite 40/40.
+  frontend-review run (`.claude/frontend-review/20260801-one-match/`): 0 P0/P1, 1 P2 found and fixed (the
+  dashboard rendered the same match twice, once in the call to action and once in the now-pointless
+  "Your active games" list). See the **ONE ACTIVE MATCH PER PLAYER** gotcha.
 - **Account admin + Google avatar as a pick (2026-07-26).** Owner requests: (1) **seed only creates
   `admin`** now (removed `alice`), and `admin` gets `email=bobagi.contact@gmail.com` + `emailVerified`
   (`prisma/seed.ts`; the seed no longer needs `ALICE_PASSWORD`). Applied live too: `alice` hard-deleted
@@ -702,10 +751,12 @@ web/                         SvelteKit frontend
    when `NODE_ENV=production`**. `NODE_ENV=production` is set in the live `.env`. (The old admin123/alice123
    default is dead on this deploy.) If the operator wants to rotate again: change the values → `docker compose
    up -d cartomania`.
-2. **Unauthenticated duel endpoints.** `GET /game/state/:id` and the duel actions are unauthenticated -
-   anyone with a `gameId` can read/act on a match. Acceptable for a portfolio; harden (auth guard +
-   "is this player in this game" check) if it ever matters. (Deliberately left: the Playwright/CI verify
-   flows and the pure-renderer client rely on this.)
+2. **Unauthenticated duel endpoints.** `GET /game/state/:id` and the duel actions (choose card/attribute,
+   advance, unchoose) are unauthenticated - anyone with a `gameId` can read/act on a match. Acceptable for
+   a portfolio; harden (auth guard + "is this player in this game" check) if it ever matters.
+   (Deliberately left: the Playwright/CI verify flows and the pure-renderer client rely on this.) The
+   **start** endpoints are NO LONGER in this bucket: they were authenticated on 2026-08-01 because, with
+   one match per player, an anonymous caller naming another player's id could lock that player out.
 3. **[DONE 2026-07-25] Google sign-in is LIVE.** OAuth client created, creds wired, `/auth/providers`→
    `{google:true}`, live-tested (302 to consent, real code exchange, state CSRF enforced). See the **Google
    sign-in** gotcha (incl. the PM2/ecosystem runtime-env fix). Last check: a human happy-path login.

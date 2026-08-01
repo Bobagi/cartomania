@@ -102,7 +102,12 @@ const pt: typeof en = {
 			readyTitle: 'Pronto para duelar?',
 			readySub: 'Inicie um Duelo de Atributos contra o bot e aumente sua coleção de vitórias.',
 			startDuel: 'Iniciar Duelo',
-			yourGames: 'Seus jogos ativos',
+			inMatchTitle: 'Seu duelo está esperando',
+			inMatchSub: 'Uma partida por vez. Termine ou desista deste duelo para começar outro.',
+			resumeDuel: 'Retomar duelo',
+			alreadyInMatch: 'Você já está em uma partida. Termine antes de começar outra.',
+			startFailed: 'Não foi possível iniciar o duelo. Tente novamente.',
+			yourGames: 'Seu jogo ativo',
 			noGames: 'Nenhum jogo ativo ainda. Inicie um duelo acima.',
 			mode: 'Modo',
 			updated: 'Atualizado',
@@ -330,7 +335,9 @@ const pt: typeof en = {
 		chatLoadFail: 'Não foi possível carregar o histórico do chat.',
 		messageSendFail: 'Não foi possível enviar a mensagem.',
 		matchCreated: 'Partida criada.',
-		matchStartFail: 'Não foi possível iniciar a partida com o amigo.'
+		matchStartFail: 'Não foi possível iniciar a partida com o amigo.',
+		friendBusy: 'Esse jogador já está em uma partida.',
+		youBusy: 'Você já está em uma partida. Termine antes de desafiar um amigo.'
 	},
 	legal: {
 		back: 'Voltar ao Cartomania',

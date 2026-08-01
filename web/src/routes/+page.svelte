@@ -3,6 +3,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import type { GameMode } from '$lib/api/cartomaniaTypes';
 	import {
+		CartomaniaApiError,
 		endCartomaniaGameSessionOnServer,
 		expireInactiveCartomaniaGames,
 		loginCartomaniaUserAccount,
@@ -68,6 +69,7 @@
 	let usernameInputValue = '';
 	let passwordInputValue = '';
 	let loginErrorKey: string | null = null;
+	let startErrorKey: string | null = null;
 	let showFriendsPanel = false;
 	let showAvatarPicker = false;
 
@@ -201,6 +203,11 @@
 	$: statGamesWon = statistics.gamesWon ?? 0;
 	$: statGamesDrawn = statistics.gamesDrawn ?? 0;
 	$: statActive = myActiveCartomaniaGames.length;
+	// One match at a time (enforced by the server): while the player is in a duel
+	// the call to action must RESUME it instead of offering a second one that the
+	// backend would refuse with a 409.
+	$: currentActiveGame = myActiveCartomaniaGames[0] ?? null;
+	$: if (currentActiveGame === null) startErrorKey = null;
 	$: statLastUpdated =
 		myActiveCartomaniaGames.length > 0
 			? formatRelativeLastActivity(
@@ -238,14 +245,35 @@
 
 	async function startNewAttributeDuelCartomaniaGameForPlayer() {
 		if (!currentUser) return;
+		startErrorKey = null;
 		try {
 			const { gameId } = await startAttributeDuelCartomaniaGameForPlayer(currentUser.id);
 			goto(`/game/duel/${gameId}`);
 			return;
 		} catch (error) {
+			// A player may only be in ONE match at a time. The button below already
+			// turns into "resume" once the dashboard knows about the match, but the
+			// server is the authority: if it says the player is busy (409), take them
+			// straight to the match it named instead of leaving them on a dead button.
+			const conflictGameId = extractActiveGameIdFromConflict(error);
+			if (conflictGameId) {
+				goto(`/game/duel/${conflictGameId}`);
+				return;
+			}
+			startErrorKey =
+				error instanceof CartomaniaApiError && error.status === 409
+					? 'home.dashboard.alreadyInMatch'
+					: 'home.dashboard.startFailed';
 			console.error('Failed to start duel', error);
 		}
 		await refreshCartomaniaDashboardData();
+	}
+
+	function extractActiveGameIdFromConflict(error: unknown): string | null {
+		if (!(error instanceof CartomaniaApiError) || error.status !== 409) return null;
+		const body = error.bodyJson as { error?: string; gameId?: string } | undefined;
+		if (body?.error !== 'ActiveGameExists') return null;
+		return typeof body.gameId === 'string' && body.gameId ? body.gameId : null;
 	}
 
 	async function expireInactiveCartomaniaGamesAndReloadDashboard() {
@@ -565,66 +593,103 @@
 
 			<div class="play-cta">
 				<div class="play-cta-copy">
-					<h2 class="play-cta-title">{$t('home.dashboard.readyTitle')}</h2>
-					<p class="play-cta-sub">{$t('home.dashboard.readySub')}</p>
+					<h2 class="play-cta-title">
+						{currentActiveGame
+							? $t('home.dashboard.inMatchTitle')
+							: $t('home.dashboard.readyTitle')}
+					</h2>
+					<p class="play-cta-sub">
+						{currentActiveGame ? $t('home.dashboard.inMatchSub') : $t('home.dashboard.readySub')}
+					</p>
+					{#if currentActiveGame}
+						<p class="play-cta-meta">
+							{$t('home.dashboard.mode')}: <b>{currentActiveGame.mode}</b>
+							{#if extractLastActivityTimestamp(currentActiveGame)}
+								• {$t('home.dashboard.updated')}: {formatRelativeLastActivity(
+									extractLastActivityTimestamp(currentActiveGame)
+								)}
+							{/if}
+						</p>
+					{/if}
+					{#if startErrorKey}
+						<p class="play-cta-sub auth-error" role="alert">{$t(startErrorKey)}</p>
+					{/if}
 				</div>
-				<button
-					class="button button-primary"
-					on:click={startNewAttributeDuelCartomaniaGameForPlayer}
-				>
-					⚔️ {$t('home.dashboard.startDuel')}
-				</button>
+				{#if currentActiveGame}
+					<button
+						class="button button-primary"
+						on:click={() =>
+							navigateToExistingCartomaniaGame(
+								resolveCartomaniaGameIdentifier(currentActiveGame),
+								currentActiveGame.mode
+							)}
+					>
+						▶ {$t('home.dashboard.resumeDuel')}
+					</button>
+				{:else}
+					<button
+						class="button button-primary"
+						on:click={startNewAttributeDuelCartomaniaGameForPlayer}
+					>
+						⚔️ {$t('home.dashboard.startDuel')}
+					</button>
+				{/if}
 			</div>
 
-			<section class="games-section">
-				<h2 class="section-title">{$t('home.dashboard.yourGames')}</h2>
-				{#if myActiveCartomaniaGames.length === 0}
-					<p class="empty-text">{$t('home.dashboard.noGames')}</p>
-				{:else}
-					<ul class="games-list">
-						{#each myActiveCartomaniaGames as gameSummary}
-							<li class="game-card">
-								<div class="game-info">
-									<p class="game-id mono">{resolveCartomaniaGameIdentifier(gameSummary)}</p>
-									<p class="game-meta">
-										{$t('home.dashboard.mode')}: <b>{gameSummary.mode}</b>
-										{#if extractLastActivityTimestamp(gameSummary)}
-											• {$t('home.dashboard.updated')}: {formatRelativeLastActivity(
-												extractLastActivityTimestamp(gameSummary)
-											)}
-										{/if}
-									</p>
-								</div>
-								<div class="game-actions">
-									<button
-										class="button button-primary"
-										on:click={() =>
-											navigateToExistingCartomaniaGame(
-												resolveCartomaniaGameIdentifier(gameSummary),
-												gameSummary.mode
-											)}
-										title={$t('home.dashboard.openGame')}
-									>
-										▶ {$t('home.dashboard.resume')}
-									</button>
-									{#if isAdmin}
+			<!-- A player now has AT MOST one match, and the call to action above already
+			     names it and resumes it, so this list would be a duplicate of it. It stays
+			     for admins only, who use the finish control on it. -->
+			{#if isAdmin}
+				<section class="games-section">
+					<h2 class="section-title">{$t('home.dashboard.yourGames')}</h2>
+					{#if myActiveCartomaniaGames.length === 0}
+						<p class="empty-text">{$t('home.dashboard.noGames')}</p>
+					{:else}
+						<ul class="games-list">
+							{#each myActiveCartomaniaGames as gameSummary}
+								<li class="game-card">
+									<div class="game-info">
+										<p class="game-id mono">{resolveCartomaniaGameIdentifier(gameSummary)}</p>
+										<p class="game-meta">
+											{$t('home.dashboard.mode')}: <b>{gameSummary.mode}</b>
+											{#if extractLastActivityTimestamp(gameSummary)}
+												• {$t('home.dashboard.updated')}: {formatRelativeLastActivity(
+													extractLastActivityTimestamp(gameSummary)
+												)}
+											{/if}
+										</p>
+									</div>
+									<div class="game-actions">
 										<button
-											class="button button-danger"
+											class="button button-primary"
 											on:click={() =>
-												endCartomaniaGameSessionOnServer(
-													resolveCartomaniaGameIdentifier(gameSummary)
-												).then(refreshCartomaniaDashboardData)}
-											title={$t('home.dashboard.finishGame')}
+												navigateToExistingCartomaniaGame(
+													resolveCartomaniaGameIdentifier(gameSummary),
+													gameSummary.mode
+												)}
+											title={$t('home.dashboard.openGame')}
 										>
-											🗑️
+											▶ {$t('home.dashboard.resume')}
 										</button>
-									{/if}
-								</div>
-							</li>
-						{/each}
-					</ul>
-				{/if}
-			</section>
+										{#if isAdmin}
+											<button
+												class="button button-danger"
+												on:click={() =>
+													endCartomaniaGameSessionOnServer(
+														resolveCartomaniaGameIdentifier(gameSummary)
+													).then(refreshCartomaniaDashboardData)}
+												title={$t('home.dashboard.finishGame')}
+											>
+												🗑️
+											</button>
+										{/if}
+									</div>
+								</li>
+							{/each}
+						</ul>
+					{/if}
+				</section>
+			{/if}
 
 			{#if isAdmin}
 				<section class="games-section">

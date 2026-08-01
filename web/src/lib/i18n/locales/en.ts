@@ -101,8 +101,13 @@ const en = {
 			readyTitle: 'Ready to duel?',
 			readySub: 'Start an Attribute Duel against the bot and grow your collection of victories.',
 			startDuel: 'Start Duel',
-			yourGames: 'Your active games',
-			noGames: 'No active games yet. Start a duel above.',
+			inMatchTitle: 'Your duel is waiting',
+			inMatchSub: 'One match at a time. Finish or surrender this duel to start a new one.',
+			resumeDuel: 'Resume duel',
+			alreadyInMatch: 'You are already in a match. Finish it before starting another one.',
+			startFailed: 'Could not start the duel. Please try again.',
+			yourGames: 'Your active game',
+			noGames: 'No active game yet. Start a duel above.',
 			mode: 'Mode',
 			updated: 'Updated',
 			resume: 'Resume',
@@ -329,7 +334,9 @@ const en = {
 		chatLoadFail: 'Unable to load chat history.',
 		messageSendFail: 'Unable to send message.',
 		matchCreated: 'Match created.',
-		matchStartFail: 'Unable to start match with friend.'
+		matchStartFail: 'Unable to start match with friend.',
+		friendBusy: 'That player is already in a match.',
+		youBusy: 'You are already in a match. Finish it before challenging a friend.'
 	},
 	legal: {
 		back: 'Back to Cartomania',

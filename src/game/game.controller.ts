@@ -38,29 +38,49 @@ export class GameController {
   private readonly logger = new Logger(GameController.name);
   constructor(private readonly gameService: GameService) {}
 
+  /**
+   * The match is ALWAYS started for the authenticated caller - the player id is
+   * never read from the body. A player may only be in one match at a time, so an
+   * anonymous caller naming someone else's id could otherwise burn that player's
+   * only slot and lock them out of the game.
+   */
+  private requireUserId(request: AuthenticatedRequest): string {
+    const userId = request.user?.sub ?? request.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('Missing authenticated user identifier');
+    }
+    return userId;
+  }
+
   /** Start CLASSIC */
+  @UseGuards(JwtAuthGuard)
   @Post('start-classic')
   async startClassic(
-    @Body('playerAId') playerAId: string,
+    @Req() request: AuthenticatedRequest,
   ): Promise<{ gameId: string; state: GameState }> {
+    const playerAId = this.requireUserId(request);
     this.logger.log(`Starting CLASSIC for ${playerAId} vs BOT`);
     return this.gameService.createGame(playerAId, BOT_ID, 'CLASSIC');
   }
 
   /** Start DUEL */
+  @UseGuards(JwtAuthGuard)
   @Post('start-duel')
   async startDuel(
-    @Body('playerAId') playerAId: string,
+    @Req() request: AuthenticatedRequest,
   ): Promise<{ gameId: string; state: GameState }> {
+    const playerAId = this.requireUserId(request);
     this.logger.log(`Starting ATTRIBUTE_DUEL for ${playerAId} vs BOT`);
     return this.gameService.createGame(playerAId, BOT_ID, 'ATTRIBUTE_DUEL');
   }
 
   /** Legacy start (kept for compatibility) -> CLASSIC */
+  @UseGuards(JwtAuthGuard)
   @Post('start')
   async startLegacy(
-    @Body('playerAId') playerAId: string,
+    @Req() request: AuthenticatedRequest,
   ): Promise<{ gameId: string; state: GameState }> {
+    const playerAId = this.requireUserId(request);
     this.logger.log(`Starting legacy (CLASSIC) for ${playerAId} vs BOT`);
     return this.gameService.createGame(playerAId, BOT_ID, 'CLASSIC');
   }
@@ -83,10 +103,7 @@ export class GameController {
     @Body('friendId') friendId: string,
     @Body('mode') mode?: 'CLASSIC' | 'ATTRIBUTE_DUEL',
   ) {
-    const userId = request.user?.sub ?? request.user?.id;
-    if (!userId) {
-      throw new UnauthorizedException('Missing authenticated user identifier');
-    }
+    const userId = this.requireUserId(request);
     return this.gameService.createGameWithFriend(
       userId,
       friendId,
@@ -100,10 +117,7 @@ export class GameController {
     @Req() request: AuthenticatedRequest,
     @Body('gameId') gameId: string,
   ) {
-    const userId = request.user?.sub ?? request.user?.id;
-    if (!userId) {
-      throw new UnauthorizedException('Missing authenticated user identifier');
-    }
+    const userId = this.requireUserId(request);
     return this.gameService.surrenderGame(gameId, userId);
   }
 
@@ -229,21 +243,20 @@ export class GameController {
   @UseGuards(JwtAuthGuard)
   @Get('active/mine')
   getActiveGamesOfMine(@Req() request: AuthenticatedRequest) {
-    const userId = request.user?.sub ?? request.user?.id;
-    if (!userId) {
-      throw new UnauthorizedException('Missing authenticated user identifier');
-    }
-    return this.gameService.listActiveForPlayer(userId);
+    return this.gameService.listActiveForPlayer(this.requireUserId(request));
+  }
+
+  /** The single match I'm in right now (the one-match-per-player rule), or null. */
+  @UseGuards(JwtAuthGuard)
+  @Get('active/current')
+  getMyCurrentGame(@Req() request: AuthenticatedRequest) {
+    return this.gameService.getActiveGameForPlayer(this.requireUserId(request));
   }
 
   /** Me: stats (games played / wins) */
   @UseGuards(JwtAuthGuard)
   @Get('stats/me')
   getMyStats(@Req() request: AuthenticatedRequest) {
-    const userId = request.user?.sub ?? request.user?.id;
-    if (!userId) {
-      throw new UnauthorizedException('Missing authenticated user identifier');
-    }
-    return this.gameService.getUserStats(userId);
+    return this.gameService.getUserStats(this.requireUserId(request));
   }
 }

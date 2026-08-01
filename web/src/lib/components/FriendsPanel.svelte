@@ -12,12 +12,14 @@
 		sendCartomaniaFriendRequest,
 		removeCartomaniaFriend,
 		startCartomaniaGameWithFriend,
+		CartomaniaApiError,
 		type CartomaniaFriendChatMessage,
 		type CartomaniaFriendSummary,
 		type CartomaniaIncomingFriendRequest,
 		type CartomaniaPlayerSummary,
 		type GameMode
 	} from '$lib/api/GameClient';
+	import { t } from '$lib/i18n';
 	import '$lib/styles/components/FriendsPanel.css';
 
 	const dispatch = createEventDispatcher<{
@@ -75,6 +77,15 @@
 		return `Visto há ${hrs} h`;
 	}
 
+	function resolveDuelFailureKey(error: unknown): string {
+		if (!(error instanceof CartomaniaApiError) || error.status !== 409) {
+			return 'friends.matchStartFail';
+		}
+		const body = error.bodyJson as { error?: string; isRequester?: boolean } | undefined;
+		if (body?.error !== 'ActiveGameExists') return 'friends.matchStartFail';
+		return body.isRequester ? 'friends.youBusy' : 'friends.friendBusy';
+	}
+
 	function showToast(txt: string, ok = false) {
 		toast = { txt, ok };
 		after(2400, () => {
@@ -106,11 +117,10 @@
 
 	$: acceptedFriends = friends.filter((f) => f.status === 'ACCEPTED' && !f.blockedByMe);
 	$: docked = dockFriendId
-		? acceptedFriends.find((f) => f.friendshipId === dockFriendId) ?? null
+		? (acceptedFriends.find((f) => f.friendshipId === dockFriendId) ?? null)
 		: null;
 	$: filteredResults = searchResults.filter(
-		(p) =>
-			p.id !== currentUserId && !acceptedFriends.some((f) => f.friend.id === p.id)
+		(p) => p.id !== currentUserId && !acceptedFriends.some((f) => f.friend.id === p.id)
 	);
 
 	async function loadData() {
@@ -222,13 +232,15 @@
 
 	async function handleDuel(f: CartomaniaFriendSummary) {
 		duelSent = { ...duelSent, [f.friendshipId]: true };
-		showToast('Duelo iniciado!', true);
 		try {
 			const { gameId } = await startCartomaniaGameWithFriend(f.friend.id, 'ATTRIBUTE_DUEL');
+			showToast($t('friends.matchCreated'), true);
 			dispatch('navigateToGame', { gameId, mode: 'ATTRIBUTE_DUEL' });
 		} catch (e) {
 			console.error('Start duel failed', e);
-			showToast('Erro ao iniciar duelo.', false);
+			// Both duellists must be free: a player can only be in one match at a
+			// time, so the challenge is refused if either side is already playing.
+			showToast($t(resolveDuelFailureKey(e)), false);
 		}
 		after(3000, () => {
 			duelSent = { ...duelSent, [f.friendshipId]: false };
@@ -374,10 +386,7 @@
 										class:menu-open={menuOpenId === f.friendshipId}
 									>
 										<!-- Avatar -->
-										<span
-											class="fr-avatar"
-											style="--tint:{avatarTint(f.friend.username)}"
-										>
+										<span class="fr-avatar" style="--tint:{avatarTint(f.friend.username)}">
 											{#if f.friend.avatarUrl}
 												<img
 													src={f.friend.avatarUrl}
@@ -387,13 +396,16 @@
 											{:else}
 												{avatarLetter(f.friend.username)}
 											{/if}
-											<span class="fr-dot" data-presence={presenceStatus(f.friend.lastSeenAt)}></span>
+											<span class="fr-dot" data-presence={presenceStatus(f.friend.lastSeenAt)}
+											></span>
 										</span>
 
 										<!-- Info -->
 										<div class="who">
 											<div class="nome">{f.friend.username}</div>
-											<div class="fr-status" data-presence={presenceStatus(f.friend.lastSeenAt)}>{presenceLabel(f.friend.lastSeenAt)}</div>
+											<div class="fr-status" data-presence={presenceStatus(f.friend.lastSeenAt)}>
+												{presenceLabel(f.friend.lastSeenAt)}
+											</div>
 										</div>
 
 										<!-- Actions -->
@@ -418,8 +430,17 @@
 												title="Abrir chat"
 												on:click|stopPropagation={() => openChat(f)}
 											>
-												<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-													<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+												<svg
+													viewBox="0 0 24 24"
+													fill="none"
+													stroke="currentColor"
+													stroke-width="2"
+													stroke-linecap="round"
+													stroke-linejoin="round"
+												>
+													<path
+														d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"
+													/>
 												</svg>
 											</button>
 
@@ -432,7 +453,14 @@
 														menuOpenId = menuOpenId === f.friendshipId ? null : f.friendshipId;
 													}}
 												>
-													<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+													<svg
+														viewBox="0 0 24 24"
+														fill="none"
+														stroke="currentColor"
+														stroke-width="2"
+														stroke-linecap="round"
+														stroke-linejoin="round"
+													>
 														<circle cx="12" cy="5" r="1.6" fill="currentColor" stroke="none" />
 														<circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none" />
 														<circle cx="12" cy="19" r="1.6" fill="currentColor" stroke="none" />
@@ -441,15 +469,33 @@
 												{#if menuOpenId === f.friendshipId}
 													<div class="fr-menu" on:click|stopPropagation>
 														<button type="button" on:click={() => handleRemove(f)}>
-															<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;">
-																<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+															<svg
+																viewBox="0 0 24 24"
+																fill="none"
+																stroke="currentColor"
+																stroke-width="2"
+																stroke-linecap="round"
+																stroke-linejoin="round"
+																style="width:14px;height:14px;"
+															>
+																<path d="M3 6h18" /><path
+																	d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"
+																/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
 															</svg>
 															Remover amigo
 														</button>
 														<div class="sep"></div>
 														<button type="button" class="danger" on:click={() => handleBlock(f)}>
-															<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;">
-																<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>
+															<svg
+																viewBox="0 0 24 24"
+																fill="none"
+																stroke="currentColor"
+																stroke-width="2"
+																stroke-linecap="round"
+																stroke-linejoin="round"
+																style="width:14px;height:14px;"
+															>
+																<circle cx="12" cy="12" r="10" /><path d="m4.9 4.9 14.2 14.2" />
 															</svg>
 															Bloquear
 														</button>
@@ -481,16 +527,15 @@
 								{#each requests as r (r.friendshipId)}
 									<div class="fr-req" class:is-leaving={leaving[r.friendshipId]}>
 										<!-- Avatar (no avatarUrl on requester) -->
-										<span
-											class="fr-avatar"
-											style="--tint:{avatarTint(r.requester.username)}"
-										>
+										<span class="fr-avatar" style="--tint:{avatarTint(r.requester.username)}">
 											{avatarLetter(r.requester.username)}
 										</span>
 
 										<!-- Info -->
 										<div class="who">
-											<div class="nome" style="font-size:15px;font-weight:800;">{r.requester.username}</div>
+											<div class="nome" style="font-size:15px;font-weight:800;">
+												{r.requester.username}
+											</div>
 											<div class="meta">
 												Pedido enviado <b>{new Date(r.createdAt).toLocaleDateString()}</b>
 											</div>
@@ -498,18 +543,10 @@
 
 										<!-- Actions -->
 										<div class="fr-req-actions">
-											<button
-												type="button"
-												class="btn-accept"
-												on:click={() => handleAccept(r)}
-											>
+											<button type="button" class="btn-accept" on:click={() => handleAccept(r)}>
 												Aceitar
 											</button>
-											<button
-												type="button"
-												class="btn-decline"
-												on:click={() => handleDecline(r)}
-											>
+											<button type="button" class="btn-decline" on:click={() => handleDecline(r)}>
 												Recusar
 											</button>
 										</div>
@@ -524,8 +561,15 @@
 				{#if tab === 'buscar'}
 					<div class="fr-scroll">
 						<div class="fr-search-bar">
-							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-								<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>
+							<svg
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" />
 							</svg>
 							<input
 								type="text"
@@ -552,10 +596,7 @@
 							<div class="fr-list">
 								{#each filteredResults as p (p.id)}
 									<div class="fr-req">
-										<span
-											class="fr-avatar"
-											style="--tint:{avatarTint(p.username)}"
-										>
+										<span class="fr-avatar" style="--tint:{avatarTint(p.username)}">
 											{avatarLetter(p.username)}
 										</span>
 
@@ -591,10 +632,7 @@
 {#if docked}
 	<div class="fr-dock">
 		<div class="fr-dock-head">
-			<span
-				class="fr-avatar"
-				style="--tint:{avatarTint(docked.friend.username)}"
-			>
+			<span class="fr-avatar" style="--tint:{avatarTint(docked.friend.username)}">
 				{#if docked.friend.avatarUrl}
 					<img
 						src={docked.friend.avatarUrl}
@@ -618,8 +656,15 @@
 					chatMessages = [];
 				}}
 			>
-				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+				<svg
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<path d="M18 6 6 18" /><path d="m6 6 12 12" />
 				</svg>
 			</button>
 		</div>
@@ -649,14 +694,16 @@
 						if (e.key === 'Enter') sendMsg();
 					}}
 				/>
-				<button
-					type="button"
-					class="btn-send"
-					disabled={!chatDraft.trim()}
-					on:click={sendMsg}
-				>
-					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-						<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>
+				<button type="button" class="btn-send" disabled={!chatDraft.trim()} on:click={sendMsg}>
+					<svg
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" />
 					</svg>
 				</button>
 			</div>
