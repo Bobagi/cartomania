@@ -425,18 +425,18 @@ web/                         SvelteKit frontend
   returns `termsAccepted`; `+layout.server.ts` fetches `{accepted, currentVersion}` and `+layout.svelte`
   shows the blocking **`AgreementGate.svelte`** to a signed-in user who hasn't accepted the version in force
   (legacy accounts, Google sign-ins, or after a version bump). Endpoints: `GET /auth/agreement`, `POST
-  /auth/accept-terms`. **The gate is modelled on CoinHub's `AgreementGate` (reworked 2026-07-26):** language
+  /auth/accept-terms`. **The gate is modelled on Porkfolio's `AgreementGate` (reworked 2026-07-26):** language
   selector, the version tag, the **full Terms rendered inline in a scrollable box** (from the `legal.terms`
   i18n doc) + links that open `/terms` and `/privacy` in a new tab, **three required checkboxes** (18+, accept
   Terms, accept Privacy) so `I accept` stays disabled until all three are ticked, and a **Decline and sign
   out** button (`/api/auth/logout` + back to `/`). i18n keys: `agreement.*` (all three locales). Do NOT
   regress it back to a single "I accept" with no checkboxes/no visible terms/no decline.
-- **Full account/email suite (2026-07-26, CoinHub-modelled) - READ before touching auth.**
+- **Full account/email suite (2026-07-26, Porkfolio-modelled) - READ before touching auth.**
   - **Registration now REQUIRES an email** (unique, validated) → sends a verification email. `register(username,
     email, password, acceptTerms, ctx)`. Existing username-only accounts keep working (email NULL); they can
     add an email on `/account`.
   - **Transactional email** = `src/email/email.service.ts` (`nodemailer`, **config-driven**: no-op unless
-    `SMTP_*` set). Live SMTP is the owner's Gmail app password (same as CoinHub), `SMTP_*`+`PUBLIC_SITE_URL`
+    `SMTP_*` set). Live SMTP is the owner's Gmail app password (same as Porkfolio), `SMTP_*`+`PUBLIC_SITE_URL`
     in the backend `.env`. `EmailModule` is `@Global`. Never logs the body (carries tokens). Proven live:
     a real verification email delivered from `bobagi.contact@gmail.com`; the link is correctly QP-encoded
     (`token=3D…`) - a real mail client decodes it fine (an MCP Gmail read shows a `` artifact, not a bug).
@@ -517,7 +517,7 @@ web/                         SvelteKit frontend
   request: migrated the Google identity (googleId + `gustavoperin067@gmail.com` + photo) onto **`Bobagi`**
   (now ADMIN, email-verified, password + Google both work) and hard-deleted `Gustavo`. Also: the live
   **SMTP now uses a Gmail app password DEDICATED to Cartomania** (still `bobagi.contact@gmail.com`, no longer
-  shared with Coin Hub) in `.env` `SMTP_PASSWORD`. Verified end-to-end: a real reset email was delivered to
+  shared with Porkfolio) in `.env` `SMTP_PASSWORD`. Verified end-to-end: a real reset email was delivered to
   the owner's inbox. **Only `admin` (seed) and `Bobagi` are ADMIN;** the other seed/demo users
   (`admin2`/`bobao`/`Leftninja`) remain USERs, no email.
 - **Landing polish + em dash purge (2026-07-26).** Owner feedback pass on the hero: (1) **Copy is now
@@ -533,7 +533,7 @@ web/                         SvelteKit frontend
   and promise width re-tuned so the Play CTA still clears the cookie bar above the fold at 1440.
 
 - **Account/email suite - password reset, email verification, Google linking, session revocation
-  (2026-07-26, CoinHub-modelled).** Registration now takes an **email** (unique, verified). Added
+  (2026-07-26, Porkfolio-modelled).** Registration now takes an **email** (unique, verified). Added
   transactional email (`nodemailer`, config-driven; live via the owner's Gmail app password), one-time
   `AuthToken`s (SHA-256-hashed, single-use), **password reset** (`/forgot-password` → `/reset-password`,
   revokes all sessions), **email verification** (`/verify-email` + resend), **Google connect/disconnect**
@@ -711,7 +711,7 @@ web/                         SvelteKit frontend
    sign-in** gotcha (incl. the PM2/ecosystem runtime-env fix). Last check: a human happy-path login.
 7. **[DONE 2026-07-26] Password reset + email verification** are live (SMTP configured = owner's Gmail app
    password). See the **Full account/email suite** gotcha. Still open (optional): **login-history /
-   new-device alerts** (needs the same email sender + an access-event table - CoinHub has the pattern).
+   new-device alerts** (needs the same email sender + an access-event table - Porkfolio has the pattern).
 8. **[optional privacy] Self-host the Google Fonts** (Cinzel/Manrope/Teko) so CSP can drop
    `fonts.googleapis.com`/`fonts.gstatic.com` and visitor IPs stop reaching Google (the card fonts
    Morpheus/Exocet are already self-hosted).
