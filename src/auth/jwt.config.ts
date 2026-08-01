@@ -23,7 +23,7 @@ export function resolveJwtSecret(): string {
     // still runs, but never the guessable literal that leaked in the repo.
     // eslint-disable-next-line no-console
     console.warn(
-      '[auth] JWT_SECRET missing/weak — using an ephemeral dev secret (NOT for production).',
+      '[auth] JWT_SECRET missing/weak - using an ephemeral dev secret (NOT for production).',
     );
     return `dev-ephemeral-${process.pid}-${Date.now()}`;
   }

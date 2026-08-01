@@ -86,7 +86,7 @@
 									{#if sideState(record, 'a') === 'win'}<span class="crown">👑</span>{/if}
 								</div>
 								<div class="fighter-meta">
-									<span class={`stat ${meta.cssClass}`}>{record.aVal ?? '–'}</span>
+									<span class={`stat ${meta.cssClass}`}>{record.aVal ?? '-'}</span>
 									<span class="card-name">{thumbName(record.aCode, record.aName)}</span>
 								</div>
 							</div>
@@ -97,7 +97,7 @@
 
 							<div class={`fighter opp ${sideState(record, 'b')}`}>
 								<div class="fighter-meta">
-									<span class={`stat ${meta.cssClass}`}>{record.bVal ?? '–'}</span>
+									<span class={`stat ${meta.cssClass}`}>{record.bVal ?? '-'}</span>
 									<span class="card-name">{thumbName(record.bCode, record.bName)}</span>
 								</div>
 								<div class="thumb">

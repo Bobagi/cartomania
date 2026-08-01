@@ -19,7 +19,7 @@ const GOOGLE_USERINFO_ENDPOINT =
  * Implements the OAuth 2.0 authorization-code exchange against Google.
  *
  * The BACKEND (not the browser, not the web tier) performs the code→token→userinfo
- * exchange, so the client secret never leaves the server and — crucially — the
+ * exchange, so the client secret never leaves the server and - crucially - the
  * single-use `code` issued by Google is the proof of a real sign-in. Even though the
  * public web proxy can reach `POST /auth/google`, a forged/absent code fails the
  * exchange, so no one can inject an arbitrary Google identity.

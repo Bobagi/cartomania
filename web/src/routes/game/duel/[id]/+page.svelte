@@ -1084,14 +1084,14 @@
 						class={`lb__pick lb__pick--${opt.pos}`}
 						disabled={isGameOver()}
 						on:click={() => chooseAttr(opt.attr)}
-						title={$t(opt.tkey, { value: chooserCardDetails?.[opt.attr] ?? '–' })}
-						aria-label={$t(opt.tkey, { value: chooserCardDetails?.[opt.attr] ?? '–' })}
+						title={$t(opt.tkey, { value: chooserCardDetails?.[opt.attr] ?? '-' })}
+						aria-label={$t(opt.tkey, { value: chooserCardDetails?.[opt.attr] ?? '-' })}
 					>
 						<span class="lb__orb lb__orb--hover">
 							<span class="lb__orb-icon" style={`background-image:url(${ATTR_ICON[opt.attr]})`}
 							></span>
 							<span class="card-attribute-value lb__orb-val"
-								>{chooserCardDetails?.[opt.attr] ?? '–'}</span
+								>{chooserCardDetails?.[opt.attr] ?? '-'}</span
 							>
 						</span>
 					</button>
@@ -1101,14 +1101,14 @@
 					<span class="lb__orb lb__orb--red">
 						<span class="lb__orb-icon" style={`background-image:url(${ATTR_ICON[chosenAttr]})`}
 						></span>
-						<span class="card-attribute-value lb__orb-val">{oppPowerValue ?? '–'}</span>
+						<span class="card-attribute-value lb__orb-val">{oppPowerValue ?? '-'}</span>
 					</span>
 				</div>
 				<div class="lb__pwr lb__pwr--you" aria-hidden="true">
 					<span class="lb__orb lb__orb--green">
 						<span class="lb__orb-icon" style={`background-image:url(${ATTR_ICON[chosenAttr]})`}
 						></span>
-						<span class="card-attribute-value lb__orb-val">{playerPowerValue ?? '–'}</span>
+						<span class="card-attribute-value lb__orb-val">{playerPowerValue ?? '-'}</span>
 					</span>
 				</div>
 			{/if}
@@ -1160,7 +1160,7 @@
 						<span class="score-num">{roundsWonA}</span>
 						<span class="score-lbl">{$t('duel.you')}</span>
 					</div>
-					<span class="score-dash">–</span>
+					<span class="score-dash">-</span>
 					<div class="score-side opp">
 						<span class="score-num">{roundsWonB}</span>
 						<span class="score-lbl">{playerBUsername}</span>

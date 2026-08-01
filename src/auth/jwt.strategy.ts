@@ -24,7 +24,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   /**
    * Beyond the signature/expiry, verify the account still exists and the token's
    * session-version matches the DB. A stale `tv` (after a password change/reset or
-   * unlink) or a deleted user ⇒ 401 — so those actions actually revoke sessions,
+   * unlink) or a deleted user ⇒ 401 - so those actions actually revoke sessions,
    * instead of a signed JWT staying valid for its full lifetime.
    */
   async validate(payload: JwtPayload) {

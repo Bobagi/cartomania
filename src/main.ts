@@ -21,7 +21,7 @@ function sameOriginGuard(allowedOrigins: string[]) {
     const source = origin || referer;
     if (!source) return next();
     // Match the ORIGIN exactly (an Origin header has no path) or, for a Referer,
-    // require a path boundary — so `https://good.example.evil.com` does NOT pass a
+    // require a path boundary - so `https://good.example.evil.com` does NOT pass a
     // naive prefix check against `https://good.example`.
     const ok = allowedOrigins.some(
       (allowed) => source === allowed || source.startsWith(`${allowed}/`),
@@ -74,7 +74,7 @@ async function bootstrap() {
     maxAge: 86400,
   });
 
-  // Swagger exposes the full API surface — only mount it outside production.
+  // Swagger exposes the full API surface - only mount it outside production.
   if (!isProduction) {
     const config = new DocumentBuilder()
       .setTitle('Cartomania API')

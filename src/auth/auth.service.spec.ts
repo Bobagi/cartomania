@@ -111,7 +111,7 @@ const jwtStub = {
   signAsync: async (payload: any) => `jwt.${payload.sub}.tv${payload.tv}`,
 } as any;
 
-// Email disabled in tests (no SMTP) — verification/reset are no-ops for delivery,
+// Email disabled in tests (no SMTP) - verification/reset are no-ops for delivery,
 // but the token lifecycle (issued/consumed) is still exercised where we call it directly.
 const emailOff = { isEnabled: () => false, send: async () => false } as any;
 const emailOn = { isEnabled: () => true, send: async () => true } as any;
@@ -131,7 +131,7 @@ async function grab(promise: Promise<unknown>) {
   }
 }
 
-describe('AuthService — registration', () => {
+describe('AuthService - registration', () => {
   it('always creates a USER (role is never a parameter)', async () => {
     const { service, prisma } = newService();
     await service.register('newplayer', 'a@b.com', 'strongpass123', true, {});
@@ -181,7 +181,7 @@ describe('AuthService — registration', () => {
   });
 });
 
-describe('AuthService — email verification (token single-use)', () => {
+describe('AuthService - email verification (token single-use)', () => {
   it('verifies with a fresh token, then the same token fails (single-use)', async () => {
     const { service, prisma, tokens } = newService(emailOn);
     const { user } = await service.register(
@@ -243,7 +243,7 @@ describe('AuthService — email verification (token single-use)', () => {
   });
 });
 
-describe('AuthService — password reset revokes sessions', () => {
+describe('AuthService - password reset revokes sessions', () => {
   it('bumps tokenVersion (revoking old JWTs) and sets the new password', async () => {
     const { service, prisma, tokens } = newService(emailOn);
     const { user } = await service.register(
@@ -277,7 +277,7 @@ describe('AuthService — password reset revokes sessions', () => {
   });
 });
 
-describe('AuthService — Google link/unlink (IDOR + lockout guards)', () => {
+describe('AuthService - Google link/unlink (IDOR + lockout guards)', () => {
   const profile = (over: Partial<GoogleUserInfo> = {}): GoogleUserInfo => ({
     sub: 'g-sub-1',
     email: 'g@e.com',
@@ -354,7 +354,7 @@ describe('AuthService — Google link/unlink (IDOR + lockout guards)', () => {
   });
 });
 
-describe('AuthService — login + lockout', () => {
+describe('AuthService - login + lockout', () => {
   async function seed(prisma: any, username: string, password: string) {
     prisma._players.push({
       id: `seed-${username}`,

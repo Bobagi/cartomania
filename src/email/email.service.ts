@@ -12,7 +12,7 @@ export interface EmailMessage {
  * Transactional email (verification, password reset), config-driven.
  *
  * With SMTP_* set it sends over SMTP+STARTTLS (e.g. Gmail on :587 with an App
- * Password). WITHOUT them it is a safe no-op that only logs — so the app runs
+ * Password). WITHOUT them it is a safe no-op that only logs - so the app runs
  * fine without email; verification/reset links just aren't delivered. Never logs
  * the message body (it can carry a token). Send is best-effort and never throws
  * to the caller (a delivery failure must not break the user action or leak
@@ -47,7 +47,7 @@ export class EmailService {
     } else {
       this.transporter = null;
       this.logger.warn(
-        'Email disabled — SMTP_* not configured (verification/reset links will not send).',
+        'Email disabled - SMTP_* not configured (verification/reset links will not send).',
       );
     }
   }
@@ -59,7 +59,7 @@ export class EmailService {
   async send(message: EmailMessage): Promise<boolean> {
     if (!this.transporter) {
       this.logger.log(
-        `email (not sent — SMTP off): to=${message.to} subject="${message.subject}"`,
+        `email (not sent - SMTP off): to=${message.to} subject="${message.subject}"`,
       );
       return false;
     }

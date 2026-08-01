@@ -58,10 +58,10 @@ export function buildPasswordResetEmail(
   return {
     to,
     subject: 'Reset your Cartomania password',
-    text: `We received a request to reset your Cartomania password.\n\nOpen this link to choose a new password (valid for 1 hour):\n${link}\n\nIf you didn't request this, you can ignore this email — your password won't change.`,
+    text: `We received a request to reset your Cartomania password.\n\nOpen this link to choose a new password (valid for 1 hour):\n${link}\n\nIf you didn't request this, you can ignore this email - your password won't change.`,
     html: shell(
       'Reset your password',
-      `<p>We received a request to reset your Cartomania password. Choose a new one using the button below. This link is valid for 1 hour.</p><p>If you didn't request this, ignore this email — your password won't change.</p>`,
+      `<p>We received a request to reset your Cartomania password. Choose a new one using the button below. This link is valid for 1 hour.</p><p>If you didn't request this, ignore this email - your password won't change.</p>`,
       { href: link, label: 'Reset password' },
     ),
   };

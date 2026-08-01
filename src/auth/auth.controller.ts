@@ -71,7 +71,7 @@ export class AuthController {
     return this.authService.login(body.username, body.password);
   }
 
-  /** Start a password reset (always 200 — never reveals if the email exists). */
+  /** Start a password reset (always 200 - never reveals if the email exists). */
   @Post('forgot-password')
   forgotPassword(@Body() body: { email?: string }) {
     return this.authService.requestPasswordReset(body?.email ?? '');

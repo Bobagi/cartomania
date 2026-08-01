@@ -5,7 +5,7 @@ import { resolveJwtSecret } from './jwt.config';
  * anyone forge an admin token. These lock the fail-closed behaviour: production
  * must refuse a missing/weak secret, and the known-leaked literal is never valid.
  */
-describe('resolveJwtSecret — fail-closed', () => {
+describe('resolveJwtSecret - fail-closed', () => {
   const originalEnv = { ...process.env };
   afterEach(() => {
     process.env = { ...originalEnv };

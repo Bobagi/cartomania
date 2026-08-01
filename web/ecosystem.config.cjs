@@ -2,7 +2,7 @@
 //
 // adapter-node does NOT load a .env at runtime, and `$env/dynamic/private`
 // (e.g. GOOGLE_CLIENT_ID / GOOGLE_REDIRECT_URI for Google sign-in) is read from
-// process.env at runtime — so we load web/.env here and inject it. The Google
+// process.env at runtime - so we load web/.env here and inject it. The Google
 // CLIENT SECRET is NOT in web/.env (only the backend needs it); the client id +
 // redirect uri + PUBLIC_GOOGLE_AUTH_ENABLED are not secret.
 const fs = require('fs');
@@ -19,7 +19,7 @@ function loadDotEnv(file) {
 			out[line.slice(0, eq).trim()] = line.slice(eq + 1).trim();
 		}
 	} catch {
-		// no .env — run with defaults (feature stays off)
+		// no .env - run with defaults (feature stays off)
 	}
 	return out;
 }
