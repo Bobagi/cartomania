@@ -2,6 +2,7 @@
 	import { browser } from '$app/environment';
 	import { invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
+	import AgreementGate from '$lib/components/AgreementGate.svelte';
 	import CookieBanner from '$lib/components/CookieBanner.svelte';
 	import SiteFooter from '$lib/components/SiteFooter.svelte';
 	import TopBar from '$lib/components/TopBar.svelte';
@@ -22,9 +23,20 @@
 
 	export let data: {
 		authUser: AuthenticatedCartomaniaUser | null;
+		termsAccepted: boolean;
+		agreementVersion?: string;
 		locale: Locale;
 		consentCookie: string | null;
 	};
+
+	// Block the app for a signed-in user who hasn't accepted the current legal terms.
+	// EXCEPT on the pages they need in order TO decide: the legal documents themselves
+	// (so they can actually read the Terms/Privacy the gate links to) and the public
+	// auth flows (reset/verify). The gate reappears the moment they navigate elsewhere.
+	$: gateExemptRoute = /^\/(terms|privacy|forgot-password|reset-password|verify-email|auth\/)/.test(
+		$page.url?.pathname ?? ''
+	);
+	$: mustAcceptTerms = data?.authUser !== null && data?.termsAccepted === false && !gateExemptRoute;
 
 	// Keep the i18n store in sync with the locale the server resolved (cookie or
 	// Accept-Language). Runs during SSR and on every client navigation.
@@ -32,7 +44,7 @@
 
 	// Seed consent from the server-resolved cookie, then load the analytics script
 	// ONLY once the visitor has accepted it (now, or on a return visit). The script
-	// is never present until consent.analytics is true — see $lib/consent/consent.
+	// is never present until consent.analytics is true - see $lib/consent/consent.
 	$: initConsent(data.consentCookie);
 	$: if (browser && $consent.analytics) loadAnalytics();
 
@@ -97,5 +109,10 @@
 <!-- Global: shows until the visitor decides, on every route (incl. chromeless game
 	board) so no script ever loads without consent. -->
 <CookieBanner />
+
+<!-- Signed-in but hasn't accepted the current Terms/Privacy - blocking consent gate. -->
+{#if mustAcceptTerms}
+	<AgreementGate version={data.agreementVersion ?? ''} />
+{/if}
 
 <style src="../app.postcss"></style>

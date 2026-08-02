@@ -1,5 +1,5 @@
 /*
- * Card FX — holographic foil tilt-shine + Burn/Dissolve/Crush destruction.
+ * Card FX - holographic foil tilt-shine + Burn/Dissolve/Crush destruction.
  * Ported from the designer's prototype and adapted to our raster card art.
  *
  * Structure expected:
@@ -8,7 +8,7 @@
  *       .cardfx-glow      (ambient iridescent halo, behind)
  *       .cardfx-card      (gets the tilt transform + SVG destruction filter)
  *         <the card content, e.g. CardComposite>
- *         .cardfx-foil    (holo overlay layers — only when foil is on)
+ *         .cardfx-foil    (holo overlay layers - only when foil is on)
  *       canvas.fx-canvas
  */
 
@@ -116,7 +116,7 @@
 	opacity: 0;
 }
 
-/* CRUSH — a fist punches the centre: 3D knock-back + held dent */
+/* CRUSH - a fist punches the centre: 3D knock-back + held dent */
 .cardfx-card.punched {
 	animation: cardfx-punch var(--crush-dur, 1100ms) cubic-bezier(0.25, 0.8, 0.3, 1) forwards;
 	transform-origin: 50% 47%;

@@ -5,6 +5,11 @@ export interface AuthenticatedCartomaniaUser {
 	username: string;
 	role: CartomaniaUserRole;
 	avatarUrl?: string | null;
+	email?: string | null;
+	emailVerified?: boolean;
+	hasPassword?: boolean;
+	googleLinked?: boolean;
+	googleAvatarUrl?: string | null;
 }
 
 export interface CartomaniaGameStatistics {

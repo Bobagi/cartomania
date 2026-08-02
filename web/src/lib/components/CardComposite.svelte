@@ -77,9 +77,9 @@
 	}
 
 	// The flexbox stretches the ribbon with the name (pure CSS). JS only handles the rare
-	// case where, even at the banner's max width, the name overflows — then it lowers a
+	// case where, even at the banner's max width, the name overflows - then it lowers a
 	// scale multiplier (kept in CSS so the name still scales with the card) until it fits.
-	// Bounded, synchronous, no observers/async — so it can never loop or hang.
+	// Bounded, synchronous, no observers/async - so it can never loop or hang.
 	function fitBannerName() {
 		if (!nameEl || !midEl) return;
 		nameEl.style.setProperty('--name-shrink', '1');
@@ -91,17 +91,25 @@
 		}
 	}
 
-	$: magicBadge = makeBadge('/icons/magic_icon.png', magicValue, $t('attributes.magic').toUpperCase());
-	$: mightBadge = makeBadge('/icons/strength_icon.png', mightValue, $t('attributes.might').toUpperCase());
+	$: magicBadge = makeBadge(
+		'/icons/magic_icon.png',
+		magicValue,
+		$t('attributes.magic').toUpperCase()
+	);
+	$: mightBadge = makeBadge(
+		'/icons/strength_icon.png',
+		mightValue,
+		$t('attributes.might').toUpperCase()
+	);
 	$: fireBadge = makeBadge('/icons/fire_icon.png', fireValue, $t('attributes.fire').toUpperCase());
 
 	$: tooltipText = descriptionText
-		? `${titleText ?? 'Card'} — ${descriptionText}`
+		? `${titleText ?? 'Card'}: ${descriptionText}`
 		: (titleText ?? 'Card');
 
 	// Refit only when the NAME actually changes. afterUpdate runs after the DOM updates,
 	// so the measure is accurate; the guard is a DOM attribute (not a reactive variable),
-	// and writing --name-shrink is a plain style write — neither schedules another update,
+	// and writing --name-shrink is a plain style write - neither schedules another update,
 	// so this can never feed back into itself.
 	afterUpdate(() => {
 		if (!nameEl || !midEl) return;
@@ -127,14 +135,14 @@
 	aria-label={titleText ?? 'card'}
 	title={tooltipText}
 	class="card-font"
-	style={`position:relative;width:100%;aspect-ratio:${aspectWidth}/${aspectHeight};overflow:hidden;border-radius:5px;transform:translateZ(0) perspective(900px);will-change:transform;container-type:size;container-name:card;`}
+	style={`position:relative;width:100%;aspect-ratio:${aspectWidth}/${aspectHeight};overflow:hidden;border-radius:5px;background:#0d0a12;transform:translateZ(0) perspective(900px);will-change:transform;container-type:size;container-name:card;`}
 >
 	<div style="position:absolute;inset:0;display:flex;flex-direction:column;width:100%;height:100%;">
 		<div style="position:relative;width:100%;height:70%;z-index:0;">
 			<img
 				src={artImageUrl}
 				alt={titleText ?? 'card-art'}
-				style={`position:absolute;inset:0;width:100%;height:100%;object-fit:${artObjectFit};display:block;padding: 6% 6% 0 6%;`}
+				style={`position:absolute;inset:0;width:100%;height:100%;object-fit:${artObjectFit};display:block;padding: 4% 4% 0 4%;`}
 				loading="lazy"
 				decoding="async"
 				draggable="false"
@@ -197,7 +205,7 @@
 	/>
 	<!-- Elastic title banner (3-slice): fixed caps + a stretchy middle. Anchored right,
 	     so long names grow the ribbon LEFTWARD like the printed cards. The stretch is
-	     PURE CSS (flexbox) — no JS, so it's fast and can't hang. The number rides in the
+	     PURE CSS (flexbox) - no JS, so it's fast and can't hang. The number rides in the
 	     right ornament. Outlines are text-shadows (a centred stroke thins the glyph).
 	     Sits above the frame so the name/number are never covered by the stone border. -->
 	<div class="cc-banner">
@@ -252,7 +260,7 @@
 	.cc-name {
 		/* Sized off the banner height; --name-shrink only lowers when the name overflows.
 		   Outline uses -webkit-text-stroke + paint-order (stroke painted first, fill on
-		   top covers the inner half) — uniform at any thickness, no ghost-copy artefacts.
+		   top covers the inner half) - uniform at any thickness, no ghost-copy artefacts.
 		   --cc-outline-size × 2em = total stroke; visible outer outline = --cc-outline-size × 1em. */
 		font-family: var(--cc-name-font, 'Morpheus'), system-ui, sans-serif;
 		font-size: calc(var(--hb) * var(--cc-name-factor, 0.29) * var(--name-shrink, 1));

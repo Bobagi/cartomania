@@ -3,6 +3,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import type { GameMode } from '$lib/api/cartomaniaTypes';
 	import {
+		CartomaniaApiError,
 		endCartomaniaGameSessionOnServer,
 		expireInactiveCartomaniaGames,
 		loginCartomaniaUserAccount,
@@ -37,6 +38,8 @@
 		authUser: AuthenticatedCartomaniaUser | null;
 		dashboard: CartomaniaDashboardData;
 		featuredCards: FeaturedHeroCard[];
+		showcaseCards: FeaturedHeroCard[];
+		collectionCardCount: number;
 	};
 
 	const avatarFallbackImageUrl = '/avatars/placeholder.png';
@@ -47,11 +50,26 @@
 	const heroCardTitleImageUrl = '/frames/title.png';
 	const heroCardTiltClasses = ['tilt-left', 'tilt-center', 'tilt-right'];
 
+	// The three attributes a round can be fought on - the spine of the landing
+	// page, rendered with the same icons the cards and the duel board use.
+	const duelAttributes = [
+		{ key: 'magic', iconUrl: '/icons/magic_icon.png' },
+		{ key: 'might', iconUrl: '/icons/strength_icon.png' },
+		{ key: 'fire', iconUrl: '/icons/fire_icon.png' }
+	] as const;
+
+	// A round is a real sequence, so the steps are numbered.
+	const duelRoundSteps = ['reveal', 'clash', 'capture'] as const;
+
+	// Purely decorative embers drifting up behind the hero; CSS positions each one.
+	const heroEmberCount = 12;
+
 	const BOT_ID = '70dc2eb8-b3a5-4c21-9e2b-c6cf901078b0';
 
 	let usernameInputValue = '';
 	let passwordInputValue = '';
 	let loginErrorKey: string | null = null;
+	let startErrorKey: string | null = null;
 	let showFriendsPanel = false;
 	let showAvatarPicker = false;
 
@@ -100,7 +118,12 @@
 				if (!gameId) continue;
 				if (firstPollDone && !seenGameIds.has(gameId)) {
 					const players = g.players as string[] | undefined;
-					if (players && players.length >= 2 && players[1] === currentUser.id && players[0] !== BOT_ID) {
+					if (
+						players &&
+						players.length >= 2 &&
+						players[1] === currentUser.id &&
+						players[0] !== BOT_ID
+					) {
 						seenGameIds.add(gameId);
 						saveSeenGames();
 						const challengerName = friendsCache.get(players[0]) || 'Um amigo';
@@ -126,7 +149,9 @@
 
 	async function declineChallenge(challenge: PendingChallenge) {
 		markChallengeSeen(challenge.gameId);
-		try { await surrenderCartomaniaGame(challenge.gameId); } catch {}
+		try {
+			await surrenderCartomaniaGame(challenge.gameId);
+		} catch {}
 	}
 
 	function startChallengePoll() {
@@ -138,7 +163,10 @@
 	}
 
 	function stopChallengePoll() {
-		if (challengePollInterval) { clearInterval(challengePollInterval); challengePollInterval = null; }
+		if (challengePollInterval) {
+			clearInterval(challengePollInterval);
+			challengePollInterval = null;
+		}
 	}
 
 	onMount(() => {
@@ -160,6 +188,8 @@
 	}
 
 	$: featuredCards = data.featuredCards ?? [];
+	$: showcaseCards = data.showcaseCards ?? [];
+	$: collectionCardCount = data.collectionCardCount ?? 0;
 
 	$: dashboardData = data.dashboard;
 	$: backendHealthMessage = dashboardData?.backendHealthMessage ?? 'Checking server…';
@@ -173,12 +203,17 @@
 	$: statGamesWon = statistics.gamesWon ?? 0;
 	$: statGamesDrawn = statistics.gamesDrawn ?? 0;
 	$: statActive = myActiveCartomaniaGames.length;
+	// One match at a time (enforced by the server): while the player is in a duel
+	// the call to action must RESUME it instead of offering a second one that the
+	// backend would refuse with a 409.
+	$: currentActiveGame = myActiveCartomaniaGames[0] ?? null;
+	$: if (currentActiveGame === null) startErrorKey = null;
 	$: statLastUpdated =
 		myActiveCartomaniaGames.length > 0
 			? formatRelativeLastActivity(
 					Math.max(...myActiveCartomaniaGames.map((g) => extractLastActivityTimestamp(g) || 0))
 				)
-			: '—';
+			: '·';
 	$: statRank = 'Bronze I';
 	$: backendStatusIcon = backendHealthMessage.toLowerCase().includes('online')
 		? '🟢'
@@ -193,7 +228,10 @@
 
 	async function handleCartomaniaLoginSubmission() {
 		try {
-			const { user } = await loginCartomaniaUserAccount(usernameInputValue.trim(), passwordInputValue);
+			const { user } = await loginCartomaniaUserAccount(
+				usernameInputValue.trim(),
+				passwordInputValue
+			);
 			setAuthState(user);
 			passwordInputValue = '';
 			loginErrorKey = null;
@@ -207,14 +245,35 @@
 
 	async function startNewAttributeDuelCartomaniaGameForPlayer() {
 		if (!currentUser) return;
+		startErrorKey = null;
 		try {
 			const { gameId } = await startAttributeDuelCartomaniaGameForPlayer(currentUser.id);
 			goto(`/game/duel/${gameId}`);
 			return;
 		} catch (error) {
+			// A player may only be in ONE match at a time. The button below already
+			// turns into "resume" once the dashboard knows about the match, but the
+			// server is the authority: if it says the player is busy (409), take them
+			// straight to the match it named instead of leaving them on a dead button.
+			const conflictGameId = extractActiveGameIdFromConflict(error);
+			if (conflictGameId) {
+				goto(`/game/duel/${conflictGameId}`);
+				return;
+			}
+			startErrorKey =
+				error instanceof CartomaniaApiError && error.status === 409
+					? 'home.dashboard.alreadyInMatch'
+					: 'home.dashboard.startFailed';
 			console.error('Failed to start duel', error);
 		}
 		await refreshCartomaniaDashboardData();
+	}
+
+	function extractActiveGameIdFromConflict(error: unknown): string | null {
+		if (!(error instanceof CartomaniaApiError) || error.status !== 409) return null;
+		const body = error.bodyJson as { error?: string; gameId?: string } | undefined;
+		if (body?.error !== 'ActiveGameExists') return null;
+		return typeof body.gameId === 'string' && body.gameId ? body.gameId : null;
 	}
 
 	async function expireInactiveCartomaniaGamesAndReloadDashboard() {
@@ -277,83 +336,178 @@
 <div class="page-shell">
 	{#if !currentUser}
 		<div class="landing">
-			<div class="landing-hero">
-				<p class="hero-kicker">{$t('home.kicker')}</p>
-				<h1 class="hero-title">Cartomania</h1>
-				<p class="hero-tagline">{$t('home.tagline')}</p>
+			<section class="lp-hero">
+				<div class="hero-embers" aria-hidden="true">
+					{#each Array(heroEmberCount) as _, emberIndex}
+						<span class="ember" data-ember={emberIndex}></span>
+					{/each}
+				</div>
+
+				<div class="landing-hero">
+					<p class="hero-kicker">{$t('home.kicker')}</p>
+					<h1 class="hero-title">Cartomania</h1>
+					<p class="hero-tagline">{$t('home.promise')}</p>
+				</div>
+
 				{#if featuredCards.length}
 					<div class="hero-art" aria-hidden="true">
-						{#each featuredCards as heroCard, index (heroCard.code)}
-							<div class="hero-card {heroCardTiltClasses[index] ?? ''}">
-								<CardComposite
-									artImageUrl={heroCard.imageUrl}
-									frameImageUrl={heroCardFrameImageUrl}
-									titleImageUrl={heroCardTitleImageUrl}
-									titleText={heroCard.name}
-									descriptionText={heroCard.description}
-									magicValue={heroCard.magic}
-									mightValue={heroCard.might}
-									fireValue={heroCard.fire}
-									cornerNumberValue={heroCard.number}
-									enableTilt={false}
-								/>
-							</div>
-						{/each}
+						<span class="hero-art-ring"></span>
+						<div class="hero-fan">
+							{#each featuredCards as heroCard, index (heroCard.code)}
+								<div class="hero-card {heroCardTiltClasses[index] ?? ''}">
+									<CardComposite
+										artImageUrl={heroCard.imageUrl}
+										frameImageUrl={heroCardFrameImageUrl}
+										titleImageUrl={heroCardTitleImageUrl}
+										titleText={heroCard.name}
+										descriptionText={heroCard.description}
+										magicValue={heroCard.magic}
+										mightValue={heroCard.might}
+										fireValue={heroCard.fire}
+										cornerNumberValue={heroCard.number}
+										enableTilt={false}
+									/>
+								</div>
+							{/each}
+						</div>
 					</div>
 				{/if}
-				<p class="hero-status">
-					{$t('home.serverLabel')}
+
+				<div class="hero-cta">
+					<button class="button button-primary hero-cta-main" on:click={() => goto('/register')}>
+						<UiIcon name="play" />
+						{$t('home.playCta')}
+					</button>
+					<button class="button button-ghost" type="button" on:click={() => goto('/gallery')}>
+						<UiIcon name="gallery" />
+						{$t('home.galleryCta')}
+					</button>
+				</div>
+				<p class="hero-note">
+					{$t('home.playNote')}
 					<span
 						class="status-dot"
 						class:online={backendStatusIcon === '🟢'}
 						class:offline={backendStatusIcon === '🔴'}
 					></span>
-					<span class="mono">{backendHealthMessage}</span>
+					<span class="hero-note-server">{$t('home.serverLabel')} · {backendHealthMessage}</span>
+					<a class="hero-login-link" href="#login">{$t('home.auth.haveAccount')}</a>
 				</p>
-			</div>
+			</section>
 
-			<div class="auth-card">
-				<h2 class="auth-card-title">{$t('home.auth.title')}</h2>
-				<p class="auth-card-sub">{$t('home.auth.subtitle')}</p>
-				<form class="controls-col" on:submit|preventDefault={handleCartomaniaLoginSubmission}>
-					<div class="auth-fields">
-						<label class="input-wrap">
-							<span class="input-label">{$t('home.auth.username')}</span>
-							<input
-								class="input-field"
-								bind:value={usernameInputValue}
-								placeholder={$t('home.auth.usernamePlaceholder')}
-								autocomplete="username"
-							/>
-						</label>
-						<label class="input-wrap">
-							<span class="input-label">{$t('home.auth.password')}</span>
-							<input
-								class="input-field"
-								type="password"
-								bind:value={passwordInputValue}
-								placeholder="••••••••"
-								autocomplete="current-password"
-							/>
-						</label>
+			<section class="lp-section lp-attrs">
+				<h2 class="lp-title">{$t('home.attributes.title')}</h2>
+				<p class="lp-sub">{$t('home.attributes.subtitle')}</p>
+				<ul class="attr-grid">
+					{#each duelAttributes as attribute (attribute.key)}
+						<li class="attr-card attr-card--{attribute.key}">
+							<img class="attr-icon" src={attribute.iconUrl} alt="" width="64" height="64" />
+							<h3 class="attr-name">{$t(`home.attributes.${attribute.key}.name`)}</h3>
+							<p class="attr-text">{$t(`home.attributes.${attribute.key}.text`)}</p>
+						</li>
+					{/each}
+				</ul>
+			</section>
+
+			<section class="lp-section lp-how">
+				<h2 class="lp-title">{$t('home.how.title')}</h2>
+				<p class="lp-sub">{$t('home.how.subtitle')}</p>
+				<ol class="step-list">
+					{#each duelRoundSteps as step, stepIndex (step)}
+						<li class="step">
+							<span class="step-num" aria-hidden="true">{stepIndex + 1}</span>
+							<h3 class="step-title">{$t(`home.how.${step}Title`)}</h3>
+							<p class="step-text">{$t(`home.how.${step}Text`)}</p>
+						</li>
+					{/each}
+				</ol>
+			</section>
+
+			{#if showcaseCards.length}
+				<section class="lp-section lp-collection">
+					<h2 class="lp-title">{$t('home.collection.title')}</h2>
+					<p class="lp-sub">
+						{$t('home.collection.subtitle', { count: String(collectionCardCount) })}
+					</p>
+					<div class="collection-strip">
+						<ul class="collection-rail">
+							{#each showcaseCards as showcaseCard (showcaseCard.code)}
+								<li class="collection-card">
+									<CardComposite
+										artImageUrl={showcaseCard.imageUrl}
+										frameImageUrl={heroCardFrameImageUrl}
+										titleImageUrl={heroCardTitleImageUrl}
+										titleText={showcaseCard.name}
+										descriptionText={showcaseCard.description}
+										magicValue={showcaseCard.magic}
+										mightValue={showcaseCard.might}
+										fireValue={showcaseCard.fire}
+										cornerNumberValue={showcaseCard.number}
+										enableTilt={false}
+									/>
+								</li>
+							{/each}
+						</ul>
 					</div>
-					{#if loginErrorKey}
-						<p class="empty-text" style="color:#ffbdbd">{$t(loginErrorKey)}</p>
-					{/if}
-					<button class="button button-primary" type="submit">⚔️ {$t('home.auth.login')}</button>
-				</form>
-				<div class="auth-divider">{$t('home.auth.or')}</div>
-				<GoogleAuthButton />
-				<div class="auth-actions">
-					<button class="button button-ghost" type="button" on:click={() => goto('/gallery')}>
+					<a class="button button-ghost lp-section-cta" href="/gallery">
 						<UiIcon name="gallery" />
-						{$t('home.auth.browseGallery')}
-					</button>
-					<button class="button button-neutral" type="button" on:click={() => goto('/register')}>
-						{$t('home.auth.createAccount')}
-					</button>
+						{$t('home.collection.cta')}
+					</a>
+				</section>
+			{/if}
+
+			<section class="lp-final">
+				<h2 class="lp-final-title">{$t('home.finalCta.title')}</h2>
+				<p class="lp-final-text">{$t('home.finalCta.text')}</p>
+				<a class="button button-primary lp-final-cta" href="/register">
+					<UiIcon name="play" />
+					{$t('home.finalCta.button')}
+				</a>
+			</section>
+
+			<section class="lp-login" id="login">
+				<div class="auth-card">
+					<p class="auth-card-eyebrow">{$t('home.auth.returning')}</p>
+					<h2 class="auth-card-title">{$t('home.auth.title')}</h2>
+					<p class="auth-card-sub">{$t('home.auth.subtitle')}</p>
+					<form class="controls-col" on:submit|preventDefault={handleCartomaniaLoginSubmission}>
+						<div class="auth-fields">
+							<label class="input-wrap">
+								<span class="input-label">{$t('home.auth.username')}</span>
+								<input
+									class="input-field"
+									bind:value={usernameInputValue}
+									placeholder={$t('home.auth.usernamePlaceholder')}
+									autocomplete="username"
+								/>
+							</label>
+							<label class="input-wrap">
+								<span class="input-label">{$t('home.auth.password')}</span>
+								<input
+									class="input-field"
+									type="password"
+									bind:value={passwordInputValue}
+									placeholder="••••••••"
+									autocomplete="current-password"
+								/>
+							</label>
+						</div>
+						{#if loginErrorKey}
+							<p class="empty-text auth-error">{$t(loginErrorKey)}</p>
+						{/if}
+						<button class="button button-neutral" type="submit">{$t('home.auth.login')}</button>
+						<p class="auth-forgot">
+							<a href="/forgot-password">{$t('home.auth.forgotPassword')}</a>
+						</p>
+					</form>
+					<div class="auth-divider">{$t('home.auth.or')}</div>
+					<GoogleAuthButton />
+					<p class="auth-newhere">
+						{$t('home.auth.newHere')}
+						<a href="/register">{$t('home.auth.createAccount')}</a>
+					</p>
 				</div>
-			</div>
+			</section>
 		</div>
 	{:else}
 		<div class="dashboard">
@@ -439,63 +593,103 @@
 
 			<div class="play-cta">
 				<div class="play-cta-copy">
-					<h2 class="play-cta-title">{$t('home.dashboard.readyTitle')}</h2>
-					<p class="play-cta-sub">{$t('home.dashboard.readySub')}</p>
+					<h2 class="play-cta-title">
+						{currentActiveGame
+							? $t('home.dashboard.inMatchTitle')
+							: $t('home.dashboard.readyTitle')}
+					</h2>
+					<p class="play-cta-sub">
+						{currentActiveGame ? $t('home.dashboard.inMatchSub') : $t('home.dashboard.readySub')}
+					</p>
+					{#if currentActiveGame}
+						<p class="play-cta-meta">
+							{$t('home.dashboard.mode')}: <b>{currentActiveGame.mode}</b>
+							{#if extractLastActivityTimestamp(currentActiveGame)}
+								• {$t('home.dashboard.updated')}: {formatRelativeLastActivity(
+									extractLastActivityTimestamp(currentActiveGame)
+								)}
+							{/if}
+						</p>
+					{/if}
+					{#if startErrorKey}
+						<p class="play-cta-sub auth-error" role="alert">{$t(startErrorKey)}</p>
+					{/if}
 				</div>
-				<button class="button button-primary" on:click={startNewAttributeDuelCartomaniaGameForPlayer}>
-					⚔️ {$t('home.dashboard.startDuel')}
-				</button>
+				{#if currentActiveGame}
+					<button
+						class="button button-primary"
+						on:click={() =>
+							navigateToExistingCartomaniaGame(
+								resolveCartomaniaGameIdentifier(currentActiveGame),
+								currentActiveGame.mode
+							)}
+					>
+						▶ {$t('home.dashboard.resumeDuel')}
+					</button>
+				{:else}
+					<button
+						class="button button-primary"
+						on:click={startNewAttributeDuelCartomaniaGameForPlayer}
+					>
+						⚔️ {$t('home.dashboard.startDuel')}
+					</button>
+				{/if}
 			</div>
 
-			<section class="games-section">
-				<h2 class="section-title">{$t('home.dashboard.yourGames')}</h2>
-				{#if myActiveCartomaniaGames.length === 0}
-					<p class="empty-text">{$t('home.dashboard.noGames')}</p>
-				{:else}
-					<ul class="games-list">
-						{#each myActiveCartomaniaGames as gameSummary}
-							<li class="game-card">
-								<div class="game-info">
-									<p class="game-id mono">{resolveCartomaniaGameIdentifier(gameSummary)}</p>
-									<p class="game-meta">
-										{$t('home.dashboard.mode')}: <b>{gameSummary.mode}</b>
-										{#if extractLastActivityTimestamp(gameSummary)}
-											• {$t('home.dashboard.updated')}: {formatRelativeLastActivity(
-												extractLastActivityTimestamp(gameSummary)
-											)}
-										{/if}
-									</p>
-								</div>
-								<div class="game-actions">
-									<button
-										class="button button-primary"
-										on:click={() =>
-											navigateToExistingCartomaniaGame(
-												resolveCartomaniaGameIdentifier(gameSummary),
-												gameSummary.mode
-											)}
-										title={$t('home.dashboard.openGame')}
-									>
-										▶ {$t('home.dashboard.resume')}
-									</button>
-									{#if isAdmin}
+			<!-- A player now has AT MOST one match, and the call to action above already
+			     names it and resumes it, so this list would be a duplicate of it. It stays
+			     for admins only, who use the finish control on it. -->
+			{#if isAdmin}
+				<section class="games-section">
+					<h2 class="section-title">{$t('home.dashboard.yourGames')}</h2>
+					{#if myActiveCartomaniaGames.length === 0}
+						<p class="empty-text">{$t('home.dashboard.noGames')}</p>
+					{:else}
+						<ul class="games-list">
+							{#each myActiveCartomaniaGames as gameSummary}
+								<li class="game-card">
+									<div class="game-info">
+										<p class="game-id mono">{resolveCartomaniaGameIdentifier(gameSummary)}</p>
+										<p class="game-meta">
+											{$t('home.dashboard.mode')}: <b>{gameSummary.mode}</b>
+											{#if extractLastActivityTimestamp(gameSummary)}
+												• {$t('home.dashboard.updated')}: {formatRelativeLastActivity(
+													extractLastActivityTimestamp(gameSummary)
+												)}
+											{/if}
+										</p>
+									</div>
+									<div class="game-actions">
 										<button
-											class="button button-danger"
+											class="button button-primary"
 											on:click={() =>
-												endCartomaniaGameSessionOnServer(
-													resolveCartomaniaGameIdentifier(gameSummary)
-												).then(refreshCartomaniaDashboardData)}
-											title={$t('home.dashboard.finishGame')}
+												navigateToExistingCartomaniaGame(
+													resolveCartomaniaGameIdentifier(gameSummary),
+													gameSummary.mode
+												)}
+											title={$t('home.dashboard.openGame')}
 										>
-											🗑️
+											▶ {$t('home.dashboard.resume')}
 										</button>
-									{/if}
-								</div>
-							</li>
-						{/each}
-					</ul>
-				{/if}
-			</section>
+										{#if isAdmin}
+											<button
+												class="button button-danger"
+												on:click={() =>
+													endCartomaniaGameSessionOnServer(
+														resolveCartomaniaGameIdentifier(gameSummary)
+													).then(refreshCartomaniaDashboardData)}
+												title={$t('home.dashboard.finishGame')}
+											>
+												🗑️
+											</button>
+										{/if}
+									</div>
+								</li>
+							{/each}
+						</ul>
+					{/if}
+				</section>
+			{/if}
 
 			{#if isAdmin}
 				<section class="games-section">
@@ -563,7 +757,9 @@
 					<div class="ct-body">
 						<strong>{challenge.challengerName}</strong> te desafiou para um duelo!
 					</div>
-					<button class="ct-accept button" on:click={() => acceptChallenge(challenge)}>Aceitar</button>
+					<button class="ct-accept button" on:click={() => acceptChallenge(challenge)}
+						>Aceitar</button
+					>
 					<button class="ct-decline" on:click={() => declineChallenge(challenge)}>Recusar</button>
 				</div>
 			{/each}
@@ -571,6 +767,7 @@
 			{#if showAvatarPicker}
 				<AvatarPicker
 					currentAvatarUrl={currentUser.avatarUrl ?? null}
+					googleAvatarUrl={currentUser.googleAvatarUrl ?? null}
 					on:close={() => (showAvatarPicker = false)}
 					on:updated={handleAvatarUpdated}
 				/>

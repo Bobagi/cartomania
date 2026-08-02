@@ -2,7 +2,7 @@
  * Attribute-themed "defeat" animation for a duel card.
  *
  * Renders a self-contained canvas particle system (fire / magic / might) over
- * the losing card element and dissolves it. Pure DOM/canvas — no app state.
+ * the losing card element and dissolves it. Pure DOM/canvas - no app state.
  * Extracted from the duel page to keep that component focused on orchestration.
  */
 

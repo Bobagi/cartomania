@@ -15,7 +15,9 @@ export function determineIfGameBelongsToPlayer(
 	);
 }
 
-export function resolveCartomaniaGameIdentifier(gameSummary: CartomaniaGameSummaryWithMetadata): string {
+export function resolveCartomaniaGameIdentifier(
+	gameSummary: CartomaniaGameSummaryWithMetadata
+): string {
 	return (
 		gameSummary.id ??
 		gameSummary.gameId ??
@@ -31,7 +33,7 @@ export function extractLastActivityTimestamp(
 }
 
 export function formatRelativeLastActivity(timestamp: number | null): string {
-	if (!timestamp) return '—';
+	if (!timestamp) return '·';
 	const elapsedMilliseconds = Date.now() - timestamp;
 	const elapsedMinutes = Math.round(elapsedMilliseconds / 60000);
 	if (elapsedMinutes < 1) return 'just now';

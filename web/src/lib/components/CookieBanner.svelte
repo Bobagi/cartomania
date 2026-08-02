@@ -1,12 +1,29 @@
 <script lang="ts">
 	import { acceptAll, acceptEssential, consent } from '$lib/consent/consent';
 	import { t } from '$lib/i18n';
+
+	// Measured once the bar is in the DOM; the spacer's CSS height covers SSR and
+	// the first paint until this lands.
+	let bannerHeight = 0;
 </script>
 
 {#if !$consent.decided}
-	<!-- Non-blocking consent bar: a labelled landmark (not a modal — it traps no
+	<!-- Reserve the bar's height at the end of the page flow so this fixed bar never
+		covers the content underneath it (it used to hide the whole login card on
+		phones). Both the spacer and the bar disappear once a choice is made. -->
+	<div
+		class="cookie-spacer"
+		aria-hidden="true"
+		style:height={bannerHeight ? `${bannerHeight}px` : null}
+	></div>
+	<!-- Non-blocking consent bar: a labelled landmark (not a modal - it traps no
 		focus and the page stays usable behind it). -->
-	<div class="cookie-banner" role="region" aria-label={$t('consent.ariaLabel')}>
+	<div
+		class="cookie-banner"
+		role="region"
+		aria-label={$t('consent.ariaLabel')}
+		bind:clientHeight={bannerHeight}
+	>
 		<div class="cookie-inner">
 			<div class="cookie-copy">
 				<p class="cookie-title">{$t('consent.title')}</p>
@@ -28,6 +45,22 @@
 {/if}
 
 <style>
+	/* SSR / first-paint fallback heights (the bar wraps to more lines as the
+	   viewport narrows); replaced by the measured height on hydration. */
+	.cookie-spacer {
+		height: 210px;
+	}
+	@media (min-width: 561px) {
+		.cookie-spacer {
+			height: 150px;
+		}
+	}
+	@media (min-width: 900px) {
+		.cookie-spacer {
+			height: 118px;
+		}
+	}
+
 	.cookie-banner {
 		position: fixed;
 		inset: auto 0 0 0;

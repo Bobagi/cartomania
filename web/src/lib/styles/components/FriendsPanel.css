@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Manrope:wght@500;600;700;800&family=Teko:wght@600;700&display=swap');
 
-/* Design tokens scoped to the modal — don't pollute the app globals */
+/* Design tokens scoped to the modal - don't pollute the app globals */
 .fr-modal, .fr-dock, .fr-toast {
   --bg-0: #070a14;
   --bg-1: #0e1426;
@@ -25,7 +25,7 @@
 }
 
 /* ============================================================
-   ALIADOS E RIVAIS — modal de amigos
+   ALIADOS E RIVAIS - modal de amigos
    Depende das variáveis de styles.css (tema Fantasia Sombria)
    ============================================================ */
 

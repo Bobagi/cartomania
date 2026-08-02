@@ -19,6 +19,7 @@ const pt: typeof en = {
 		manage: 'Preferências de cookies'
 	},
 	nav: {
+		login: 'Entrar',
 		logout: 'Sair'
 	},
 	footer: {
@@ -32,12 +33,53 @@ const pt: typeof en = {
 	},
 	home: {
 		kicker: 'Duelo de Cartas Colecionáveis',
-		tagline:
-			'Comande a coleção Dracomania e duele por fogo, magia e força. A cada rodada os dois duelistas revelam uma carta e se enfrentam em um atributo — capture mais cartas que seu rival para vencer a partida.',
 		serverLabel: 'Servidor',
+		promise:
+			'Dragões, guerreiros e criaturas míticas se enfrentam na mesa. Você escolhe o atributo que acha que vence a rodada: magia, força ou fogo. Acertou, as duas cartas são suas.',
+		playCta: 'Jogue seu primeiro duelo',
+		playNote: 'De graça, direto no navegador.',
+		galleryCta: 'Ver as cartas',
+		attributes: {
+			title: 'Três formas de vencer a rodada',
+			subtitle: 'Toda carta tem os três. Só vale o atributo que você escolher.',
+			magic: {
+				name: 'Magia',
+				text: 'Poder arcano. A carta que perderia na força muitas vezes vence no feitiço.'
+			},
+			might: {
+				name: 'Força',
+				text: 'Força bruta. A escolha segura, e o que mantém os pesados perigosos.'
+			},
+			fire: {
+				name: 'Fogo',
+				text: 'Chama ardente. A maior variação do tabuleiro, e por isso a aposta mais ousada.'
+			}
+		},
+		how: {
+			title: 'Como funciona uma rodada',
+			subtitle: 'Uma rodada, três tempos. Uma partida termina em poucos minutos.',
+			revealTitle: 'Revelar',
+			revealText: 'Os dois duelistas jogam uma carta da mão. A arena vira as duas juntas.',
+			clashTitle: 'Confrontar',
+			clashText: 'Um dos duelistas escolhe o atributo. As duas cartas valem só aquele número.',
+			captureTitle: 'Capturar',
+			captureText:
+				'O maior valor leva as duas cartas. Quando uma mão acaba, quem tem a pilha maior vence a partida.'
+		},
+		collection: {
+			title: 'A coleção Dracomania',
+			subtitle:
+				'{count} dragões, guerreiros e criaturas míticas pintados à mão, cada um com sua magia, força e fogo. Aprenda os números e você saberá qual atributo escolher.',
+			cta: 'Ver todas as cartas'
+		},
+		finalCta: {
+			title: 'A arena está aberta',
+			text: 'Crie uma conta e em segundos você está duelando, contra o bot da casa ou contra um amigo que você desafiar.',
+			button: 'Jogue seu primeiro duelo'
+		},
 		auth: {
 			title: 'Entre na arena',
-			subtitle: 'Faça login para jogar, ou veja a coleção primeiro.',
+			subtitle: 'Faça login para continuar seus duelos.',
 			username: 'Usuário',
 			usernamePlaceholder: 'Seu apelido',
 			password: 'Senha',
@@ -45,7 +87,11 @@ const pt: typeof en = {
 			or: 'ou',
 			browseGallery: 'Ver a galeria',
 			createAccount: 'Criar uma conta',
-			invalidCredentials: 'Usuário ou senha inválidos.'
+			newHere: 'É novo por aqui?',
+			haveAccount: 'Já tem conta?',
+			returning: 'Já joga Cartomania?',
+			invalidCredentials: 'Usuário ou senha inválidos.',
+			forgotPassword: 'Esqueceu a senha?'
 		},
 		dashboard: {
 			adminBadge: 'Admin',
@@ -56,8 +102,13 @@ const pt: typeof en = {
 			readyTitle: 'Pronto para duelar?',
 			readySub: 'Inicie um Duelo de Atributos contra o bot e aumente sua coleção de vitórias.',
 			startDuel: 'Iniciar Duelo',
-			yourGames: 'Seus jogos ativos',
-			noGames: 'Nenhum jogo ativo ainda — inicie um duelo acima.',
+			inMatchTitle: 'Seu duelo está esperando',
+			inMatchSub: 'Uma partida por vez. Termine ou desista deste duelo para começar outro.',
+			resumeDuel: 'Retomar duelo',
+			alreadyInMatch: 'Você já está em uma partida. Termine antes de começar outra.',
+			startFailed: 'Não foi possível iniciar o duelo. Tente novamente.',
+			yourGames: 'Seu jogo ativo',
+			noGames: 'Nenhum jogo ativo ainda. Inicie um duelo acima.',
 			mode: 'Modo',
 			updated: 'Atualizado',
 			resume: 'Retomar',
@@ -99,20 +150,82 @@ const pt: typeof en = {
 		subtitle: 'É rápido e gratuito.',
 		username: 'Usuário',
 		usernamePlaceholder: 'Apelido',
+		email: 'E-mail',
+		emailPlaceholder: 'voce@exemplo.com',
 		password: 'Senha',
 		confirmPassword: 'Confirmar senha',
 		submit: 'Criar conta',
 		back: 'Voltar',
+		terms: {
+			prefix: 'Li e aceito os',
+			terms: 'Termos de Uso',
+			and: 'e a',
+			privacy: 'Política de Privacidade'
+		},
 		errors: {
 			usernameRequired: 'O usuário é obrigatório.',
 			passwordRequired: 'A senha é obrigatória.',
+			passwordTooShort: 'A senha deve ter pelo menos 8 caracteres.',
+			emailInvalid: 'Digite um e-mail válido.',
 			passwordMismatch: 'As senhas não coincidem.',
+			termsRequired: 'Você precisa aceitar os Termos de Uso e a Política de Privacidade.',
 			generic: 'Não foi possível criar a conta.'
 		}
 	},
 	auth: {
 		googleContinue: 'Continuar com o Google',
-		googleComingSoon: 'Login com Google em breve.'
+		googleComingSoon: 'Login com Google em breve.',
+		googleError: 'O login com Google não foi concluído. Tente novamente.'
+	},
+	agreement: {
+		title: 'Antes de jogar',
+		version: 'Versão {version}',
+		intro:
+			'Para continuar jogando o Cartomania, leia e aceite nossos Termos de Uso e a Política de Privacidade. Você pode ler os Termos abaixo e abrir qualquer um dos documentos em uma nova aba.',
+		viewTerms: 'Abrir Termos de Uso',
+		viewPrivacy: 'Abrir Política de Privacidade',
+		termsLabel: 'Termos de Uso',
+		privacyLabel: 'Política de Privacidade',
+		checkboxAge: 'Tenho pelo menos 18 anos, ou tenho o consentimento do meu responsável.',
+		checkboxTermsPre: 'Li e aceito os',
+		checkboxPrivacyPre: 'Li e aceito a',
+		accept: 'Eu aceito',
+		accepting: 'Salvando…',
+		decline: 'Recusar e sair',
+		error: 'Não foi possível salvar sua aceitação. Tente novamente.'
+	},
+	forgot: {
+		title: 'Esqueceu a senha?',
+		subtitle: 'Informe seu e-mail e enviaremos um link de redefinição.',
+		email: 'E-mail',
+		emailPlaceholder: 'voce@exemplo.com',
+		submit: 'Enviar link',
+		sent: 'Se existir uma conta com esse e-mail, o link de redefinição está a caminho. Confira sua caixa de entrada.',
+		backToLogin: 'Voltar ao login'
+	},
+	reset: {
+		title: 'Escolha uma nova senha',
+		subtitle: 'Digite uma nova senha para sua conta.',
+		newPassword: 'Nova senha',
+		confirm: 'Confirmar senha',
+		submit: 'Redefinir senha',
+		done: 'Sua senha foi redefinida. Agora você pode entrar.',
+		goLogin: 'Ir para o login',
+		requestNew: 'Solicitar novo link',
+		errors: {
+			passwordTooShort: 'A senha deve ter pelo menos 8 caracteres.',
+			mismatch: 'As senhas não coincidem.',
+			invalid: 'Este link de redefinição é inválido ou expirou.',
+			noToken: 'Nenhum token de redefinição encontrado. Solicite um novo link.'
+		}
+	},
+	verify: {
+		title: 'Verificação de e-mail',
+		working: 'Verificando seu e-mail…',
+		ok: 'Seu e-mail foi verificado. Obrigado!',
+		error: 'Este link de verificação é inválido ou expirou.',
+		goHome: 'Ir para o início',
+		goAccount: 'Ir para a conta'
 	},
 	attributes: {
 		magic: 'Magia',
@@ -156,7 +269,7 @@ const pt: typeof en = {
 		errorSurrender: 'Não foi possível se render.',
 		playerSurrendered: 'Um jogador se rendeu.',
 		historyTitle: 'Registro de Batalha',
-		historyEmpty: 'Nenhuma rodada ainda — escolha uma carta para começar o duelo.',
+		historyEmpty: 'Nenhuma rodada ainda. Escolha uma carta para começar o duelo.',
 		historyRound: 'Rodada {n}',
 		historyLive: 'AO VIVO',
 		historyTie: 'Empate',
@@ -222,7 +335,9 @@ const pt: typeof en = {
 		chatLoadFail: 'Não foi possível carregar o histórico do chat.',
 		messageSendFail: 'Não foi possível enviar a mensagem.',
 		matchCreated: 'Partida criada.',
-		matchStartFail: 'Não foi possível iniciar a partida com o amigo.'
+		matchStartFail: 'Não foi possível iniciar a partida com o amigo.',
+		friendBusy: 'Esse jogador já está em uma partida.',
+		youBusy: 'Você já está em uma partida. Termine antes de desafiar um amigo.'
 	},
 	legal: {
 		back: 'Voltar ao Cartomania',
@@ -234,7 +349,7 @@ const pt: typeof en = {
 		privacy: {
 			title: 'Política de Privacidade',
 			intro:
-				'O Cartomania é um projeto de portfólio gratuito e não comercial — um jogo de cartas colecionáveis digital criado para apresentar a coleção Dracomania. Esta página explica, em linguagem simples, quais informações o jogo manipula e por quê. Coletamos o mínimo possível e nunca vendemos seus dados.',
+				'O Cartomania é um projeto de portfólio gratuito e não comercial: um jogo de cartas colecionáveis digital criado para apresentar a coleção Dracomania. Esta página explica, em linguagem simples, quais informações o jogo manipula e por quê. Coletamos o mínimo possível e nunca vendemos seus dados.',
 			contactHeading: 'Contato',
 			contactText: 'Dúvidas sobre privacidade? Entre em contato pelo',
 			sections: [
@@ -282,7 +397,7 @@ const pt: typeof en = {
 				{
 					heading: 'Análises',
 					paragraphs: [
-						'Com o seu consentimento, o Cartomania carrega um script de análises próprio e focado em privacidade (Umami, servido de analytics.bobagi.space) para medir o uso agregado, como visualizações de página e visitas. Ele não usa cookies, não coleta informações pessoais e nunca rastreia você por outros sites. O script só é carregado depois que você aceita as análises no banner de consentimento — se você escolher “Apenas essenciais”, ele nunca é carregado. Você pode mudar sua decisão a qualquer momento pelo link “Preferências de cookies” no rodapé.'
+						'Com o seu consentimento, o Cartomania carrega um script de análises próprio e focado em privacidade (Umami, servido de analytics.bobagi.space) para medir o uso agregado, como visualizações de página e visitas. Ele não usa cookies, não coleta informações pessoais e nunca rastreia você por outros sites. O script só é carregado depois que você aceita as análises no banner de consentimento. Se você escolher “Apenas essenciais”, ele nunca é carregado. Você pode mudar sua decisão a qualquer momento pelo link “Preferências de cookies” no rodapé.'
 					],
 					items: []
 				},
@@ -408,10 +523,11 @@ const pt: typeof en = {
 		title: 'Configurações da conta',
 		back: 'Voltar',
 		chooseAvatar: 'Escolha seu avatar',
+		googlePhoto: 'Sua foto do Google',
 		save: 'Salvar',
 		cancel: 'Cancelar',
 		usernameTitle: 'Usuário',
-		usernameHint: 'Seu nome de exibição e de login (3–50 caracteres).',
+		usernameHint: 'Seu nome de exibição e de login (3-50 caracteres).',
 		newUsername: 'Novo nome de usuário',
 		changeUsername: 'Alterar nome de usuário',
 		passwordTitle: 'Senha',
@@ -428,6 +544,21 @@ const pt: typeof en = {
 		passwordUpdated: 'Senha alterada.',
 		avatarUpdated: 'Avatar atualizado.',
 		passwordsDoNotMatch: 'As novas senhas não coincidem.',
+		emailTitle: 'E-mail',
+		emailNone: 'Nenhum e-mail definido. Adicione um para permitir a recuperação de senha.',
+		emailVerified: 'Seu e-mail está verificado.',
+		emailUnverified: 'Seu e-mail ainda não foi verificado.',
+		emailLabel: 'Endereço de e-mail',
+		saveEmail: 'Salvar e-mail',
+		emailUpdated: 'E-mail salvo. Confira sua caixa de entrada para verificá-lo.',
+		resendVerification: 'Reenviar e-mail de verificação',
+		verificationResent: 'E-mail de verificação enviado (se o seu endereço precisar).',
+		googleTitle: 'Google',
+		googleConnected: 'Sua conta do Google está conectada.',
+		googleDisconnect: 'Desconectar Google',
+		googleSetPasswordFirst: 'Defina uma senha antes de desconectar o Google.',
+		googleNotConnected: 'Conecte o Google para entrar com um clique.',
+		googleConnect: 'Conectar Google',
 		genericError: 'Algo deu errado. Tente novamente.'
 	}
 };

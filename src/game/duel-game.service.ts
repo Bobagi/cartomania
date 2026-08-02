@@ -18,7 +18,7 @@ import {
 const TURN_DURATION_MS = 10_000;
 // Server-authoritative autonomous progression (so a match keeps going and finishes
 // even when no browser is open). The server steps in a little AFTER the client's own
-// turn deadline, and holds REVEAL long enough for an open client's animation — so an
+// turn deadline, and holds REVEAL long enough for an open client's animation - so an
 // active player is never disrupted, while abandoned games still play out to the end.
 const SERVER_PICK_GRACE_MS = 1_500;
 const SERVER_REVEAL_HOLD_MS = 2_800;
@@ -529,7 +529,7 @@ export class DuelGameService {
   /**
    * Server-authoritative tick for a single duel. If the current turn's deadline (or
    * the reveal hold) has elapsed, it resolves/advances the game exactly like the
-   * client does on a timeout — auto-picking the pending card/attribute, letting the
+   * client does on a timeout - auto-picking the pending card/attribute, letting the
    * bot respond, and advancing the round. Safe to call repeatedly: every step is
    * stage-guarded inside its own transaction, so it can't double-resolve a turn even
    * if an open client acts at the same time. Returns true if it advanced the game.

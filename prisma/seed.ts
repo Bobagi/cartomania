@@ -11,6 +11,8 @@ interface PlayerSeedData {
   username: string;
   passwordHash: string;
   role: UserRole;
+  email?: string;
+  emailVerified?: boolean;
 }
 
 interface CardSeedInput {
@@ -31,35 +33,32 @@ const createPlayerUpsertArgs = (player: PlayerSeedData) => ({
 });
 
 async function main() {
-  // ---------- Senhas (podem vir do ambiente) ----------
+  // ---------- Senha do admin (pode vir do ambiente) ----------
   const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'admin123';
-  const ALICE_PASSWORD = process.env.ALICE_PASSWORD ?? 'alice123';
+  const ADMIN_EMAIL = 'bobagi.contact@gmail.com';
 
-  const [adminHash, aliceHash] = await Promise.all([
-    bcrypt.hash(ADMIN_PASSWORD, 10),
-    bcrypt.hash(ALICE_PASSWORD, 10),
-  ]);
+  // Refuse the weak demo default on a production deploy: the repo is public, so
+  // shipping with admin123 would hand out a known ADMIN login.
+  if (process.env.NODE_ENV === 'production' && !process.env.ADMIN_PASSWORD) {
+    throw new Error(
+      'Refusing to seed with the default demo password in production. Set ADMIN_PASSWORD in the environment.',
+    );
+  }
 
-  // ---------- Usuários ----------
-  // Admin padrão (username: admin)
+  const adminHash = await bcrypt.hash(ADMIN_PASSWORD, 10);
+
+  // ---------- Usuário admin (username: admin, email do projeto) ----------
   await prisma.player.upsert(
     createPlayerUpsertArgs({
       username: 'admin',
+      email: ADMIN_EMAIL,
+      emailVerified: true,
       passwordHash: adminHash,
       role: UserRole.ADMIN,
     }),
   );
 
-  // Usuário de exemplo (id e username: alice) para bater com sua UI
-  await prisma.player.upsert(
-    createPlayerUpsertArgs({
-      username: 'alice',
-      passwordHash: aliceHash,
-      role: UserRole.USER,
-    }),
-  );
-
-  console.log('✅ Users seeded: admin, alice');
+  console.log('✅ User seeded: admin');
 
   // ---------- Coleções ----------
   const dracomaniaCollection = await prisma.collection.upsert({

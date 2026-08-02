@@ -23,6 +23,7 @@
 		type DestructionType
 	} from '$lib/cards/cardDestruction';
 	import '$lib/cards/cardFx.css';
+	import { VoidFlames } from '$lib/cards/voidFlames';
 	import { detectChosenAttributeMode, normalizeDuelCenterForView } from '$lib/duel/duelCenter';
 	import { buildHistoryFromLog, buildLiveRound } from '$lib/duel/history';
 	import { t } from '$lib/i18n';
@@ -42,7 +43,7 @@
 	export const REVEAL_EXTRA_BUFFER_MS = 400;
 
 	// The server (DuelProgressionService) is the single authority for turn timeouts and
-	// round advancement. The client never drives the game — it only renders the latest
+	// round advancement. The client never drives the game - it only renders the latest
 	// server state (polled) and sends real moves. Flip this on only to debug locally.
 	const CLIENT_DRIVES_TIMEOUTS = false;
 	const STATE_POLL_INTERVAL_MS = 1000;
@@ -61,6 +62,18 @@
 	let frameOverlayImageUrl: string | null = '/frames/default.png';
 	const titleOverlayImageUrl = '/frames/title.png';
 	const cardBackImageUrl = '/frames/card-back.png';
+
+	// Power (attribute) icons + options for the in-circle selector / reveal orbs.
+	const ATTR_ICON: Record<'magic' | 'might' | 'fire', string> = {
+		magic: '/icons/magic_icon.png',
+		might: '/icons/strength_icon.png',
+		fire: '/icons/fire_icon.png'
+	};
+	const POWER_OPTIONS = [
+		{ attr: 'magic', tkey: 'duel.chooseMagic', pos: 'l' },
+		{ attr: 'might', tkey: 'duel.chooseMight', pos: 'c' },
+		{ attr: 'fire', tkey: 'duel.chooseFire', pos: 'r' }
+	] as const;
 
 	let errorMessageText: string | null = null;
 	let finalGameResult: { winner: string | null; log: string[] } | null = null;
@@ -131,6 +144,16 @@
 	let opponentHandContainerElement: HTMLDivElement | null = null;
 	let centerSlotAElement: HTMLDivElement | null = null;
 	let centerSlotBElement: HTMLDivElement | null = null;
+	// The arena creature-art <img>s - the destruction target for the art-only layout.
+	// The old card result-wraps (centerSlot{A,B}Element) still take priority when present,
+	// so the burn/dissolve/crush keeps working on BOTH representations (cards AND art).
+	let arenaArtYouElement: HTMLImageElement | null = null;
+	let arenaArtOppElement: HTMLImageElement | null = null;
+	// Ambient void-flame particle effect (canvas inside the arena disc; colours sampled
+	// from each played card's art - see voidFlames.ts).
+	let arenaEl: HTMLDivElement | null = null;
+	let flamesCanvasEl: HTMLCanvasElement | null = null;
+	let voidFlames: VoidFlames | null = null;
 	let lastDefeatEffectCycleId: number | null = null;
 
 	let hasInitialStateLoaded = false;
@@ -182,17 +205,6 @@
 		const details = cardDetailsCacheByCode.get(code);
 		if (!details) return null;
 		return { name: details.name, imageUrl: details.imageUrl };
-	}
-
-	function isHighlightedAttribute(attr: 'magic' | 'might' | 'fire'): boolean {
-		if (!chooserCardDetails) return false;
-		const stats = {
-			magic: chooserCardDetails.magic ?? 0,
-			might: chooserCardDetails.might ?? 0,
-			fire: chooserCardDetails.fire ?? 0
-		};
-		const highest = Math.max(stats.magic, stats.might, stats.fire);
-		return stats[attr] === highest && highest > 0;
 	}
 
 	function resolveStrongestAttributeFromDetails(
@@ -453,7 +465,7 @@
 				const newOppCount = Array.isArray(state.hands?.[opp]) ? state.hands[opp].length : 0;
 
 				if (state.mode === 'ATTRIBUTE_DUEL' && state.duelStage === 'REVEAL') {
-					// Animate the flip/defeat only once per reveal — polling re-runs this block.
+					// Animate the flip/defeat only once per reveal - polling re-runs this block.
 					if (previousDuelStage !== 'REVEAL') {
 						centerRevealCycle++;
 					}
@@ -619,7 +631,7 @@
 			mode === 'magic' ? 'dissolve' : mode === 'might' ? 'crush' : 'burn';
 		const destroyer = new CardDestroyer({ card: loserEl, wrap, canvas });
 		destroyer.play(type, { ...DESTRUCTION_DEFAULTS, destructDuration: 1.4 });
-		// Do NOT reset — the card stays consumed/crushed until the round advances and
+		// Do NOT reset - the card stays consumed/crushed until the round advances and
 		// the slot clears it. (Resetting made it "reappear whole" before advancing.)
 		activeDestruction = { destroyer, canvas, card: loserEl, wrap };
 	}
@@ -627,8 +639,10 @@
 	function findLoserCenterElement(): HTMLElement | null {
 		const winner = currentDuelRoundWinner;
 		if (!winner) return null;
-		if (winner === playerA) return centerSlotBElement;
-		if (winner === playerB) return centerSlotAElement;
+		// Prefer the whole-card element when it's rendered (old method); otherwise fall
+		// back to the arena creature-art <img> (new method) - so the FX works on both.
+		if (winner === playerA) return centerSlotBElement ?? arenaArtOppElement;
+		if (winner === playerB) return centerSlotAElement ?? arenaArtYouElement;
 		return null;
 	}
 
@@ -649,6 +663,10 @@
 		await ensureCatalogLoaded();
 		await loadGameStateOrFinalResult();
 		setupMyHandResizeObserver();
+		if (flamesCanvasEl && arenaEl) {
+			voidFlames = new VoidFlames(flamesCanvasEl, arenaEl);
+			voidFlames.start();
+		}
 	});
 
 	onDestroy(() => {
@@ -661,6 +679,7 @@
 			window.clearInterval(duelStatePollHandle);
 			duelStatePollHandle = null;
 		}
+		voidFlames?.stop();
 		clearActiveDestruction();
 	});
 
@@ -684,6 +703,38 @@
 	$: oppHandCount = Array.isArray($gameStateStore?.hands?.[playerB])
 		? $gameStateStore!.hands[playerB].length
 		: 0;
+
+	// --- Circular battlefield ("arena", step 2) ---------------------------------
+	// The played card's creature ART is masked into the felt circle (background) AND
+	// the whole card is shown on top for clarity (name + attributes). Your half
+	// (bottom) fills the moment you pick; the opponent's half (top) reveals on REVEAL.
+	$: youCardCode = currentDuelCenter?.aCardCode ?? null;
+	$: oppCardCode = currentDuelCenter?.bCardCode ?? null;
+	$: youCard = youCardCode ? (cardDetailsCacheByCode.get(youCardCode) ?? null) : null;
+	$: oppCard = oppCardCode ? (cardDetailsCacheByCode.get(oppCardCode) ?? null) : null;
+	$: youArt = youCard?.imageUrl ?? null;
+	$: oppArt = oppCard?.imageUrl ?? null;
+	$: youName = youCard?.name ?? youCardCode;
+	$: oppName = oppCard?.name ?? oppCardCode;
+	$: oppRevealed = currentDuelStage === 'REVEAL';
+	// The dueled power + each side's value (for the in-circle clash orbs at REVEAL).
+	$: chosenAttr = (currentDuelCenter?.chosenAttribute ?? null) as 'magic' | 'might' | 'fire' | null;
+	$: playerPowerValue = chosenAttr
+		? (youCard?.[chosenAttr] ?? currentDuelCenter?.aVal ?? null)
+		: null;
+	$: oppPowerValue = chosenAttr ? (oppCard?.[chosenAttr] ?? currentDuelCenter?.bVal ?? null) : null;
+	$: youOutcome =
+		currentDuelStage === 'REVEAL' && currentDuelRoundWinner
+			? currentDuelRoundWinner === playerA
+				? 'win'
+				: 'lose'
+			: null;
+	$: oppOutcome =
+		currentDuelStage === 'REVEAL' && currentDuelRoundWinner
+			? currentDuelRoundWinner === playerB
+				? 'win'
+				: 'lose'
+			: null;
 
 	let myHandContainerElement: HTMLDivElement | null = null;
 	let myHandCardSpreadPixels: number | null = null;
@@ -914,26 +965,6 @@
 	$: chooserUsername =
 		chooserId === playerA ? playerAUsername : chooserId === playerB ? playerBUsername : chooserId;
 
-	const ROUND_BANNER_ICON: Record<'win' | 'lose' | 'draw', string> = {
-		win: '🏆',
-		lose: '💥',
-		draw: '🤝'
-	};
-	$: roundBanner = (() => {
-		if (currentDuelStage !== 'REVEAL') return null;
-		if (!currentDuelRoundWinner) {
-			return { tone: 'draw' as const, icon: ROUND_BANNER_ICON.draw, text: $t('duel.roundTied') };
-		}
-		if (currentDuelRoundWinner === playerA) {
-			return { tone: 'win' as const, icon: ROUND_BANNER_ICON.win, text: $t('duel.roundYouWin') };
-		}
-		return {
-			tone: 'lose' as const,
-			icon: ROUND_BANNER_ICON.lose,
-			text: $t('duel.roundOpponentWins', { name: playerBUsername })
-		};
-	})();
-
 	$: endOutcome =
 		resolvedWinner === null
 			? null
@@ -990,179 +1021,104 @@
 	</header>
 
 	<section class="lb__table">
-		<div class="lb__felt-ring" aria-hidden="true"></div>
-		<div class="lb__column">
-			<div class="lb__cards">
-				<div
-					class="duel-slot"
-					class:slot-removable={canReturnSelectedCardToHand}
-					style={`width:${cardWidthCssValue}; height:calc(${cardWidthCssValue} * 1.55);`}
-				>
-					{#if currentDuelCenter?.aCardCode}
-						<div
-							bind:this={centerSlotAElement}
-							class={`result-wrap ${currentDuelStage === 'REVEAL' && currentDuelRoundWinner === playerA ? 'winner-glow' : currentDuelStage === 'REVEAL' && currentDuelRoundWinner && currentDuelRoundWinner !== playerA ? 'loser-shake' : ''}`}
-							on:click={onCenterCardReturnToHand}
-							title={$t('duel.returnCard')}
-						>
-							<CardComposite
-								artImageUrl={cardDetailsCacheByCode.get($gameStateStore.duelCenter.aCardCode)
-									?.imageUrl ?? ''}
-								frameImageUrl={frameOverlayImageUrl ?? '/frames/default.png'}
-								titleImageUrl={titleOverlayImageUrl}
-								titleText={cardDetailsCacheByCode.get($gameStateStore.duelCenter.aCardCode)?.name ??
-									$gameStateStore.duelCenter.aCardCode}
-								aspectWidth={1444}
-								aspectHeight={1920}
-								artObjectFit="cover"
-								enableTilt={false}
-								descriptionText={cardDetailsCacheByCode.get($gameStateStore.duelCenter.aCardCode)
-									?.description ?? ''}
-								magicValue={cardDetailsCacheByCode.get($gameStateStore.duelCenter.aCardCode)
-									?.magic ?? 0}
-								mightValue={cardDetailsCacheByCode.get($gameStateStore.duelCenter.aCardCode)
-									?.might ?? 0}
-								fireValue={cardDetailsCacheByCode.get($gameStateStore.duelCenter.aCardCode)?.fire ??
-									0}
-								cornerNumberValue={cardDetailsCacheByCode.get($gameStateStore.duelCenter.aCardCode)
-									?.number ?? 0}
-							/>
-						</div>
-					{/if}
-				</div>
-
-				<div class="lb__vsrow">
-					<span class="line"></span>
-					<div class="vs" class:clash={currentDuelStage === 'REVEAL'}>
-						<span class="vs__spark"></span>
-						<span class="vs__disc">VS</span>
+		<!-- Circular battlefield arena (art only): the played card's creature ART is masked into the
+		     felt disc, sized to the circle's vertical RADIUS and centred (the left/right sides stay
+		     empty by design - reserved for later). Rotating arcane rings add motion, and the attribute
+		     selector lives INSIDE the disc (lower-inner): an icon + value per power; click one to choose. -->
+		<div class="lb__arena-rings" aria-hidden="true">
+			<span class="lb__arena-ring lb__arena-ring--1"></span>
+			<span class="lb__arena-ring lb__arena-ring--2"></span>
+			<span class="lb__arena-ring lb__arena-ring--3"></span>
+		</div>
+		<div class="lb__arena" bind:this={arenaEl}>
+			<canvas class="lb__flames" bind:this={flamesCanvasEl} aria-hidden="true"></canvas>
+			<div class={`lb__arena-half lb__arena-half--opp ${oppOutcome ? 'is-' + oppOutcome : ''}`}>
+				{#if oppArt && oppRevealed}
+					<div class="lb__arena-art-wrap">
+						<img
+							class="lb__arena-art"
+							bind:this={arenaArtOppElement}
+							src={oppArt}
+							alt={oppName}
+							data-cycle={centerRevealCycle}
+							decoding="async"
+						/>
 					</div>
-					<span class="line"></span>
-				</div>
-
-				<div
-					class="duel-slot"
-					style={`width:${cardWidthCssValue}; height:calc(${cardWidthCssValue} * 1.55);`}
-				>
-					{#if currentDuelCenter?.bCardCode}
-						<div class="flip-wrap" data-cycle={centerRevealCycle}>
-							<div
-								class="flipper"
-								class:start-back={currentDuelStage !== 'REVEAL'}
-								class:animate={currentDuelStage === 'REVEAL'}
-								style={`--flip-ms:${FLIP_MS}ms;`}
-							>
-								<div class="face front">
-									<div
-										bind:this={centerSlotBElement}
-										class={`result-wrap ${currentDuelStage === 'REVEAL' && currentDuelRoundWinner === playerB ? 'winner-glow' : currentDuelStage === 'REVEAL' && currentDuelRoundWinner && currentDuelRoundWinner !== playerB ? 'loser-shake' : ''}`}
-									>
-										<CardComposite
-											artImageUrl={cardDetailsCacheByCode.get($gameStateStore.duelCenter.bCardCode)
-												?.imageUrl ?? ''}
-											frameImageUrl={frameOverlayImageUrl ?? '/frames/default.png'}
-											titleImageUrl={titleOverlayImageUrl}
-											titleText={cardDetailsCacheByCode.get($gameStateStore.duelCenter.bCardCode)
-												?.name ?? $gameStateStore.duelCenter.bCardCode}
-											aspectWidth={1444}
-											aspectHeight={1920}
-											artObjectFit="cover"
-											enableTilt={false}
-											descriptionText={cardDetailsCacheByCode.get(
-												$gameStateStore.duelCenter.bCardCode
-											)?.description ?? ''}
-											magicValue={cardDetailsCacheByCode.get($gameStateStore.duelCenter.bCardCode)
-												?.magic ?? 0}
-											mightValue={cardDetailsCacheByCode.get($gameStateStore.duelCenter.bCardCode)
-												?.might ?? 0}
-											fireValue={cardDetailsCacheByCode.get($gameStateStore.duelCenter.bCardCode)
-												?.fire ?? 0}
-											cornerNumberValue={cardDetailsCacheByCode.get(
-												$gameStateStore.duelCenter.bCardCode
-											)?.number ?? 0}
-										/>
-									</div>
-								</div>
-								<div class="face back">
-									<img
-										src={cardBackImageUrl}
-										alt="hidden"
-										style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;border-radius:10px;display:block;"
-										loading="lazy"
-										decoding="async"
-									/>
-								</div>
-							</div>
-						</div>
-					{:else if opponentLooksLikeBot && duelStage === 'PICK_CARD'}
-						<div class="slot-placeholder bot-card-back">
-							<img src={cardBackImageUrl} alt="Bot card hidden" loading="lazy" decoding="async" />
-						</div>
-					{/if}
-				</div>
+				{/if}
 			</div>
+			<div
+				class={`lb__arena-half lb__arena-half--you ${youOutcome ? 'is-' + youOutcome : ''}`}
+				class:is-removable={canReturnSelectedCardToHand}
+				role="button"
+				tabindex="0"
+				on:click={onCenterCardReturnToHand}
+				on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && onCenterCardReturnToHand()}
+				title={canReturnSelectedCardToHand ? $t('duel.returnCard') : ''}
+			>
+				{#if youArt}
+					<div class="lb__arena-art-wrap">
+						<img
+							class="lb__arena-art"
+							bind:this={arenaArtYouElement}
+							src={youArt}
+							alt={youName}
+							decoding="async"
+						/>
+					</div>
+				{/if}
+			</div>
+			<div class="lb__arena-seam" aria-hidden="true"></div>
+			<div class="lb__arena-vs vs" class:clash={currentDuelStage === 'REVEAL'} aria-hidden="true">
+				<span class="vs__spark"></span>
+				<span class="vs__disc">VS</span>
+			</div>
+		</div>
 
-			{#if roundBanner}
-				<div class={`round-banner lb__round-banner ${roundBanner.tone}`}>
-					<span class="round-banner-icon">{roundBanner.icon}</span>
-					<span class="round-banner-text">{roundBanner.text}</span>
+		<!-- Power icons ride the disc's CIRCUMFERENCE (so they don't cover the central art): the 3
+		     options spread along the lower arc; at REVEAL your power sits at the bottom of the rim
+		     (green) and the opponent's at the top of the rim (red). Concentric with .lb__arena. -->
+		<div class="lb__powers">
+			{#if duelStage === 'PICK_ATTRIBUTE' && chooserId === playerA}
+				{#each POWER_OPTIONS as opt (opt.attr)}
+					<button
+						class={`lb__pick lb__pick--${opt.pos}`}
+						disabled={isGameOver()}
+						on:click={() => chooseAttr(opt.attr)}
+						title={$t(opt.tkey, { value: chooserCardDetails?.[opt.attr] ?? '-' })}
+						aria-label={$t(opt.tkey, { value: chooserCardDetails?.[opt.attr] ?? '-' })}
+					>
+						<span class="lb__orb lb__orb--hover">
+							<span class="lb__orb-icon" style={`background-image:url(${ATTR_ICON[opt.attr]})`}
+							></span>
+							<span class="card-attribute-value lb__orb-val"
+								>{chooserCardDetails?.[opt.attr] ?? '-'}</span
+							>
+						</span>
+					</button>
+				{/each}
+			{:else if duelStage === 'REVEAL' && chosenAttr}
+				<div class="lb__pwr lb__pwr--opp" aria-hidden="true">
+					<span class="lb__orb lb__orb--red">
+						<span class="lb__orb-icon" style={`background-image:url(${ATTR_ICON[chosenAttr]})`}
+						></span>
+						<span class="card-attribute-value lb__orb-val">{oppPowerValue ?? '-'}</span>
+					</span>
+				</div>
+				<div class="lb__pwr lb__pwr--you" aria-hidden="true">
+					<span class="lb__orb lb__orb--green">
+						<span class="lb__orb-icon" style={`background-image:url(${ATTR_ICON[chosenAttr]})`}
+						></span>
+						<span class="card-attribute-value lb__orb-val">{playerPowerValue ?? '-'}</span>
+					</span>
 				</div>
 			{/if}
 		</div>
 
+		<!-- Round-result banner intentionally hidden - the clash orbs now convey the outcome. -->
+
 		<div class="lb__notices">
-			{#if duelStage === 'PICK_ATTRIBUTE' && chooserId === playerA}
-				<div class="notice chooser" style="margin-top:12px; text-align:center;">
-					<span>{$t('duel.chooseAttribute')}</span>
-					<div>
-						<button
-							class="btn attribute-option"
-							class:attribute-highlight={isHighlightedAttribute('magic')}
-							disabled={isGameOver()}
-							on:click={() => chooseAttr('magic')}
-							title={$t('duel.chooseMagic', { value: chooserCardDetails?.magic ?? '–' })}
-							aria-label={$t('duel.chooseMagic', { value: chooserCardDetails?.magic ?? '–' })}
-						>
-							<img src="/icons/magic_icon.png" alt="Magic icon" loading="lazy" decoding="async" />
-							{#if chooserCardDetails}
-								<span class="attribute-value">{chooserCardDetails.magic}</span>
-							{/if}
-						</button>
-						<button
-							class="btn attribute-option"
-							class:attribute-highlight={isHighlightedAttribute('might')}
-							disabled={isGameOver()}
-							on:click={() => chooseAttr('might')}
-							title={$t('duel.chooseMight', { value: chooserCardDetails?.might ?? '–' })}
-							aria-label={$t('duel.chooseMight', { value: chooserCardDetails?.might ?? '–' })}
-						>
-							<img
-								src="/icons/strength_icon.png"
-								alt="Might icon"
-								loading="lazy"
-								decoding="async"
-							/>
-							{#if chooserCardDetails}
-								<span class="attribute-value">{chooserCardDetails.might}</span>
-							{/if}
-						</button>
-						<button
-							class="btn attribute-option"
-							class:attribute-highlight={isHighlightedAttribute('fire')}
-							disabled={isGameOver()}
-							on:click={() => chooseAttr('fire')}
-							title={$t('duel.chooseFire', { value: chooserCardDetails?.fire ?? '–' })}
-							aria-label={$t('duel.chooseFire', { value: chooserCardDetails?.fire ?? '–' })}
-						>
-							<img src="/icons/fire_icon.png" alt="Fire icon" loading="lazy" decoding="async" />
-							{#if chooserCardDetails}
-								<span class="attribute-value">{chooserCardDetails.fire}</span>
-							{/if}
-						</button>
-					</div>
-				</div>
-			{:else if duelStage === 'PICK_ATTRIBUTE'}
-				<div class="notice warn" style="margin-top:12px; text-align:center;">
+			{#if duelStage === 'PICK_ATTRIBUTE' && chooserId !== playerA}
+				<div class="notice warn" style="text-align:center;">
 					{$t('duel.waitingForAttribute', { name: chooserUsername })}
 				</div>
 			{/if}
@@ -1204,7 +1160,7 @@
 						<span class="score-num">{roundsWonA}</span>
 						<span class="score-lbl">{$t('duel.you')}</span>
 					</div>
-					<span class="score-dash">–</span>
+					<span class="score-dash">-</span>
 					<div class="score-side opp">
 						<span class="score-num">{roundsWonB}</span>
 						<span class="score-lbl">{playerBUsername}</span>

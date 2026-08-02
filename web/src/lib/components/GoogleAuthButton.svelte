@@ -4,7 +4,7 @@
 
 	// Groundwork: the button is visible now but only performs the real OAuth
 	// redirect once PUBLIC_GOOGLE_AUTH_ENABLED=true (and the backend/credentials
-	// are wired up — see CLAUDE.md). Until then a click shows a "coming soon" hint.
+	// are wired up - see CLAUDE.md). Until then a click shows a "coming soon" hint.
 	const googleEnabled = env.PUBLIC_GOOGLE_AUTH_ENABLED === 'true';
 	let showComingSoon = false;
 

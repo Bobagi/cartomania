@@ -1,15 +1,19 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
-	import { loginCartomaniaUserAccount, registerCartomaniaUserAccount } from '$lib/api/GameClient';
+	import { goto, invalidateAll } from '$app/navigation';
 	import GoogleAuthButton from '$lib/components/GoogleAuthButton.svelte';
 	import BackButton from '$lib/components/BackButton.svelte';
 	import { t } from '$lib/i18n';
 	import '../mainpage.css';
 
 	let usernameInputValue = '';
+	let emailInputValue = '';
 	let passwordInputValue = '';
 	let confirmPasswordInputValue = '';
+	let acceptTermsChecked = false;
 	let registrationErrorKey: string | null = null;
+	let submitting = false;
+
+	const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 	async function handleRegister() {
 		registrationErrorKey = null;
@@ -17,24 +21,55 @@
 			registrationErrorKey = 'register.errors.usernameRequired';
 			return;
 		}
-		if (!passwordInputValue) {
-			registrationErrorKey = 'register.errors.passwordRequired';
+		if (!EMAIL_RE.test(emailInputValue.trim())) {
+			registrationErrorKey = 'register.errors.emailInvalid';
+			return;
+		}
+		if (passwordInputValue.length < 8) {
+			registrationErrorKey = 'register.errors.passwordTooShort';
 			return;
 		}
 		if (passwordInputValue !== confirmPasswordInputValue) {
 			registrationErrorKey = 'register.errors.passwordMismatch';
 			return;
 		}
+		if (!acceptTermsChecked) {
+			registrationErrorKey = 'register.errors.termsRequired';
+			return;
+		}
 
+		submitting = true;
 		try {
-			await registerCartomaniaUserAccount(usernameInputValue.trim(), passwordInputValue);
-			await loginCartomaniaUserAccount(usernameInputValue.trim(), passwordInputValue);
+			const response = await fetch('/api/auth/register', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					username: usernameInputValue.trim(),
+					email: emailInputValue.trim(),
+					password: passwordInputValue,
+					acceptTerms: acceptTermsChecked
+				})
+			});
+			if (!response.ok) {
+				const data = await response.json().catch(() => null);
+				registrationErrorKey =
+					response.status === 400 && typeof data?.message === 'string' && data.message
+						? null
+						: 'register.errors.generic';
+				if (registrationErrorKey === null) registrationServerMessage = data?.message ?? '';
+				return;
+			}
+			await invalidateAll();
 			goto('/');
 		} catch (error) {
 			console.error(error);
 			registrationErrorKey = 'register.errors.generic';
+		} finally {
+			submitting = false;
 		}
 	}
+
+	let registrationServerMessage = '';
 </script>
 
 <div class="page-shell">
@@ -53,6 +88,17 @@
 						bind:value={usernameInputValue}
 						placeholder={$t('register.usernamePlaceholder')}
 						autocomplete="username"
+					/>
+				</label>
+
+				<label class="input-wrap">
+					<span class="input-label">{$t('register.email')}</span>
+					<input
+						class="input-field"
+						type="email"
+						bind:value={emailInputValue}
+						placeholder={$t('register.emailPlaceholder')}
+						autocomplete="email"
 					/>
 				</label>
 
@@ -79,8 +125,20 @@
 				</label>
 			</div>
 
+			<label class="terms-check">
+				<input type="checkbox" bind:checked={acceptTermsChecked} />
+				<span>
+					{$t('register.terms.prefix')}
+					<a href="/terms" target="_blank" rel="noopener">{$t('register.terms.terms')}</a>
+					{$t('register.terms.and')}
+					<a href="/privacy" target="_blank" rel="noopener">{$t('register.terms.privacy')}</a>.
+				</span>
+			</label>
+
 			<div class="auth-actions stacked">
-				<button class="button button-accent" type="submit">{$t('register.submit')}</button>
+				<button class="button button-primary" type="submit" disabled={submitting}>
+					{$t('register.submit')}
+				</button>
 				<BackButton href="/" label={$t('register.back')} />
 			</div>
 		</form>
@@ -90,6 +148,36 @@
 
 		{#if registrationErrorKey}
 			<p class="empty-text" style="color:#ffbdbd">{$t(registrationErrorKey)}</p>
+		{:else if registrationServerMessage}
+			<p class="empty-text" style="color:#ffbdbd">{registrationServerMessage}</p>
 		{/if}
 	</section>
 </div>
+
+<style>
+	.terms-check {
+		display: flex;
+		align-items: flex-start;
+		gap: 10px;
+		margin: 4px 2px 2px;
+		font-size: 13.5px;
+		line-height: 1.5;
+		color: var(--muted, #cdbb8f);
+		text-align: left;
+	}
+	.terms-check input[type='checkbox'] {
+		margin-top: 3px;
+		width: 16px;
+		height: 16px;
+		flex: 0 0 auto;
+		accent-color: var(--accent, #e5b96b);
+		cursor: pointer;
+	}
+	.terms-check a {
+		color: var(--accent, #e5b96b);
+		text-decoration: underline;
+	}
+	.terms-check a:hover {
+		filter: brightness(1.15);
+	}
+</style>

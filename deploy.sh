@@ -3,8 +3,8 @@
 # Frontend = PM2 app `cartomania-web` (port 3055); backend = docker compose service `cartomania` (port 3056).
 #
 # Usage:
-#   ./deploy.sh           # frontend (default): pnpm build + pm2 restart — for changes in web/
-#   ./deploy.sh back      # backend: docker compose build/up cartomania + health — for src/ or prisma/
+#   ./deploy.sh           # frontend (default): pnpm build + pm2 restart - for changes in web/
+#   ./deploy.sh back      # backend: docker compose build/up cartomania + health - for src/ or prisma/
 #   ./deploy.sh all       # both
 set -euo pipefail
 cd "$(dirname "$0")"

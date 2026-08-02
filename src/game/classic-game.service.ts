@@ -68,7 +68,7 @@ export class ClassicGameService {
     state.log.push(
       hasCards
         ? `Player ${skipperId} skips`
-        : `Player ${skipperId} has no cards — skip`,
+        : `Player ${skipperId} has no cards - skip`,
     );
 
     state.turn++;
@@ -95,7 +95,7 @@ export class ClassicGameService {
     const otherHand = state.hands[otherPlayerId];
     if (currentHand.length === 0 && otherHand.length === 0) {
       state.winner = null;
-      state.log.push('Both out of cards — tie');
+      state.log.push('Both out of cards - tie');
       state.turnDeadline = null;
       return true;
     }
@@ -141,7 +141,7 @@ export class ClassicGameService {
           break;
         }
       } else {
-        completed = this.forceSkip(state, BOT_ID, 'Bot has no cards — skip');
+        completed = this.forceSkip(state, BOT_ID, 'Bot has no cards - skip');
         if (completed) break;
       }
       this.setNextDeadline(state);
@@ -182,7 +182,7 @@ export class ClassicGameService {
 
     if (state.hp[opponentId] <= 0 && !state.winner) {
       state.winner = actorId;
-      playLog += ' — WIN';
+      playLog += ' - WIN';
     }
 
     state.log.push(playLog);
@@ -225,7 +225,7 @@ export class ClassicGameService {
       const hand = state.hands[currentPlayerId];
       if (hand.length > 0) {
         state.log.push(
-          `Timer expired for ${currentPlayerId} — card chosen automatically`,
+          `Timer expired for ${currentPlayerId} - card chosen automatically`,
         );
         const randomCard = hand[Math.floor(Math.random() * hand.length)];
         await this.resolveClassicPlay(
@@ -243,7 +243,7 @@ export class ClassicGameService {
         completed = this.forceSkip(
           state,
           currentPlayerId,
-          `Timer expired for ${currentPlayerId} — skip`,
+          `Timer expired for ${currentPlayerId} - skip`,
         );
         if (completed) break;
       }

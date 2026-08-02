@@ -8,7 +8,7 @@ import { DuelGameService } from './duel-game.service';
  * server (`DuelGameService`); this just keeps it ticking so that every active
  * Attribute Duel keeps progressing and eventually finishes WITHOUT depending on a
  * browser being open. That's what makes the match continue after a player leaves the
- * screen, and it's the foundation for anti-cheat (the client only sends intents — it
+ * screen, and it's the foundation for anti-cheat (the client only sends intents - it
  * can no longer stall a match by closing the tab).
  */
 @Injectable()

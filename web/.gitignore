@@ -24,3 +24,9 @@ vite.config.ts.timestamp-*
 
 *.txt
 *.py
+
+# Rotas do SvelteKit cujo nome termina em .txt (ex.: /robots.txt) sao CODIGO, nao
+# notas -- o "*.txt" acima as pegava por tabela. O git nao re-inclui arquivo
+# dentro de diretorio excluido, entao o DIRETORIO precisa ser negado primeiro.
+!src/routes/robots.txt
+!src/routes/robots.txt/**

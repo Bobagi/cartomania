@@ -57,7 +57,7 @@
 				<div class="title">Game finished</div>
 				{#if finalResult.winner === null}
 					<div class="msg">
-						Tie game{endedDueToNoCards ? ' — both players ran out of cards' : ''}.
+						Tie game{endedDueToNoCards ? ', both players ran out of cards' : ''}.
 					</div>
 				{:else}
 					<div class="msg">Winner: {finalResult.winner}</div>

@@ -19,6 +19,7 @@ const es: typeof en = {
 		manage: 'Preferencias de cookies'
 	},
 	nav: {
+		login: 'Iniciar sesión',
 		logout: 'Cerrar sesión'
 	},
 	footer: {
@@ -32,12 +33,53 @@ const es: typeof en = {
 	},
 	home: {
 		kicker: 'Duelo de Cartas Coleccionables',
-		tagline:
-			'Comanda la colección Dracomania y duela por fuego, magia y fuerza. En cada ronda ambos duelistas revelan una carta y se enfrentan en un atributo: captura más cartas que tu rival para ganar la partida.',
 		serverLabel: 'Servidor',
+		promise:
+			'Dragones, guerreros y criaturas míticas se enfrentan en la mesa. Eliges el atributo que crees que gana la ronda: magia, fuerza o fuego. Si aciertas, las dos cartas son tuyas.',
+		playCta: 'Juega tu primer duelo',
+		playNote: 'Gratis, directo en el navegador.',
+		galleryCta: 'Ver las cartas',
+		attributes: {
+			title: 'Tres formas de ganar la ronda',
+			subtitle: 'Cada carta lleva los tres. Solo cuenta el atributo que tú elijas.',
+			magic: {
+				name: 'Magia',
+				text: 'Poder arcano. La carta que perdería a golpes suele ganar con el hechizo.'
+			},
+			might: {
+				name: 'Fuerza',
+				text: 'Fuerza bruta. La elección segura, y lo que mantiene peligrosos a los pesados.'
+			},
+			fire: {
+				name: 'Fuego',
+				text: 'Llama ardiente. La mayor variación del tablero, y por eso la apuesta más audaz.'
+			}
+		},
+		how: {
+			title: 'Cómo funciona una ronda',
+			subtitle: 'Una ronda, tres tiempos. Una partida termina en un par de minutos.',
+			revealTitle: 'Revelar',
+			revealText: 'Ambos duelistas juegan una carta de su mano. La arena las voltea a la vez.',
+			clashTitle: 'Enfrentar',
+			clashText: 'Uno de los duelistas elige el atributo. Ambas cartas valen solo ese número.',
+			captureTitle: 'Capturar',
+			captureText:
+				'El valor más alto se lleva las dos cartas. Cuando una mano se acaba, la pila mayor gana la partida.'
+		},
+		collection: {
+			title: 'La colección Dracomania',
+			subtitle:
+				'{count} dragones, guerreros y criaturas míticas pintados a mano, cada uno con su magia, fuerza y fuego. Aprende los números y sabrás qué atributo elegir.',
+			cta: 'Ver todas las cartas'
+		},
+		finalCta: {
+			title: 'La arena está abierta',
+			text: 'Crea una cuenta y en segundos estarás duelando, contra el bot de la casa o contra un amigo al que retes.',
+			button: 'Juega tu primer duelo'
+		},
 		auth: {
 			title: 'Entra en la arena',
-			subtitle: 'Inicia sesión para jugar, o explora la colección primero.',
+			subtitle: 'Inicia sesión para retomar tus duelos.',
 			username: 'Usuario',
 			usernamePlaceholder: 'Tu apodo',
 			password: 'Contraseña',
@@ -45,7 +87,11 @@ const es: typeof en = {
 			or: 'o',
 			browseGallery: 'Explorar la galería',
 			createAccount: 'Crear una cuenta',
-			invalidCredentials: 'Usuario o contraseña inválidos.'
+			newHere: '¿Eres nuevo?',
+			haveAccount: '¿Ya tienes cuenta?',
+			returning: '¿Ya juegas?',
+			invalidCredentials: 'Usuario o contraseña inválidos.',
+			forgotPassword: '¿Olvidaste tu contraseña?'
 		},
 		dashboard: {
 			adminBadge: 'Admin',
@@ -56,8 +102,13 @@ const es: typeof en = {
 			readyTitle: '¿Listo para duelar?',
 			readySub: 'Inicia un Duelo de Atributos contra el bot y aumenta tu colección de victorias.',
 			startDuel: 'Iniciar Duelo',
-			yourGames: 'Tus partidas activas',
-			noGames: 'Aún no hay partidas activas: inicia un duelo arriba.',
+			inMatchTitle: 'Tu duelo está esperando',
+			inMatchSub: 'Una partida a la vez. Termina o abandona este duelo para empezar otro.',
+			resumeDuel: 'Reanudar duelo',
+			alreadyInMatch: 'Ya estás en una partida. Termínala antes de empezar otra.',
+			startFailed: 'No se pudo iniciar el duelo. Inténtalo de nuevo.',
+			yourGames: 'Tu partida activa',
+			noGames: 'Aún no hay partida activa: inicia un duelo arriba.',
 			mode: 'Modo',
 			updated: 'Actualizado',
 			resume: 'Reanudar',
@@ -99,20 +150,82 @@ const es: typeof en = {
 		subtitle: 'Es rápido y gratis.',
 		username: 'Usuario',
 		usernamePlaceholder: 'Apodo',
+		email: 'Correo',
+		emailPlaceholder: 'tu@ejemplo.com',
 		password: 'Contraseña',
 		confirmPassword: 'Confirmar contraseña',
 		submit: 'Crear cuenta',
 		back: 'Volver',
+		terms: {
+			prefix: 'He leído y acepto los',
+			terms: 'Términos de Uso',
+			and: 'y la',
+			privacy: 'Política de Privacidad'
+		},
 		errors: {
 			usernameRequired: 'El usuario es obligatorio.',
 			passwordRequired: 'La contraseña es obligatoria.',
+			passwordTooShort: 'La contraseña debe tener al menos 8 caracteres.',
+			emailInvalid: 'Introduce un correo válido.',
 			passwordMismatch: 'Las contraseñas no coinciden.',
+			termsRequired: 'Debes aceptar los Términos de Uso y la Política de Privacidad.',
 			generic: 'No se pudo crear la cuenta.'
 		}
 	},
 	auth: {
 		googleContinue: 'Continuar con Google',
-		googleComingSoon: 'El inicio de sesión con Google llegará pronto.'
+		googleComingSoon: 'El inicio de sesión con Google llegará pronto.',
+		googleError: 'El inicio de sesión con Google no se completó. Inténtalo de nuevo.'
+	},
+	agreement: {
+		title: 'Antes de jugar',
+		version: 'Versión {version}',
+		intro:
+			'Para seguir jugando a Cartomania, lee y acepta nuestros Términos de Uso y la Política de Privacidad. Puedes leer los Términos abajo y abrir cualquiera de los documentos en una pestaña nueva.',
+		viewTerms: 'Abrir Términos de Uso',
+		viewPrivacy: 'Abrir Política de Privacidad',
+		termsLabel: 'Términos de Uso',
+		privacyLabel: 'Política de Privacidad',
+		checkboxAge: 'Tengo al menos 18 años, o cuento con el consentimiento de mi tutor.',
+		checkboxTermsPre: 'He leído y acepto los',
+		checkboxPrivacyPre: 'He leído y acepto la',
+		accept: 'Acepto',
+		accepting: 'Guardando…',
+		decline: 'Rechazar y salir',
+		error: 'No se pudo guardar tu aceptación. Inténtalo de nuevo.'
+	},
+	forgot: {
+		title: '¿Olvidaste tu contraseña?',
+		subtitle: 'Escribe tu correo y te enviaremos un enlace para restablecerla.',
+		email: 'Correo',
+		emailPlaceholder: 'tu@ejemplo.com',
+		submit: 'Enviar enlace',
+		sent: 'Si existe una cuenta con ese correo, el enlace de restablecimiento va en camino. Revisa tu bandeja de entrada.',
+		backToLogin: 'Volver al inicio de sesión'
+	},
+	reset: {
+		title: 'Elige una nueva contraseña',
+		subtitle: 'Escribe una nueva contraseña para tu cuenta.',
+		newPassword: 'Nueva contraseña',
+		confirm: 'Confirmar contraseña',
+		submit: 'Restablecer contraseña',
+		done: 'Tu contraseña se restableció. Ya puedes iniciar sesión.',
+		goLogin: 'Ir al inicio de sesión',
+		requestNew: 'Solicitar un nuevo enlace',
+		errors: {
+			passwordTooShort: 'La contraseña debe tener al menos 8 caracteres.',
+			mismatch: 'Las contraseñas no coinciden.',
+			invalid: 'Este enlace de restablecimiento no es válido o expiró.',
+			noToken: 'No se encontró el token. Solicita un nuevo enlace.'
+		}
+	},
+	verify: {
+		title: 'Verificación de correo',
+		working: 'Verificando tu correo…',
+		ok: 'Tu correo fue verificado. ¡Gracias!',
+		error: 'Este enlace de verificación no es válido o expiró.',
+		goHome: 'Ir al inicio',
+		goAccount: 'Ir a la cuenta'
 	},
 	attributes: {
 		magic: 'Magia',
@@ -222,7 +335,9 @@ const es: typeof en = {
 		chatLoadFail: 'No se pudo cargar el historial del chat.',
 		messageSendFail: 'No se pudo enviar el mensaje.',
 		matchCreated: 'Partida creada.',
-		matchStartFail: 'No se pudo iniciar la partida con el amigo.'
+		matchStartFail: 'No se pudo iniciar la partida con el amigo.',
+		friendBusy: 'Ese jugador ya está en una partida.',
+		youBusy: 'Ya estás en una partida. Termínala antes de desafiar a un amigo.'
 	},
 	legal: {
 		back: 'Volver a Cartomania',
@@ -408,10 +523,11 @@ const es: typeof en = {
 		title: 'Configuración de la cuenta',
 		back: 'Volver',
 		chooseAvatar: 'Elige tu avatar',
+		googlePhoto: 'Tu foto de Google',
 		save: 'Guardar',
 		cancel: 'Cancelar',
 		usernameTitle: 'Usuario',
-		usernameHint: 'Tu nombre visible y de inicio de sesión (3–50 caracteres).',
+		usernameHint: 'Tu nombre visible y de inicio de sesión (3-50 caracteres).',
 		newUsername: 'Nuevo nombre de usuario',
 		changeUsername: 'Cambiar nombre de usuario',
 		passwordTitle: 'Contraseña',
@@ -428,6 +544,21 @@ const es: typeof en = {
 		passwordUpdated: 'Contraseña cambiada.',
 		avatarUpdated: 'Avatar actualizado.',
 		passwordsDoNotMatch: 'Las nuevas contraseñas no coinciden.',
+		emailTitle: 'Correo',
+		emailNone: 'No hay correo configurado. Agrega uno para poder recuperar tu contraseña.',
+		emailVerified: 'Tu correo está verificado.',
+		emailUnverified: 'Tu correo aún no está verificado.',
+		emailLabel: 'Dirección de correo',
+		saveEmail: 'Guardar correo',
+		emailUpdated: 'Correo guardado. Revisa tu bandeja para verificarlo.',
+		resendVerification: 'Reenviar correo de verificación',
+		verificationResent: 'Correo de verificación enviado (si tu dirección lo necesita).',
+		googleTitle: 'Google',
+		googleConnected: 'Tu cuenta de Google está conectada.',
+		googleDisconnect: 'Desconectar Google',
+		googleSetPasswordFirst: 'Configura una contraseña antes de desconectar Google.',
+		googleNotConnected: 'Conecta Google para entrar con un clic.',
+		googleConnect: 'Conectar Google',
 		genericError: 'Algo salió mal. Inténtalo de nuevo.'
 	}
 };

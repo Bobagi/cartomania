@@ -7,7 +7,7 @@
 	font-display: swap;
 }
 @font-face {
-	/* Morpheus — used for card name banner; also the "CARTOMANIA" brand title. */
+	/* Morpheus - used for card name banner; also the "CARTOMANIA" brand title. */
 	font-family: 'Morpheus';
 	src: url('/fonts/Morpheus.ttf') format('truetype');
 	font-weight: 400 900;
@@ -21,7 +21,7 @@
  *
  * Font split: Morpheus for the name banner (--cc-name-font default); Draco (Exocet)
  * for the corner number, attribute values, and attribute labels (all --cc-*-font vars).
- * Outline: -webkit-text-stroke + paint-order:stroke fill — strokes cleanly at any
+ * Outline: -webkit-text-stroke + paint-order:stroke fill - strokes cleanly at any
  * thickness (no ghost-copy artefacts). Visible outline = --cc-outline-size × 1em
  * (we double it internally because paint-order:fill covers the inner half).
  */
