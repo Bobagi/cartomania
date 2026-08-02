@@ -25,11 +25,19 @@
 > has already made; that wastes his time and frustrates him. Bias toward doing what he asked over
 > hedging.
 
-> **ALWAYS commit + push to `main` + deploy** as the final step of any change, automatically,
-> without asking first. Build/verify → `git add` (never the intentionally-untracked
-> `web/pnpm-lock.yaml`) → commit (end msg with the Co-Authored-By trailer) → `git push origin main`
-> → deploy (rebuild web + `pm2 restart cartomania-web`, and/or `docker compose build/up cartomania`)
+> **ALWAYS land the work on `main` and deploy to production** as the final step of any change,
+> automatically, without asking first. Build/verify → `git add` (never the intentionally-untracked
+> `web/pnpm-lock.yaml`) → commit (end msg with the Co-Authored-By trailer) → **if you worked on a
+> branch, `git checkout main && git merge <branch>` first** → `git push origin main` → deploy
+> (rebuild web + `pm2 restart cartomania-web`, and/or `docker compose build/up cartomania`)
 > → health-check.
+>
+> **`main` IS production and must always be deployable.** Never leave finished work parked on a
+> branch: it happened once (`feat/duel-circle-art`, 41 commits over 5 weeks, `main` unable to run
+> the app) because a stale TODO line said the branch was pending review, and every session trusted
+> it instead of the rule above. **A note in this file saying a branch is unmerged does NOT override
+> this rule; it means the note is out of date.** If a branch is ever genuinely meant to stay open,
+> the owner says so in the conversation.
 
 Guidance for Claude Code working in this repo. All code, comments and UI text are
 **English**; use intuitive names.
@@ -717,7 +725,7 @@ web/                         SvelteKit frontend
 
 > Ordered roughly by priority. Update/trim as items land.
 
-- **[ON BRANCH `feat/duel-circle-art` - NOT merged; DEPLOYED live for review; `main` is the fallback]
+- **[MERGED to `main` 2026-08-02 - `feat/duel-circle-art` is history now, work on `main`]
   Duel battlefield rework.** Long iterative session (2026-06-20 → 26). **Current state - commit `f3694e7`:**
   - **Step 1 (merged to `main`):** removed the "your card here" / "waiting" centre placeholders + the slot's
     framed outline (the felt is empty until a card is played); fixed the opponent's face-down card clipping
@@ -742,9 +750,13 @@ web/                         SvelteKit frontend
   - **Open / next:** keep tuning the flames per taste (intensity / length / darkness / density - the user
     referenced a Hearthstone "black flame"; constant emission from every border point would look best but was
     kept moderate for performance/accessibility); the `is-lose` dark tint still overlays the destruction
-    (could drop); the opponent half has no "hidden card" indicator before REVEAL. **To merge:** review the
-    branch, then `git checkout main && git merge feat/duel-circle-art` (+ rebuild + restart). **To abandon:**
-    `git checkout main` + rebuild + `pm2 restart cartomania-web`.
+    (could drop); the opponent half has no "hidden card" indicator before REVEAL.
+  - **Merge history (do not repeat the mistake):** this item used to say "NOT merged, `main` is the
+    fallback", and that stale line survived 5 weeks while every session kept committing to the branch
+    and deploying it - `main` silently fell 41 commits behind and could no longer run the app. Merged
+    into `main` on 2026-08-02 (branch side won every conflict, all of them the duplicated consent-banner
+    commit; the resulting tree is byte-identical to what was already live). **There is no long-lived
+    feature branch here: finish, merge to `main`, push, deploy.**
 
 1. **[DONE 2026-07-23] `admin`/`alice` passwords + weak-seed hardening.** The live `.env` DOES now set
    `ADMIN_PASSWORD`/`ALICE_PASSWORD` (verified), and `seed.ts` now **refuses to seed with the demo defaults
